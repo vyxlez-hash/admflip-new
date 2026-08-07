@@ -1,21 +1,156 @@
 const BACKEND = "https://admflip-new.onrender.com";
 
 
-const loginBtn = document.getElementById("loginBtn");
-const logoutBtn = document.getElementById("logoutBtn");
+// ======================
+// SITE STATUS CHECK
+// ======================
 
-const modal = document.getElementById("modal");
+async function checkSiteStatus(){
 
-const usernameInput = document.getElementById("username");
+    try{
 
-const profile = document.getElementById("profile");
-const phraseText = document.getElementById("phrase");
+        const response =
+        await fetch(
+            BACKEND + "/status"
+        );
 
-const verifyBtn = document.getElementById("verify");
+
+        const data =
+        await response.json();
+
+
+
+        const maintenance =
+        document.getElementById("maintenance");
+
+
+        const site =
+        document.getElementById("site");
+
+
+        const announcement =
+        document.getElementById("announcement");
+
+
+
+        if(!data.online){
+
+            if(maintenance)
+            maintenance.classList.remove("hidden");
+
+
+            if(site)
+            site.style.display = "none";
+
+        }
+
+        else{
+
+            if(maintenance)
+            maintenance.classList.add("hidden");
+
+
+            if(site)
+            site.style.display = "block";
+
+        }
+
+
+
+
+
+        if(data.announcement){
+
+            if(announcement){
+
+                announcement.classList.remove("hidden");
+
+                announcement.innerHTML =
+                "📢 " + data.announcement;
+
+            }
+
+        }
+
+        else{
+
+            if(announcement)
+            announcement.classList.add("hidden");
+
+        }
+
+
+
+    }
+
+    catch(error){
+
+        console.log(
+            "Status error:",
+            error
+        );
+
+    }
+
+
+}
+
+
+
+checkSiteStatus();
+
+
+setInterval(
+    checkSiteStatus,
+    15000
+);
+
+
+
+
+
+
+
+
+// ======================
+// LOGIN SYSTEM
+// ======================
+
+
+const loginBtn =
+document.getElementById("loginBtn");
+
+
+const logoutBtn =
+document.getElementById("logoutBtn");
+
+
+const modal =
+document.getElementById("modal");
+
+
+const usernameInput =
+document.getElementById("username");
+
+
+const profile =
+document.getElementById("profile");
+
+
+const phraseText =
+document.getElementById("phrase");
+
+
+const verifyBtn =
+document.getElementById("verify");
+
 
 
 let currentUser = null;
+
 let phrase = "";
+
+
 
 
 
@@ -23,12 +158,16 @@ let phrase = "";
 
 // Load saved login
 
-const savedUser = localStorage.getItem("admflipUser");
+const savedUser =
+localStorage.getItem("admflipUser");
+
 
 
 if(savedUser){
 
-    currentUser = JSON.parse(savedUser);
+    currentUser =
+    JSON.parse(savedUser);
+
 
     showUser();
 
@@ -38,7 +177,10 @@ if(savedUser){
 
 
 
-// Show logged in account
+
+
+
+// Show user
 
 function showUser(){
 
@@ -54,10 +196,13 @@ function showUser(){
     `;
 
 
+
     loginBtn.classList.add("logged");
 
 
-    logoutBtn.style.display = "block";
+
+    logoutBtn.style.display =
+    "block";
 
 
 }
@@ -67,7 +212,9 @@ function showUser(){
 
 
 
-// Open login modal
+
+
+// Open login
 
 loginBtn.onclick = ()=>{
 
@@ -88,159 +235,155 @@ loginBtn.onclick = ()=>{
 
 
 
-// Check Roblox username automatically
+// Username check
 
 usernameInput.onchange = async()=>{
 
 
-    const username =
-    usernameInput.value.trim();
+const username =
+usernameInput.value.trim();
 
 
 
-    if(!username){
+if(!username)
+return;
 
-        return;
 
-    }
 
 
+try{
 
 
-    try{
+const response =
+await fetch(
 
+BACKEND +
+"/user/" +
+username
 
-        const response =
-        await fetch(
+);
 
-            BACKEND + "/user/" + username
 
-        );
 
+const data =
+await response.json();
 
 
-        const data =
-        await response.json();
 
 
+if(!data.success){
 
 
+alert(
+"Roblox username not found"
+);
 
-        if(!data.success){
 
+return;
 
-            alert("Roblox username not found");
 
+}
 
-            return;
 
 
-        }
 
 
+currentUser =
+data.user;
 
 
 
 
-        currentUser = data.user;
 
+profile.classList.remove("hidden");
 
 
 
+profile.innerHTML = `
 
+<img width="80" src="${currentUser.avatar}">
 
-        profile.classList.remove("hidden");
+<br><br>
 
+<b>${currentUser.username}</b>
 
+`;
 
-        profile.innerHTML = `
 
 
-        <img width="80" src="${currentUser.avatar}">
 
 
-        <br><br>
 
 
-        <b>${currentUser.username}</b>
 
+// Generate phrase
 
-        `;
 
+const phraseResponse =
+await fetch(
 
+BACKEND +
+"/create"
 
+);
 
 
 
+const phraseData =
+await phraseResponse.json();
 
 
 
-        // Create phrase automatically
+phrase =
+phraseData.phrase;
 
 
-        const phraseResponse =
-        await fetch(
 
-            BACKEND + "/create"
 
-        );
 
+phraseText.classList.remove("hidden");
 
 
-        const phraseData =
-        await phraseResponse.json();
 
+phraseText.innerHTML = `
 
 
+Put this phrase in your Roblox bio:
 
-        phrase =
-        phraseData.phrase;
 
+<br><br>
 
 
+<b>${phrase}</b>
 
 
-        phraseText.classList.remove("hidden");
+`;
 
 
 
-        phraseText.innerHTML = `
 
 
-        Put this phrase in your Roblox bio:
+verifyBtn.style.display =
+"block";
 
 
-        <br><br>
 
 
-        <b>${phrase}</b>
+}
 
 
-        `;
+catch(error){
 
 
+console.log(error);
 
 
+alert(
+"Server error"
+);
 
 
-        verifyBtn.style.display = "block";
-
-
-
-
-    }
-
-
-    catch(error){
-
-
-        console.log(error);
-
-
-        alert("Server error");
-
-
-    }
+}
 
 
 
@@ -253,138 +396,147 @@ usernameInput.onchange = async()=>{
 
 
 
-// Verify Roblox bio
+
+// Verify
 
 verifyBtn.onclick = async()=>{
 
 
-    verifyBtn.disabled = true;
+verifyBtn.disabled =
+true;
 
-    verifyBtn.innerText = "Checking...";
 
+verifyBtn.innerText =
+"Checking...";
 
 
 
-    try{
+try{
 
 
-        const response =
-        await fetch(
+const response =
+await fetch(
 
-            BACKEND + "/check",
+BACKEND +
+"/check",
 
-            {
+{
 
+method:"POST",
 
-                method:"POST",
+headers:{
 
+"Content-Type":
+"application/json"
 
-                headers:{
+},
 
 
-                    "Content-Type":"application/json"
+body:JSON.stringify({
 
+username:
+currentUser.username,
 
-                },
 
+phrase:
+phrase
 
-                body:JSON.stringify({
+})
 
-                    username:
-                    currentUser.username,
 
+}
 
-                    phrase:phrase
+);
 
 
-                })
 
+const data =
+await response.json();
 
-            }
 
 
-        );
 
 
+if(data.success){
 
 
 
-        const data =
-        await response.json();
+localStorage.setItem(
 
+"admflipUser",
 
+JSON.stringify(currentUser)
 
+);
 
 
-        if(data.success){
 
+modal.classList.remove(
+"show"
+);
 
 
-            localStorage.setItem(
 
-                "admflipUser",
+showUser();
 
-                JSON.stringify(currentUser)
 
-            );
 
+alert(
+"Verified successfully"
+);
 
 
-            modal.classList.remove("show");
 
+}
 
+else{
 
-            showUser();
 
+alert(
 
+"Verification phrase not found. Put it in your Roblox bio first."
 
-            alert("Verified successfully");
+);
 
 
 
-        }
+verifyBtn.disabled =
+false;
 
 
-        else{
+verifyBtn.innerText =
+"Verify";
 
 
-            alert(
+}
 
-            "Verification phrase not found. Put it in your Roblox bio first."
 
-            );
 
 
+}
 
-            verifyBtn.disabled = false;
 
+catch(error){
 
-            verifyBtn.innerText = "Verify";
 
+console.log(error);
 
-        }
 
+alert(
+"Verification failed"
+);
 
 
-    }
 
+verifyBtn.disabled =
+false;
 
-    catch(error){
 
+verifyBtn.innerText =
+"Verify";
 
-        console.log(error);
 
-
-        alert("Verification failed");
-
-
-        verifyBtn.disabled = false;
-
-
-        verifyBtn.innerText = "Verify";
-
-
-    }
+}
 
 
 
@@ -402,32 +554,41 @@ verifyBtn.onclick = async()=>{
 logoutBtn.onclick = ()=>{
 
 
-    localStorage.removeItem("admflipUser");
-
-
-    currentUser = null;
-
-    phrase = "";
+localStorage.removeItem(
+"admflipUser"
+);
 
 
 
-    loginBtn.innerHTML = `
+currentUser = null;
 
-        <img src="roblox.png">
-
-        <span>
-        Sign In
-        </span>
-
-    `;
+phrase = "";
 
 
 
-    loginBtn.classList.remove("logged");
+
+
+loginBtn.innerHTML = `
+
+<img src="roblox.png">
+
+<span>
+Sign In
+</span>
+
+`;
 
 
 
-    logoutBtn.style.display = "none";
+loginBtn.classList.remove(
+"logged"
+);
+
+
+
+logoutBtn.style.display =
+"none";
+
 
 
 };
