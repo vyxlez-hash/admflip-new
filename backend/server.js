@@ -172,3 +172,66 @@ if (verifyBtn) {
     };
 
 }
+app.get("/user/:username", async(req,res)=>{
+
+const username=req.params.username;
+
+
+const response=await fetch(
+"https://users.roblox.com/v1/usernames/users",
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+usernames:[username],
+excludeBannedUsers:true
+})
+});
+
+
+const data=await response.json();
+
+
+if(!data.data.length){
+
+return res.json({
+success:false
+});
+
+}
+
+
+const user=data.data[0];
+
+
+const avatarResponse=await fetch(
+
+`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${user.id}&size=150x150&format=Png`
+
+);
+
+
+const avatarData=await avatarResponse.json();
+
+
+
+res.json({
+
+success:true,
+
+user:{
+
+username:user.name,
+
+id:user.id,
+
+avatar:avatarData.data[0].imageUrl
+
+}
+
+});
+
+
+});
