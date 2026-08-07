@@ -3,19 +3,21 @@ const cors = require("cors");
 
 const app = express();
 
+
 app.use(cors());
+
 app.use(express.json());
 
 
-// Temporary storage
-// Use a database later for a real production site
-const verificationRequests = {};
+
+let verificationPhrases = {};
 
 
 
-// Test route
 
-app.get("/", (req, res) => {
+// Home test
+
+app.get("/", (req,res)=>{
 
     res.send("ADMFLIP backend is online");
 
@@ -25,28 +27,32 @@ app.get("/", (req, res) => {
 
 
 
-// Generate random phrase
+// Generate Roblox-friendly phrase
 
-function createPhrase(){
+function generatePhrase(){
+
 
     const words = [
+
         "BlueTiger",
         "FastCloud",
         "LuckyWave",
         "SilverMoon",
         "GreenFox",
-        "CoolRiver",
         "BrightStar",
         "GoldenLeaf"
+
     ];
 
 
     const word =
-    words[Math.floor(Math.random() * words.length)];
+    words[Math.floor(Math.random()*words.length)];
+
 
 
     const number =
-    Math.floor(1000 + Math.random() * 9000);
+    Math.floor(1000 + Math.random()*9000);
+
 
 
     return word + number;
@@ -57,10 +63,11 @@ function createPhrase(){
 
 
 
-// Check if Roblox username exists
-// Also returns avatar
 
-app.get("/user/:username", async (req,res)=>{
+
+// Get Roblox user + avatar
+
+app.get("/user/:username", async(req,res)=>{
 
 
     try{
@@ -74,28 +81,28 @@ app.get("/user/:username", async (req,res)=>{
         const response =
         await fetch(
 
-        "https://users.roblox.com/v1/usernames/users",
+            "https://users.roblox.com/v1/usernames/users",
 
-        {
+            {
 
-            method:"POST",
+                method:"POST",
 
-            headers:{
+                headers:{
 
-                "Content-Type":"application/json"
+                    "Content-Type":"application/json"
 
-            },
+                },
 
 
-            body:JSON.stringify({
+                body:JSON.stringify({
 
-                usernames:[username],
+                    usernames:[username],
 
-                excludeBannedUsers:true
+                    excludeBannedUsers:true
 
-            })
+                })
 
-        }
+            }
 
         );
 
@@ -106,10 +113,8 @@ app.get("/user/:username", async (req,res)=>{
 
 
 
-        if(
-            !data.data ||
-            data.data.length === 0
-        ){
+        if(!data.data || data.data.length === 0){
+
 
             return res.json({
 
@@ -119,9 +124,8 @@ app.get("/user/:username", async (req,res)=>{
 
             });
 
+
         }
-
-
 
 
 
@@ -165,8 +169,8 @@ app.get("/user/:username", async (req,res)=>{
 
             }
 
-        });
 
+        });
 
 
     }
@@ -190,7 +194,6 @@ app.get("/user/:username", async (req,res)=>{
     }
 
 
-
 });
 
 
@@ -199,7 +202,8 @@ app.get("/user/:username", async (req,res)=>{
 
 
 
-// Create verification phrase
+
+// Create phrase
 
 app.get("/create",(req,res)=>{
 
@@ -210,16 +214,15 @@ app.get("/create",(req,res)=>{
 
 
     const phrase =
-    createPhrase();
+    generatePhrase();
 
 
 
-
-    verificationRequests[id]={
+    verificationPhrases[id]={
 
         phrase:phrase,
 
-        created:Date.now()
+        time:Date.now()
 
     };
 
@@ -234,7 +237,6 @@ app.get("/create",(req,res)=>{
     });
 
 
-
 });
 
 
@@ -243,30 +245,28 @@ app.get("/create",(req,res)=>{
 
 
 
-// Verify Roblox bio
+
+
+// Verify bio
 
 app.post("/check", async(req,res)=>{
-
-
-    const {
-
-        username,
-
-        phrase
-
-    } = req.body;
-
-
-
 
 
     try{
 
 
-        // Get Roblox user ID
+        const {
+
+            username,
+
+            phrase
+
+        } = req.body;
 
 
-        const response =
+
+
+        const userResponse =
         await fetch(
 
         "https://users.roblox.com/v1/usernames/users",
@@ -290,22 +290,16 @@ app.post("/check", async(req,res)=>{
 
             })
 
-
         });
 
 
 
-        const data =
-        await response.json();
+        const userData =
+        await userResponse.json();
 
 
 
-
-
-        if(
-            !data.data ||
-            data.data.length === 0
-        ){
+        if(!userData.data.length){
 
 
             return res.json({
@@ -322,14 +316,12 @@ app.post("/check", async(req,res)=>{
 
 
 
+
         const userId =
-        data.data[0].id;
+        userData.data[0].id;
 
 
 
-
-
-        // Get Roblox profile bio
 
 
         const profileResponse =
@@ -343,7 +335,6 @@ app.post("/check", async(req,res)=>{
 
         const profile =
         await profileResponse.json();
-
 
 
 
@@ -364,7 +355,7 @@ app.post("/check", async(req,res)=>{
 
                 username:profile.name,
 
-                userId:profile.id
+                id:profile.id
 
             });
 
@@ -374,17 +365,13 @@ app.post("/check", async(req,res)=>{
 
 
 
-
-
         res.json({
 
             success:false,
 
-            message:"Verification phrase not found in Roblox bio"
+            message:"Phrase not found in Roblox bio"
 
         });
-
-
 
 
 
@@ -397,22 +384,20 @@ app.post("/check", async(req,res)=>{
         console.log(error);
 
 
-
         res.status(500).json({
 
             success:false,
 
-            message:"Server error"
+            message:"Verification failed"
 
         });
-
 
 
     }
 
 
-
 });
+
 
 
 
