@@ -6,15 +6,18 @@ const logoutBtn = document.getElementById("logoutBtn");
 
 const modal = document.getElementById("modal");
 
-const usernameInput = document.getElementById("username");
+const usernameInput =
+document.getElementById("username");
 
-const profile = document.getElementById("profile");
+const profile =
+document.getElementById("profile");
 
-const phraseText = document.getElementById("phrase");
+const phraseText =
+document.getElementById("phrase");
 
-const doneBtn = document.getElementById("done");
+const verifyBtn =
+document.getElementById("verify");
 
-const verifyBtn = document.getElementById("verify");
 
 
 let currentUser = null;
@@ -24,14 +27,13 @@ let phrase = "";
 
 
 
-// Load saved account after refresh
+const saved =
+localStorage.getItem("admflipUser");
 
-const savedUser = localStorage.getItem("admflipUser");
 
+if(saved){
 
-if(savedUser){
-
-    currentUser = JSON.parse(savedUser);
+    currentUser = JSON.parse(saved);
 
     showUser();
 
@@ -41,27 +43,20 @@ if(savedUser){
 
 
 
-
-
-// Show logged in user
-
 function showUser(){
-
 
     loginBtn.innerHTML = `
 
-        <img src="${currentUser.avatar}">
+    <img src="${currentUser.avatar}">
 
-        <span>${currentUser.username}</span>
+    <span>${currentUser.username}</span>
 
     `;
 
 
     loginBtn.classList.add("logged");
 
-
-    logoutBtn.style.display = "block";
-
+    logoutBtn.style.display="block";
 
 }
 
@@ -70,11 +65,7 @@ function showUser(){
 
 
 
-
-// Open login
-
 loginBtn.onclick = ()=>{
-
 
     if(!currentUser){
 
@@ -82,7 +73,6 @@ loginBtn.onclick = ()=>{
 
     }
 
-
 };
 
 
@@ -91,142 +81,117 @@ loginBtn.onclick = ()=>{
 
 
 
-
-// Check Roblox username
 
 usernameInput.onchange = async()=>{
 
 
-    const username =
-    usernameInput.value.trim();
+const username =
+usernameInput.value.trim();
 
 
+if(!username) return;
 
-    if(!username){
 
-        return;
 
-    }
+try{
 
 
+const userResponse =
+await fetch(
 
+BACKEND + "/user/" + username
 
-    try{
+);
 
 
-        const response =
-        await fetch(
 
-            BACKEND +
-            "/user/" +
-            username
+const userData =
+await userResponse.json();
 
-        );
 
 
 
-        const data =
-        await response.json();
+if(!userData.success){
 
+alert("Roblox username not found");
 
+return;
 
+}
 
 
-        if(!data.success){
 
 
-            alert("Roblox username not found");
 
-            return;
+currentUser =
+userData.user;
 
 
-        }
 
 
+profile.innerHTML = `
 
+<img width="90" src="${currentUser.avatar}">
 
+<br><br>
 
-        currentUser = data.user;
+<b>${currentUser.username}</b>
 
+`;
 
 
 
-        profile.innerHTML = `
 
 
-        <img width="80" src="${currentUser.avatar}">
 
-        <br><br>
+// automatic phrase generation
 
-        <b>${currentUser.username}</b>
+const phraseResponse =
+await fetch(
 
+BACKEND + "/create"
 
-        `;
+);
 
 
 
+const phraseData =
+await phraseResponse.json();
 
 
 
+phrase =
+phraseData.phrase;
 
-        // Generate phrase automatically
 
 
-        const phraseResponse =
-        await fetch(
+phraseText.innerHTML = `
 
-            BACKEND + "/create"
+Put this phrase in your Roblox bio:
 
-        );
+<br><br>
 
+<b>${phrase}</b>
 
+`;
 
-        const phraseData =
-        await phraseResponse.json();
 
 
 
+verifyBtn.style.display="block";
 
-        phrase =
-        phraseData.phrase;
 
 
+}
 
+catch(error){
 
+console.log(error);
 
-        phraseText.innerHTML = `
+alert("Server error");
 
+}
 
-        Put this phrase in your Roblox bio:
-
-        <br><br>
-
-        <b>${phrase}</b>
-
-
-        `;
-
-
-
-
-
-        doneBtn.style.display = "block";
-
-
-
-    }
-
-
-    catch(error){
-
-
-        console.log(error);
-
-
-        alert("Server error");
-
-
-    }
 
 
 };
@@ -237,187 +202,119 @@ usernameInput.onchange = async()=>{
 
 
 
-
-// Done button
-
-doneBtn.onclick = ()=>{
-
-
-    phraseText.innerHTML += `
-
-
-    <br><br>
-
-
-    After adding it to your Roblox bio,
-    click Verify Account.
-
-
-    `;
-
-
-
-    verifyBtn.style.display = "block";
-
-
-};
-
-
-
-
-
-
-
-
-// Verify Roblox bio
 
 verifyBtn.onclick = async()=>{
 
 
-    if(!currentUser || !phrase){
+verifyBtn.innerText="Checking...";
 
-        alert("Generate a phrase first");
+verifyBtn.disabled=true;
 
-        return;
 
-    }
 
+try{
 
 
-    verifyBtn.disabled = true;
+const response =
+await fetch(
 
-    verifyBtn.innerText = "Checking...";
+BACKEND+"/check",
 
+{
 
+method:"POST",
 
+headers:{
 
+"Content-Type":"application/json"
 
-    try{
+},
 
+body:JSON.stringify({
 
-        const response =
-        await fetch(
+username:currentUser.username,
 
-            BACKEND + "/check",
+phrase:phrase
 
-            {
+})
 
+}
 
-                method:"POST",
+);
 
 
-                headers:{
 
 
-                    "Content-Type":"application/json"
 
+const data =
+await response.json();
 
-                },
 
 
 
-                body:JSON.stringify({
 
+if(data.success){
 
-                    username:
-                    currentUser.username,
 
+localStorage.setItem(
 
-                    phrase:phrase
+"admflipUser",
 
+JSON.stringify(currentUser)
 
-                })
+);
 
 
-            }
 
+modal.classList.remove("show");
 
-        );
 
+showUser();
 
 
+alert("Verified");
 
-        const data =
-        await response.json();
 
+}
 
+else{
 
 
+alert(
+"Verification phrase not found. Put it in your Roblox bio first."
+);
 
-        if(data.success){
 
 
+verifyBtn.disabled=false;
 
-            localStorage.setItem(
 
-                "admflipUser",
+verifyBtn.innerText="Verify";
 
-                JSON.stringify(currentUser)
 
-            );
+}
 
 
 
-            modal.classList.remove("show");
+}
 
 
+catch(error){
 
-            showUser();
 
+console.log(error);
 
 
-            alert("Account verified");
+alert("Verification failed");
 
 
+verifyBtn.disabled=false;
 
-        }
 
+verifyBtn.innerText="Verify";
 
-        else{
 
-
-            alert(
-
-            "Verification phrase not found. Put the phrase in your Roblox bio and try again."
-
-            );
-
-
-
-            verifyBtn.disabled = false;
-
-
-            verifyBtn.innerText = "Verify Account";
-
-
-        }
-
-
-
-
-    }
-
-
-    catch(error){
-
-
-
-        console.log(error);
-
-
-
-        alert("Verification failed");
-
-
-
-        verifyBtn.disabled = false;
-
-
-        verifyBtn.innerText = "Verify Account";
-
-
-
-    }
+}
 
 
 
@@ -429,46 +326,29 @@ verifyBtn.onclick = async()=>{
 
 
 
+logoutBtn.onclick=()=>{
 
 
-// Logout
-
-logoutBtn.onclick = ()=>{
+localStorage.removeItem("admflipUser");
 
 
-    localStorage.removeItem("admflipUser");
+currentUser=null;
 
 
-    currentUser = null;
+loginBtn.innerHTML=`
 
+<img src="roblox.png">
 
-    phrase = "";
+<span>Sign In</span>
 
-
-
-    loginBtn.innerHTML = `
-
-
-        <img src="roblox.png">
-
-
-        <span>
-
-        Sign In
-
-        </span>
-
-
-    `;
+`;
 
 
 
-    loginBtn.classList.remove("logged");
+loginBtn.classList.remove("logged");
 
 
-
-    logoutBtn.style.display = "none";
-
+logoutBtn.style.display="none";
 
 
 };
