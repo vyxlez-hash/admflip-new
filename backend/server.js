@@ -162,11 +162,7 @@ continue;
 
 
 
-value =
-value
-.replace(/\./g,"")
-.replace(/,/g,"");
-
+value = value.replace(/\./g,"")
 
 
 pets.push({
@@ -666,12 +662,12 @@ message:"Verification failed"
 
 
 
-app.listen(3000,()=>{
+require("./telegram");
 
+app.listen(3000,()=>{
 
 console.log(
 "ADMFLIP backend running on port 3000"
 );
-
 
 });
