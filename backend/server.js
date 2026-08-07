@@ -1,5 +1,5 @@
 const BACKEND =
-"https://admflip-new.onrender.com/";
+"https://admflip-new.onrender.com";
 
 
 const loginBtn =
