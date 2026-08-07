@@ -1,165 +1,109 @@
-const express = require("express");
-const cors = require("cors");
-
-const app = express();
-
-app.use(cors());
-app.use(express.json());
+const BACKEND =
+"https://admflip-new.onrender.com/";
 
 
-// Temporary storage
-// For a real website use a database
-const verificationRequests = {};
+const loginBtn =
+document.getElementById("loginBtn");
+
+const modal =
+document.getElementById("modal");
 
 
-// Home test route
-app.get("/", (req, res) => {
-    res.send("ADMFLIP backend is online");
-});
+let phrase = "";
 
-
-// Create verification phrase
-app.get("/create", (req, res) => {
-
-    const id = Date.now().toString();
-
-    const phrase =
-        "ADMFLIP-" +
-        Math.random()
-        .toString(36)
-        .substring(2, 8)
-        .toUpperCase();
-
-
-    verificationRequests[id] = {
-        phrase,
-        created: Date.now()
-    };
-
-
-    res.json({
-        id,
-        phrase
-    });
-
-});
+let verifyId = "";
 
 
 
-// Check Roblox bio
-app.post("/check", async (req, res) => {
-
-    const {
-        username,
-        phrase
-    } = req.body;
+loginBtn.onclick = async () => {
 
 
-    try {
+    modal.classList.add("show");
 
-        // Find Roblox user
-        const userResponse = await fetch(
-            "https://users.roblox.com/v1/usernames/users",
-            {
-                method: "POST",
 
-                headers: {
-                    "Content-Type": "application/json"
-                },
+    const response =
+    await fetch(
+        BACKEND + "/create"
+    );
 
-                body: JSON.stringify({
-                    usernames: [username],
-                    excludeBannedUsers: true
-                })
-            }
+
+    const data =
+    await response.json();
+
+
+    phrase = data.phrase;
+
+    verifyId = data.id;
+
+
+    document.getElementById("phrase").innerText =
+    "Put this phrase in your Roblox bio: "
+    + phrase;
+
+
+};
+
+
+
+
+
+document.getElementById("verify").onclick =
+async () => {
+
+
+    const username =
+    document.getElementById("username").value;
+
+
+
+    const response =
+    await fetch(
+        BACKEND + "/check",
+        {
+
+            method:"POST",
+
+            headers:{
+                "Content-Type":"application/json"
+            },
+
+
+            body:JSON.stringify({
+
+                username,
+                phrase
+
+            })
+
+        }
+    );
+
+
+
+    const data =
+    await response.json();
+
+
+
+    if(data.success){
+
+
+        alert(
+        "Verified as " 
+        + data.username
         );
 
 
-        const userData = await userResponse.json();
+    }
+
+    else{
 
 
-        if (!userData.data || userData.data.length === 0) {
-
-            return res.json({
-                success:false,
-                message:"Roblox user not found"
-            });
-
-        }
-
-
-        const userId = userData.data[0].id;
-
-
-
-        // Get Roblox profile
-        const profileResponse = await fetch(
-            `https://users.roblox.com/v1/users/${userId}`
-        );
-
-
-        const profile = await profileResponse.json();
-
-
-
-        if (
-            profile.description &&
-            profile.description.includes(phrase)
-        ) {
-
-            return res.json({
-
-                success:true,
-
-                username:profile.name,
-
-                userId:profile.id
-
-            });
-
-        }
-
-
-
-        return res.json({
-
-            success:false,
-
-            message:"Verification phrase not found in bio"
-
-        });
-
-
-
-    } catch(error) {
-
-
-        console.error(error);
-
-
-        res.status(500).json({
-
-            success:false,
-
-            message:"Server error"
-
-        });
+        alert(data.message);
 
 
     }
 
 
-});
 
-
-
-
-// Start server
-
-app.listen(3000, () => {
-
-    console.log(
-        "ADMFLIP backend running on port 3000"
-    );
-
-});
+};
