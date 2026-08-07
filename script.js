@@ -6,175 +6,257 @@ const modal = document.getElementById("modal");
 
 const usernameInput = document.getElementById("username");
 const phraseText = document.getElementById("phrase");
-const verifyBtn = document.getElementById("verify");
 
+const verifyBtn = document.getElementById("verify");
+const generateBtn = document.getElementById("generate");
 
 let phrase = "";
+let robloxUser = null;
 
 
-// Open sign in and generate phrase
+// Load saved login
 
-if (loginBtn) {
+const savedUser = localStorage.getItem("admflipUser");
 
-    loginBtn.addEventListener("click", async () => {
+if (savedUser) {
 
-        if (modal) {
-            modal.classList.add("show");
-        }
+    robloxUser = JSON.parse(savedUser);
 
+    showUser();
 
-        try {
-
-            const response = await fetch(
-                BACKEND + "/create"
-            );
+}
 
 
-            const data = await response.json();
 
+// Show logged in user
 
-            phrase = data.phrase;
+function showUser(){
 
+    loginBtn.innerHTML = `
 
-            if (phraseText) {
+    <img src="${robloxUser.avatar}">
 
-                phraseText.innerText =
-                "Put this phrase in your Roblox bio: " + phrase;
+    ${robloxUser.username}
 
-            }
-
-
-        } catch (error) {
-
-            console.error(error);
-
-            alert("Could not connect to ADMFLIP server");
-
-        }
-
-
-    });
+    `;
 
 }
 
 
 
 
-// Verify Roblox account
 
-if (verifyBtn) {
+// Open login
 
-    verifyBtn.addEventListener("click", async () => {
+loginBtn.onclick = () => {
+
+    if(!robloxUser){
+
+        modal.classList.add("show");
+
+    }
+
+};
 
 
-        const username =
-        usernameInput.value.trim();
 
 
 
-        if (!username) {
+// Generate phrase button
 
-            alert("Enter your Roblox username");
+generateBtn.onclick = async () => {
+
+
+    const username =
+    usernameInput.value.trim();
+
+
+    if(!username){
+
+        alert("Enter Roblox username");
+
+        return;
+
+    }
+
+
+
+    try{
+
+
+        const userCheck =
+        await fetch(
+
+        BACKEND + "/user/" + username
+
+        );
+
+
+        const data =
+        await userCheck.json();
+
+
+
+        if(!data.success){
+
+
+            alert("Roblox username not found");
 
             return;
+
 
         }
 
 
 
-        if (!phrase) {
-
-            alert("Click Sign In first to generate a phrase");
-
-            return;
-
-        }
+        robloxUser = data.user;
 
 
 
-        try {
+        document.getElementById("profile").innerHTML = `
+
+        <img width="80" src="${robloxUser.avatar}">
+
+        <br>
+
+        ${robloxUser.username}
+
+        `;
 
 
-            const response = await fetch(
-                BACKEND + "/check",
-                {
 
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+        const phraseResponse =
+        await fetch(
+            BACKEND + "/create"
+        );
 
 
-                    body: JSON.stringify({
+        const phraseData =
+        await phraseResponse.json();
 
-                        username: username,
 
-                        phrase: phrase
 
-                    })
+        phrase =
+        phraseData.phrase;
 
-                }
+
+
+        phraseText.innerText =
+        "Put this in your Roblox bio: " + phrase;
+
+
+
+        verifyBtn.style.display="block";
+
+
+    }
+
+    catch(error){
+
+        console.log(error);
+
+        alert("Server error");
+
+    }
+
+
+};
+
+
+
+
+
+
+
+// Verify
+
+verifyBtn.onclick = async()=>{
+
+
+    try{
+
+
+        const response =
+        await fetch(
+
+            BACKEND + "/check",
+
+            {
+
+            method:"POST",
+
+            headers:{
+
+            "Content-Type":"application/json"
+
+            },
+
+
+            body:JSON.stringify({
+
+                username:robloxUser.username,
+
+                phrase:phrase
+
+            })
+
+            }
+
+        );
+
+
+
+        const data =
+        await response.json();
+
+
+
+        if(data.success){
+
+
+            localStorage.setItem(
+
+                "admflipUser",
+
+                JSON.stringify(robloxUser)
+
             );
 
 
 
-            const data =
-            await response.json();
+            modal.classList.remove("show");
+
+            showUser();
 
 
-
-            if (data.success) {
-
-
-                alert(
-                    "Verified as " + data.username
-                );
+            alert(
+            "Verified successfully"
+            );
 
 
-                if (loginBtn) {
+        }
 
-                    loginBtn.innerHTML = `
-
-                    <img src="roblox.png">
-
-                    ${data.username}
-
-                    `;
-
-                }
+        else{
 
 
-                if (modal) {
-
-                    modal.classList.remove("show");
-
-                }
-
-
-            } else {
-
-
-                alert(
-                    data.message || "Verification failed"
-                );
-
-
-            }
-
-
-
-        } catch (error) {
-
-
-            console.error(error);
-
-            alert("Server connection failed");
+            alert(
+            "Verification phrase not found"
+            );
 
 
         }
 
 
-    });
 
-}
+    }
+
+    catch(error){
+
+        console.log(error);
+
+        alert("Verification failed");
+
+    }
+
+
+};
