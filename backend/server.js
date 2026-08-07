@@ -1,237 +1,431 @@
-const BACKEND = "https://admflip-new.onrender.com";
+const express = require("express");
+const cors = require("cors");
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
 
 
-const loginBtn = document.getElementById("loginBtn");
-const modal = document.getElementById("modal");
-
-const usernameInput = document.getElementById("username");
-const phraseText = document.getElementById("phrase");
-const verifyBtn = document.getElementById("verify");
+// Temporary storage
+// Use a database later for a real production site
+const verificationRequests = {};
 
 
-let phrase = "";
+
+// Test route
+
+app.get("/", (req, res) => {
+
+    res.send("ADMFLIP backend is online");
+
+});
 
 
-// Open login popup + create phrase
-
-if (loginBtn) {
-
-    loginBtn.onclick = async () => {
-
-        modal.classList.add("show");
 
 
-        try {
 
-            const response = await fetch(
-                BACKEND + "/create"
-            );
+// Generate random phrase
 
+function createPhrase(){
 
-            const data = await response.json();
-
-
-            phrase = data.phrase;
-
-
-            phraseText.innerText =
-            "Put this phrase in your Roblox bio: " 
-            + phrase;
-
-
-        } 
-        
-        catch(error) {
-
-            console.error(error);
-
-            alert("Backend connection failed");
-
-        }
+    const words = [
+        "BlueTiger",
+        "FastCloud",
+        "LuckyWave",
+        "SilverMoon",
+        "GreenFox",
+        "CoolRiver",
+        "BrightStar",
+        "GoldenLeaf"
+    ];
 
 
-    };
+    const word =
+    words[Math.floor(Math.random() * words.length)];
+
+
+    const number =
+    Math.floor(1000 + Math.random() * 9000);
+
+
+    return word + number;
 
 }
 
 
 
-// Verify Roblox account
 
-if (verifyBtn) {
 
-    verifyBtn.onclick = async () => {
+// Check if Roblox username exists
+// Also returns avatar
+
+app.get("/user/:username", async (req,res)=>{
+
+
+    try{
 
 
         const username =
-        usernameInput.value.trim();
+        req.params.username;
 
 
 
-        if (!username) {
+        const response =
+        await fetch(
 
-            alert("Enter your Roblox username");
+        "https://users.roblox.com/v1/usernames/users",
 
-            return;
+        {
+
+            method:"POST",
+
+            headers:{
+
+                "Content-Type":"application/json"
+
+            },
+
+
+            body:JSON.stringify({
+
+                usernames:[username],
+
+                excludeBannedUsers:true
+
+            })
+
+        }
+
+        );
+
+
+
+        const data =
+        await response.json();
+
+
+
+        if(
+            !data.data ||
+            data.data.length === 0
+        ){
+
+            return res.json({
+
+                success:false,
+
+                message:"Roblox username not found"
+
+            });
 
         }
 
 
 
-        if (!phrase) {
 
-            alert("Generate a phrase first");
 
-            return;
-
-        }
+        const user =
+        data.data[0];
 
 
 
-        try {
 
 
-            const response = await fetch(
-                BACKEND + "/check",
-                {
+        const avatarResponse =
+        await fetch(
 
-                    method:"POST",
+        `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${user.id}&size=150x150&format=Png`
 
-                    headers:{
-
-                        "Content-Type":"application/json"
-
-                    },
-
-
-                    body:JSON.stringify({
-
-                        username:username,
-
-                        phrase:phrase
-
-                    })
-
-                }
-            );
+        );
 
 
 
-            const data =
-            await response.json();
+        const avatarData =
+        await avatarResponse.json();
 
 
 
-            if(data.success){
 
 
-                alert(
-                "Verified as " + data.username
-                );
+        res.json({
+
+            success:true,
 
 
-                loginBtn.innerHTML = `
+            user:{
 
-                <img src="roblox.png">
+                username:user.name,
 
-                ${data.username}
-
-                `;
+                id:user.id,
 
 
-                modal.classList.remove("show");
-
+                avatar:
+                avatarData.data[0].imageUrl
 
             }
 
-            else {
+        });
 
 
-                alert(
-                data.message
-                );
+
+    }
 
 
-            }
+    catch(error){
 
 
-        }
+        console.log(error);
 
 
-        catch(error){
+        res.status(500).json({
+
+            success:false,
+
+            message:"Server error"
+
+        });
 
 
-            console.error(error);
-
-            alert("Verification failed");
+    }
 
 
-        }
 
+});
+
+
+
+
+
+
+
+// Create verification phrase
+
+app.get("/create",(req,res)=>{
+
+
+    const id =
+    Date.now().toString();
+
+
+
+    const phrase =
+    createPhrase();
+
+
+
+
+    verificationRequests[id]={
+
+        phrase:phrase,
+
+        created:Date.now()
 
     };
 
-}
-app.get("/user/:username", async(req,res)=>{
-
-const username=req.params.username;
 
 
-const response=await fetch(
-"https://users.roblox.com/v1/usernames/users",
-{
-method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
-body:JSON.stringify({
-usernames:[username],
-excludeBannedUsers:true
-})
+    res.json({
+
+        id:id,
+
+        phrase:phrase
+
+    });
+
+
+
 });
 
 
-const data=await response.json();
 
 
-if(!data.data.length){
 
-return res.json({
-success:false
+
+
+// Verify Roblox bio
+
+app.post("/check", async(req,res)=>{
+
+
+    const {
+
+        username,
+
+        phrase
+
+    } = req.body;
+
+
+
+
+
+    try{
+
+
+        // Get Roblox user ID
+
+
+        const response =
+        await fetch(
+
+        "https://users.roblox.com/v1/usernames/users",
+
+        {
+
+            method:"POST",
+
+            headers:{
+
+                "Content-Type":"application/json"
+
+            },
+
+
+            body:JSON.stringify({
+
+                usernames:[username],
+
+                excludeBannedUsers:true
+
+            })
+
+
+        });
+
+
+
+        const data =
+        await response.json();
+
+
+
+
+
+        if(
+            !data.data ||
+            data.data.length === 0
+        ){
+
+
+            return res.json({
+
+                success:false,
+
+                message:"Roblox username not found"
+
+            });
+
+
+        }
+
+
+
+
+        const userId =
+        data.data[0].id;
+
+
+
+
+
+        // Get Roblox profile bio
+
+
+        const profileResponse =
+        await fetch(
+
+        `https://users.roblox.com/v1/users/${userId}`
+
+        );
+
+
+
+        const profile =
+        await profileResponse.json();
+
+
+
+
+
+
+        if(
+
+            profile.description &&
+
+            profile.description.includes(phrase)
+
+        ){
+
+
+            return res.json({
+
+                success:true,
+
+                username:profile.name,
+
+                userId:profile.id
+
+            });
+
+
+        }
+
+
+
+
+
+
+        res.json({
+
+            success:false,
+
+            message:"Verification phrase not found in Roblox bio"
+
+        });
+
+
+
+
+
+    }
+
+
+    catch(error){
+
+
+        console.log(error);
+
+
+
+        res.status(500).json({
+
+            success:false,
+
+            message:"Server error"
+
+        });
+
+
+
+    }
+
+
+
 });
 
-}
-
-
-const user=data.data[0];
-
-
-const avatarResponse=await fetch(
-
-`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${user.id}&size=150x150&format=Png`
-
-);
-
-
-const avatarData=await avatarResponse.json();
 
 
 
-res.json({
 
-success:true,
 
-user:{
 
-username:user.name,
+app.listen(3000,()=>{
 
-id:user.id,
 
-avatar:avatarData.data[0].imageUrl
-
-}
-
-});
+    console.log(
+        "ADMFLIP backend running on port 3000"
+    );
 
 
 });
