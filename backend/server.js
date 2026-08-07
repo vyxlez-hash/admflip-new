@@ -4,14 +4,11 @@ const rateLimit = require("express-rate-limit");
 const mongoose = require("mongoose");
 const fs = require("fs");
 
-
 const app = express();
-
 
 app.use(cors());
 
 app.use(express.json());
-
 
 
 // ======================
@@ -25,7 +22,6 @@ app.use(rateLimit({
     max: 50
 
 }));
-
 
 
 
@@ -58,35 +54,12 @@ mongoose.connect(process.env.MONGO_URL)
 
 
 
-
-
-
-
 // ======================
 // USER DATABASE
 // ======================
 
 
 const User = mongoose.model(
-    const Settings = mongoose.model(
-
-"Settings",
-
-new mongoose.Schema({
-
-siteOnline:{
-type:Boolean,
-default:true
-},
-
-announcement:{
-type:String,
-default:""
-}
-
-})
-
-);
 
 "User",
 
@@ -118,17 +91,41 @@ new mongoose.Schema({
 
 })
 
-
 );
 
 
 
+// ======================
+// SETTINGS DATABASE
+// ======================
 
 
+const Settings = mongoose.model(
+
+"Settings",
+
+new mongoose.Schema({
+
+    siteOnline:{
+
+        type:Boolean,
+
+        default:true
+
+    },
 
 
+    announcement:{
 
+        type:String,
 
+        default:""
+
+    }
+
+})
+
+);
 // ======================
 // PET VALUES
 // ======================
@@ -140,39 +137,34 @@ function loadPets(){
 try{
 
 
-const text =
-fs.readFileSync(
-"./values.txt",
-"utf8"
+const text = fs.readFileSync(
+    "./values.txt",
+    "utf8"
 );
 
 
 
-const lines =
-text
+const lines = text
 .split(/\r?\n/)
 .map(x=>x.trim())
 .filter(Boolean);
 
 
 
-let pets=[];
+let pets = [];
 
 
 
 for(
-let i=0;
-i<lines.length;
-i+=2
+let i = 0;
+i < lines.length;
+i += 2
 ){
 
 
-let name =
-lines[i];
+let name = lines[i];
 
-
-let value =
-lines[i+1];
+let value = lines[i+1];
 
 
 
@@ -181,14 +173,17 @@ continue;
 
 
 
-value = value.replace(/\./g,"")
+value = value
+.replace(/\./g,"")
+.replace(/,/g,"");
+
 
 
 pets.push({
 
-name:name,
+    name:name,
 
-value:Number(value)
+    value:Number(value)
 
 });
 
@@ -198,8 +193,8 @@ value:Number(value)
 
 
 console.log(
-"Loaded pets:",
-pets.length
+    "Loaded pets:",
+    pets.length
 );
 
 
@@ -209,13 +204,12 @@ return pets;
 
 }
 
-
 catch(error){
 
 
 console.log(
-"Pet loading error:",
-error.message
+    "Pet loading error:",
+    error.message
 );
 
 
@@ -225,16 +219,11 @@ return [];
 }
 
 
-
 }
 
 
 
-const pets =
-loadPets();
-
-
-
+const pets = loadPets();
 
 
 
@@ -250,12 +239,72 @@ app.get("/",(req,res)=>{
 
 
 res.send(
-"ADMFLIP backend is online"
+    "ADMFLIP backend is online"
 );
 
 
 });
 
+
+
+
+
+
+// ======================
+// SITE STATUS
+// ======================
+
+
+app.get("/status",async(req,res)=>{
+
+
+try{
+
+
+let settings =
+await Settings.findOne();
+
+
+
+if(!settings){
+
+
+settings =
+await Settings.create({});
+
+
+}
+
+
+
+res.json({
+
+    online:settings.siteOnline,
+
+    announcement:settings.announcement
+
+});
+
+
+}
+
+
+catch(error){
+
+
+res.status(500).json({
+
+    online:true,
+
+    announcement:""
+
+});
+
+
+}
+
+
+});
 
 
 
@@ -273,23 +322,14 @@ app.get("/pets",(req,res)=>{
 
 res.json({
 
-success:true,
+    success:true,
 
-pets:pets
-
-});
-
+    pets:pets
 
 });
 
 
-
-
-
-
-
-
-
+});
 // ======================
 // ROBLOX USER
 // ======================
@@ -301,13 +341,11 @@ app.get("/user/:username",async(req,res)=>{
 try{
 
 
-const username =
-req.params.username;
+const username = req.params.username;
 
 
 
-const response =
-await fetch(
+const response = await fetch(
 
 "https://users.roblox.com/v1/usernames/users",
 
@@ -335,10 +373,7 @@ excludeBannedUsers:true
 
 
 
-const data =
-await response.json();
-
-
+const data = await response.json();
 
 
 
@@ -358,17 +393,11 @@ message:"Roblox username not found"
 
 
 
-
-
-const user =
-data.data[0];
+const user = data.data[0];
 
 
 
-
-
-const avatarResponse =
-await fetch(
+const avatarResponse = await fetch(
 
 `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${user.id}&size=150x150&format=Png`
 
@@ -376,11 +405,7 @@ await fetch(
 
 
 
-const avatarData =
-await avatarResponse.json();
-
-
-
+const avatarData = await avatarResponse.json();
 
 
 
@@ -388,21 +413,17 @@ res.json({
 
 success:true,
 
-
 user:{
 
 id:user.id,
 
 username:user.name,
 
-avatar:
-avatarData.data[0].imageUrl
+avatar:avatarData.data[0].imageUrl
 
 }
 
-
 });
-
 
 
 }
@@ -426,11 +447,7 @@ message:"Server error"
 }
 
 
-
 });
-
-
-
 
 
 
@@ -462,14 +479,14 @@ const words=[
 
 return (
 
-words[...] + Math.floor(...)
+words[
+Math.floor(Math.random()*words.length)
 ]
 
 +
 
 Math.floor(
-1000+
-Math.random()*9000
+1000 + Math.random()*9000
 )
 
 );
@@ -480,22 +497,17 @@ Math.random()*9000
 
 
 
-
-
-
 app.get("/create",(req,res)=>{
 
 
 res.json({
 
-phrase:
-generatePhrase()
+phrase:generatePhrase()
 
 });
 
 
 });
-
 
 
 
@@ -505,7 +517,7 @@ generatePhrase()
 
 
 // ======================
-// VERIFY BIO
+// VERIFY ROBLOX BIO
 // ======================
 
 
@@ -525,10 +537,7 @@ phrase
 
 
 
-
-
-const response =
-await fetch(
+const response = await fetch(
 
 "https://users.roblox.com/v1/usernames/users",
 
@@ -556,12 +565,7 @@ excludeBannedUsers:true
 
 
 
-
-
-const data =
-await response.json();
-
-
+const data = await response.json();
 
 
 
@@ -581,17 +585,11 @@ message:"Roblox username not found"
 
 
 
-
-
-const id =
-data.data[0].id;
+const id = data.data[0].id;
 
 
 
-
-
-const profileResponse =
-await fetch(
+const profileResponse = await fetch(
 
 `https://users.roblox.com/v1/users/${id}`
 
@@ -599,13 +597,7 @@ await fetch(
 
 
 
-
-
-const profile =
-await profileResponse.json();
-
-
-
+const profile = await profileResponse.json();
 
 
 
@@ -633,8 +625,6 @@ id:profile.id
 
 
 
-
-
 res.json({
 
 success:false,
@@ -642,8 +632,6 @@ success:false,
 message:"Verification phrase not found"
 
 });
-
-
 
 
 }
@@ -667,7 +655,6 @@ message:"Verification failed"
 }
 
 
-
 });
 
 
@@ -677,12 +664,30 @@ message:"Verification failed"
 
 
 
+// ======================
+// TELEGRAM BOT
+// ======================
+
+
 require("./telegram");
 
+
+
+
+
+
+
+// ======================
+// START SERVER
+// ======================
+
+
 app.listen(3000,()=>{
+
 
 console.log(
 "ADMFLIP backend running on port 3000"
 );
+
 
 });
