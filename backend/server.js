@@ -54,10 +54,10 @@ mongoose.connect(process.env.MONGO_URL)
 
 
 
+
 // ======================
 // USER DATABASE
 // ======================
-
 
 const User = mongoose.model(
 
@@ -95,10 +95,10 @@ new mongoose.Schema({
 
 
 
+
 // ======================
 // SETTINGS DATABASE
 // ======================
-
 
 const Settings = mongoose.model(
 
@@ -126,13 +126,51 @@ new mongoose.Schema({
 })
 
 );
+
+
+
+
+// ======================
+// CHAT DATABASE
+// ======================
+
+const Chat = mongoose.model(
+
+"Chat",
+
+new mongoose.Schema({
+
+    username:String,
+
+    avatar:String,
+
+    message:String,
+
+
+    type:{
+
+        type:String,
+
+        default:"message"
+
+    },
+
+
+    createdAt:{
+
+        type:Date,
+
+        default:Date.now
+
+    }
+
+})
+
 // ======================
 // PET VALUES
 // ======================
 
-
 function loadPets(){
-
 
 try{
 
@@ -234,14 +272,11 @@ const pets = loadPets();
 // HOME
 // ======================
 
-
 app.get("/",(req,res)=>{
 
-
 res.send(
-    "ADMFLIP backend is online"
+"ADMFLIP backend is online"
 );
-
 
 });
 
@@ -254,9 +289,7 @@ res.send(
 // SITE STATUS
 // ======================
 
-
 app.get("/status",async(req,res)=>{
-
 
 try{
 
@@ -311,11 +344,9 @@ res.status(500).json({
 
 
 
-
 // ======================
 // PETS
 // ======================
-
 
 app.get("/pets",(req,res)=>{
 
@@ -330,22 +361,159 @@ res.json({
 
 
 });
-// ======================
-// ROBLOX USER
-// ======================
 
 
-app.get("/user/:username",async(req,res)=>{
+
+
+
+
+// ======================
+// CHAT GET
+// ======================
+
+app.get("/chat",async(req,res)=>{
 
 
 try{
 
 
-const username = req.params.username;
+const messages =
+await Chat.find()
+
+.sort({
+
+createdAt:1
+
+})
+
+.limit(100);
 
 
 
-const response = await fetch(
+res.json(messages);
+
+
+}
+
+catch(error){
+
+
+console.log(error);
+
+
+res.status(500).json({
+
+success:false
+
+});
+
+
+}
+
+
+});
+
+
+
+
+
+
+
+// ======================
+// CHAT SEND
+// ======================
+
+app.post("/chat",async(req,res)=>{
+
+
+try{
+
+
+const {
+
+username,
+
+avatar,
+
+message
+
+}=req.body;
+
+
+
+if(!username || !message){
+
+
+return res.json({
+
+success:false,
+
+message:"Missing data"
+
+});
+
+
+}
+
+
+
+const chat =
+await Chat.create({
+
+username,
+
+avatar,
+
+message,
+
+type:"message"
+
+});
+
+
+
+res.json({
+
+success:true,
+
+chat
+
+});
+
+
+}
+
+
+catch(error){
+
+
+console.log(error);
+
+
+res.status(500).json({
+
+success:false
+
+});
+
+
+}
+// ======================
+// ROBLOX USER
+// ======================
+
+app.get("/user/:username",async(req,res)=>{
+
+try{
+
+
+const username =
+req.params.username;
+
+
+
+const response =
+await fetch(
 
 "https://users.roblox.com/v1/usernames/users",
 
@@ -373,7 +541,8 @@ excludeBannedUsers:true
 
 
 
-const data = await response.json();
+const data =
+await response.json();
 
 
 
@@ -393,11 +562,13 @@ message:"Roblox username not found"
 
 
 
-const user = data.data[0];
+const user =
+data.data[0];
 
 
 
-const avatarResponse = await fetch(
+const avatarResponse =
+await fetch(
 
 `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${user.id}&size=150x150&format=Png`
 
@@ -405,7 +576,8 @@ const avatarResponse = await fetch(
 
 
 
-const avatarData = await avatarResponse.json();
+const avatarData =
+await avatarResponse.json();
 
 
 
@@ -454,10 +626,11 @@ message:"Server error"
 
 
 
+
+
 // ======================
 // CREATE PHRASE
 // ======================
-
 
 function generatePhrase(){
 
@@ -496,7 +669,6 @@ Math.floor(
 
 
 
-
 app.get("/create",(req,res)=>{
 
 
@@ -520,7 +692,6 @@ phrase:generatePhrase()
 // VERIFY ROBLOX BIO
 // ======================
 
-
 app.post("/check",async(req,res)=>{
 
 
@@ -537,7 +708,8 @@ phrase
 
 
 
-const response = await fetch(
+const response =
+await fetch(
 
 "https://users.roblox.com/v1/usernames/users",
 
@@ -565,7 +737,8 @@ excludeBannedUsers:true
 
 
 
-const data = await response.json();
+const data =
+await response.json();
 
 
 
@@ -585,11 +758,13 @@ message:"Roblox username not found"
 
 
 
-const id = data.data[0].id;
+const id =
+data.data[0].id;
 
 
 
-const profileResponse = await fetch(
+const profileResponse =
+await fetch(
 
 `https://users.roblox.com/v1/users/${id}`
 
@@ -597,7 +772,8 @@ const profileResponse = await fetch(
 
 
 
-const profile = await profileResponse.json();
+const profile =
+await profileResponse.json();
 
 
 
@@ -663,11 +839,9 @@ message:"Verification failed"
 
 
 
-
 // ======================
 // TELEGRAM BOT
 // ======================
-
 
 require("./telegram");
 
@@ -681,7 +855,6 @@ require("./telegram");
 // START SERVER
 // ======================
 
-
 app.listen(3000,()=>{
 
 
@@ -691,3 +864,4 @@ console.log(
 
 
 });
+}););
