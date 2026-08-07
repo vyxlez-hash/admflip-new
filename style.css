@@ -1,157 +1,66 @@
-.header{
-
-height:75px;
-
-width:100%;
-
-background:#050505;
-
-border-bottom:1px solid #222;
-
-display:flex;
-
-align-items:center;
-
-justify-content:space-between;
-
-padding:0 35px;
-
-position:sticky;
-
-top:0;
-
-z-index:100;
-
+body{
+margin:0;
+background:#070707;
+color:white;
+font-family:Arial, sans-serif;
 }
 
 
+.header{
+height:75px;
+background:#050505;
+border-bottom:1px solid #222;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:0 35px;
+}
 
-/* Logo */
 
 .brand{
-
 display:flex;
-
 align-items:center;
-
 gap:12px;
-
 font-size:28px;
-
-font-weight:900;
-
-color:white;
-
+font-weight:bold;
 }
-
 
 
 .brand img{
-
 width:50px;
-
 height:50px;
-
-object-fit:contain;
-
 }
 
-
-
-
-
-/* Menu */
 
 .menu{
-
 display:flex;
-
 gap:35px;
-
 }
-
 
 
 .menu a{
-
-color:#bdbdbd;
-
+color:#aaa;
 text-decoration:none;
-
-font-size:17px;
-
-font-weight:600;
-
-transition:.2s;
-
+font-weight:bold;
 }
-
 
 
 .menu a:hover{
-
 color:white;
-
 }
 
-
-
-
-
-/* Login */
 
 .login{
-
 background:#5865ff;
-
 color:white;
-
-border:none;
-
+border:0;
 padding:12px 25px;
-
 border-radius:12px;
-
-font-size:15px;
-
 font-weight:bold;
-
-cursor:pointer;
-
 }
 
 
-
-.login:hover{
-
-background:#7280ff;
-
-}
-
-
-
-
-
-@media(max-width:700px){
-
-.menu{
-
-display:none;
-
-}
-
-
-.header{
-
-padding:0 15px;
-
-}
-
-
-.brand span{
-
-font-size:22px;
-
-}
-
+main{
+text-align:center;
+margin-top:100px;
 }
