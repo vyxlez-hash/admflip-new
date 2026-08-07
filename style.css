@@ -1,66 +1,22 @@
-body{
-margin:0;
-background:#070707;
-color:white;
-font-family:Arial, sans-serif;
-}
-
-
-.header{
-height:75px;
-background:#050505;
-border-bottom:1px solid #222;
-display:flex;
-align-items:center;
-justify-content:space-between;
-padding:0 35px;
-}
-
-
 .brand{
+
+width:220px;
+
+height:75px;
+
 display:flex;
+
 align-items:center;
-gap:12px;
-font-size:28px;
-font-weight:bold;
+
 }
 
 
 .brand img{
-width:50px;
-height:50px;
-}
 
+width:65px;
 
-.menu{
-display:flex;
-gap:35px;
-}
+height:65px;
 
+object-fit:contain;
 
-.menu a{
-color:#aaa;
-text-decoration:none;
-font-weight:bold;
-}
-
-
-.menu a:hover{
-color:white;
-}
-
-
-.login{
-background:#5865ff;
-color:white;
-border:0;
-padding:12px 25px;
-border-radius:12px;
-font-weight:bold;
-}
-
-
-main{
-text-align:center;
-margin-top:100px;
 }
