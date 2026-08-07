@@ -1,44 +1,72 @@
 const BACKEND = "https://admflip-new.onrender.com";
 
 
-const loginBtn = document.getElementById("loginBtn");
-const modal = document.getElementById("modal");
+const loginBtn =
+document.getElementById("loginBtn");
 
-const usernameInput = document.getElementById("username");
-const phraseText = document.getElementById("phrase");
 
-const verifyBtn = document.getElementById("verify");
-const generateBtn = document.getElementById("generate");
+const modal =
+document.getElementById("modal");
+
+
+const usernameInput =
+document.getElementById("username");
+
+
+const profile =
+document.getElementById("profile");
+
+
+const phraseText =
+document.getElementById("phrase");
+
+
+const doneBtn =
+document.getElementById("done");
+
+
+const verifyBtn =
+document.getElementById("verify");
+
+
+
+let currentUser = null;
 
 let phrase = "";
-let robloxUser = null;
 
 
-// Load saved login
 
-const savedUser = localStorage.getItem("admflipUser");
 
-if (savedUser) {
 
-    robloxUser = JSON.parse(savedUser);
+// keep login after refresh
 
-    showUser();
+const saved =
+localStorage.getItem("admflipUser");
+
+
+if(saved){
+
+currentUser =
+JSON.parse(saved);
+
+showUser();
 
 }
 
 
 
-// Show logged in user
+
 
 function showUser(){
 
-    loginBtn.innerHTML = `
 
-    <img src="${robloxUser.avatar}">
+loginBtn.innerHTML = `
 
-    ${robloxUser.username}
+<img src="${currentUser.avatar}">
 
-    `;
+${currentUser.username}
+
+`;
 
 }
 
@@ -46,118 +74,16 @@ function showUser(){
 
 
 
-// Open login
+// open login
 
-loginBtn.onclick = () => {
+loginBtn.onclick = ()=>{
 
-    if(!robloxUser){
 
-        modal.classList.add("show");
+if(!currentUser){
 
-    }
+modal.classList.add("show");
 
-};
-
-
-
-
-
-// Generate phrase button
-
-generateBtn.onclick = async () => {
-
-
-    const username =
-    usernameInput.value.trim();
-
-
-    if(!username){
-
-        alert("Enter Roblox username");
-
-        return;
-
-    }
-
-
-
-    try{
-
-
-        const userCheck =
-        await fetch(
-
-        BACKEND + "/user/" + username
-
-        );
-
-
-        const data =
-        await userCheck.json();
-
-
-
-        if(!data.success){
-
-
-            alert("Roblox username not found");
-
-            return;
-
-
-        }
-
-
-
-        robloxUser = data.user;
-
-
-
-        document.getElementById("profile").innerHTML = `
-
-        <img width="80" src="${robloxUser.avatar}">
-
-        <br>
-
-        ${robloxUser.username}
-
-        `;
-
-
-
-        const phraseResponse =
-        await fetch(
-            BACKEND + "/create"
-        );
-
-
-        const phraseData =
-        await phraseResponse.json();
-
-
-
-        phrase =
-        phraseData.phrase;
-
-
-
-        phraseText.innerText =
-        "Put this in your Roblox bio: " + phrase;
-
-
-
-        verifyBtn.style.display="block";
-
-
-    }
-
-    catch(error){
-
-        console.log(error);
-
-        alert("Server error");
-
-    }
+}
 
 
 };
@@ -168,95 +94,234 @@ generateBtn.onclick = async () => {
 
 
 
-// Verify
+// check username automatically
 
-verifyBtn.onclick = async()=>{
-
-
-    try{
+usernameInput.onchange = async()=>{
 
 
-        const response =
-        await fetch(
-
-            BACKEND + "/check",
-
-            {
-
-            method:"POST",
-
-            headers:{
-
-            "Content-Type":"application/json"
-
-            },
+const username =
+usernameInput.value.trim();
 
 
-            body:JSON.stringify({
-
-                username:robloxUser.username,
-
-                phrase:phrase
-
-            })
-
-            }
-
-        );
+if(!username)
+return;
 
 
 
-        const data =
-        await response.json();
+try{
+
+
+const response =
+await fetch(
+
+BACKEND +
+"/user/" +
+username
+
+);
 
 
 
-        if(data.success){
-
-
-            localStorage.setItem(
-
-                "admflipUser",
-
-                JSON.stringify(robloxUser)
-
-            );
+const data =
+await response.json();
 
 
 
-            modal.classList.remove("show");
-
-            showUser();
+if(!data.success){
 
 
-            alert(
-            "Verified successfully"
-            );
+alert("Roblox username not found");
+
+return;
 
 
-        }
-
-        else{
-
-
-            alert(
-            "Verification phrase not found"
-            );
-
-
-        }
+}
 
 
 
-    }
+currentUser =
+data.user;
 
-    catch(error){
 
-        console.log(error);
 
-        alert("Verification failed");
+profile.innerHTML = `
 
-    }
+<img width="80" src="${currentUser.avatar}">
+
+<br>
+
+<b>${currentUser.username}</b>
+
+`;
+
+
+
+
+// generate phrase automatically
+
+
+const phraseResponse =
+await fetch(
+
+BACKEND + "/create"
+
+);
+
+
+
+const phraseData =
+await phraseResponse.json();
+
+
+
+phrase =
+phraseData.phrase;
+
+
+
+phraseText.innerHTML =
+
+"Put this phrase in your Roblox bio:<br><br><b>"
++
+phrase
++
+"</b>";
+
+
+
+doneBtn.style.display="block";
+
+
+
+}
+
+catch(error){
+
+console.log(error);
+
+alert("Server error");
+
+}
+
+
+};
+
+
+
+
+
+
+
+
+// done button
+
+doneBtn.onclick=()=>{
+
+
+phraseText.innerHTML +=
+
+"<br><br>After adding it to your bio click Verify.";
+
+
+verifyBtn.style.display="block";
+
+
+};
+
+
+
+
+
+
+
+// verify
+
+verifyBtn.onclick=async()=>{
+
+
+try{
+
+
+const response =
+await fetch(
+
+BACKEND + "/check",
+
+{
+
+method:"POST",
+
+headers:{
+
+"Content-Type":"application/json"
+
+},
+
+body:JSON.stringify({
+
+username:
+currentUser.username,
+
+phrase:phrase
+
+})
+
+}
+
+);
+
+
+
+const data =
+await response.json();
+
+
+
+if(data.success){
+
+
+localStorage.setItem(
+
+"admflipUser",
+
+JSON.stringify(currentUser)
+
+);
+
+
+
+modal.classList.remove("show");
+
+
+showUser();
+
+
+alert("Verified successfully");
+
+
+}
+
+else{
+
+
+alert(data.message);
+
+}
+
+
+
+}
+
+catch(error){
+
+
+console.log(error);
+
+
+alert("Verification failed");
+
+
+}
 
 
 };
