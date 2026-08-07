@@ -1,7 +1,9 @@
 const express = require("express");
 const cors = require("cors");
 const rateLimit = require("express-rate-limit");
+const mongoose = require("mongoose");
 const fs = require("fs");
+
 
 const app = express();
 
@@ -12,23 +14,48 @@ app.use(express.json());
 
 
 
+// ======================
 // RATE LIMIT
+// ======================
 
-const limiter = rateLimit({
+app.use(rateLimit({
 
     windowMs: 60 * 1000,
 
-    max: 50,
+    max: 50
 
-    message: {
-        success:false,
-        message:"Too many requests"
-    }
+}));
+
+
+
+
+// ======================
+// MONGODB CONNECTION
+// ======================
+
+console.log(
+    "Mongo URL exists:",
+    !!process.env.MONGO_URL
+);
+
+
+mongoose.connect(process.env.MONGO_URL)
+
+.then(()=>{
+
+    console.log("MongoDB connected");
+
+})
+
+.catch((err)=>{
+
+    console.log(
+        "MongoDB error:",
+        err.message
+    );
 
 });
 
-
-app.use(limiter);
 
 
 
@@ -36,121 +63,180 @@ app.use(limiter);
 
 
 // ======================
-// PET VALUE LOADER
+// USER DATABASE
+// ======================
+
+
+const User = mongoose.model(
+
+"User",
+
+new mongoose.Schema({
+
+    robloxId:Number,
+
+    username:String,
+
+    avatar:String,
+
+
+    inventory:[{
+
+        name:String,
+
+        value:Number
+
+    }],
+
+
+    deposited:[{
+
+        name:String,
+
+        value:Number
+
+    }]
+
+})
+
+
+);
+
+
+
+
+
+
+
+
+
+// ======================
+// PET VALUES
 // ======================
 
 
 function loadPets(){
 
-    try{
+
+try{
 
 
-        const text =
-        fs.readFileSync(
-            "./values.txt",
-            "utf8"
-        );
-
-
-
-        const lines =
-        text
-        .split(/\r?\n/)
-        .map(line=>line.trim())
-        .filter(line=>line.length);
+const text =
+fs.readFileSync(
+"./values.txt",
+"utf8"
+);
 
 
 
-        let pets=[];
+const lines =
+text
+.split(/\r?\n/)
+.map(x=>x.trim())
+.filter(Boolean);
 
 
 
-        for(let i=0;i<lines.length;i+=2){
-
-
-            const name = lines[i];
-
-
-            let value = lines[i+1];
+let pets=[];
 
 
 
-            if(!name || !value)
-                continue;
+for(
+let i=0;
+i<lines.length;
+i+=2
+){
+
+
+let name =
+lines[i];
+
+
+let value =
+lines[i+1];
 
 
 
-            value =
-            value
-            .replace(/\./g,"")
-            .replace(/,/g,"");
+if(!name || !value)
+continue;
 
 
 
-            pets.push({
-
-                name:name,
-
-                value:Number(value)
-
-            });
-
-
-        }
+value =
+value
+.replace(/\./g,"")
+.replace(/,/g,"");
 
 
 
-        console.log(
-            "Loaded pets:",
-            pets.length
-        );
+pets.push({
 
+name:name,
 
+value:Number(value)
 
-        return pets;
-
-
-
-    }
-
-    catch(error){
-
-
-        console.log(
-            "Values file error:",
-            error
-        );
-
-
-        return [];
-
-
-    }
+});
 
 
 }
 
 
 
-
-const pets = loadPets();
-
-
-
-
+console.log(
+"Loaded pets:",
+pets.length
+);
 
 
 
+return pets;
 
+
+}
+
+
+catch(error){
+
+
+console.log(
+"Pet loading error:",
+error.message
+);
+
+
+return [];
+
+
+}
+
+
+
+}
+
+
+
+const pets =
+loadPets();
+
+
+
+
+
+
+
+
+
+// ======================
 // HOME
+// ======================
 
 
 app.get("/",(req,res)=>{
 
 
-    res.send(
-        "ADMFLIP backend is online"
-    );
+res.send(
+"ADMFLIP backend is online"
+);
 
 
 });
@@ -162,41 +248,21 @@ app.get("/",(req,res)=>{
 
 
 
-// TEST
-
-
-app.get("/test",(req,res)=>{
-
-
-    res.send(
-        "Server working"
-    );
-
-
-});
-
-
-
-
-
-
-
-
+// ======================
 // PETS
+// ======================
 
 
 app.get("/pets",(req,res)=>{
 
 
-    res.json({
+res.json({
 
-        success:true,
+success:true,
 
-        count:pets.length,
+pets:pets
 
-        pets:pets
-
-    });
+});
 
 
 });
@@ -209,7 +275,9 @@ app.get("/pets",(req,res)=>{
 
 
 
-// ROBLOX USER SEARCH
+// ======================
+// ROBLOX USER
+// ======================
 
 
 app.get("/user/:username",async(req,res)=>{
@@ -233,7 +301,9 @@ await fetch(
 method:"POST",
 
 headers:{
+
 "Content-Type":"application/json"
+
 },
 
 body:JSON.stringify({
@@ -256,6 +326,7 @@ await response.json();
 
 
 
+
 if(!data.data.length){
 
 
@@ -273,6 +344,7 @@ message:"Roblox username not found"
 
 
 
+
 const user =
 data.data[0];
 
@@ -280,8 +352,7 @@ data.data[0];
 
 
 
-
-const avatar =
+const avatarResponse =
 await fetch(
 
 `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${user.id}&size=150x150&format=Png`
@@ -291,7 +362,7 @@ await fetch(
 
 
 const avatarData =
-await avatar.json();
+await avatarResponse.json();
 
 
 
@@ -305,23 +376,17 @@ success:true,
 
 user:{
 
+id:user.id,
 
 username:user.name,
 
-
-id:user.id,
-
-
 avatar:
 avatarData.data[0].imageUrl
-
 
 }
 
 
 });
-
-
 
 
 
@@ -357,7 +422,9 @@ message:"Server error"
 
 
 
-// PHRASE SYSTEM
+// ======================
+// CREATE PHRASE
+// ======================
 
 
 function generatePhrase(){
@@ -378,7 +445,6 @@ const words=[
 ];
 
 
-
 return (
 
 words[
@@ -391,7 +457,8 @@ Math.random()*words.length
 +
 
 Math.floor(
-1000+Math.random()*9000
+1000+
+Math.random()*9000
 )
 
 );
@@ -401,12 +468,17 @@ Math.floor(
 
 
 
+
+
+
+
 app.get("/create",(req,res)=>{
 
 
 res.json({
 
-phrase:generatePhrase()
+phrase:
+generatePhrase()
 
 });
 
@@ -421,7 +493,9 @@ phrase:generatePhrase()
 
 
 
+// ======================
 // VERIFY BIO
+// ======================
 
 
 app.post("/check",async(req,res)=>{
@@ -441,6 +515,7 @@ phrase
 
 
 
+
 const response =
 await fetch(
 
@@ -451,7 +526,9 @@ await fetch(
 method:"POST",
 
 headers:{
+
 "Content-Type":"application/json"
+
 },
 
 body:JSON.stringify({
@@ -465,6 +542,7 @@ excludeBannedUsers:true
 }
 
 );
+
 
 
 
@@ -511,8 +589,10 @@ await fetch(
 
 
 
+
 const profile =
 await profileResponse.json();
+
 
 
 
