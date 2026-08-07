@@ -1,35 +1,92 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 <title>ADMFLIP</title>
-<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
+
 <header class="header">
 
 <div class="brand">
-<img src="./logo.png">
+<img src="logo.png">
 </div>
 
+
 <nav class="menu">
-<a href="#">Coinflip</a>
-<a href="#">Leaderboard</a>
-<a href="#">Chat</a>
+<a>Coinflip</a>
+<a>Leaderboard</a>
+<a id="chatBtn">Chat</a>
 </nav>
 
-<button class="login">
-<img src="./roblox.png">
+
+
+<button class="login" id="loginBtn">
+
+<img src="roblox.png">
+
+<span>
 Sign In
+</span>
+
 </button>
+
 
 </header>
 
 
-<h1>ADMFLIP</h1>
 
-<script src="./script.js"></script>
+
+<div class="modal" id="modal">
+
+<div class="box">
+
+<h2>
+Roblox Verification
+</h2>
+
+
+<input id="username" placeholder="Roblox username">
+
+
+<button id="generate">
+Generate Phrase
+</button>
+
+
+<p id="phrase"></p>
+
+
+<button id="verify">
+Verify Account
+</button>
+
+
+</div>
+
+</div>
+
+
+
+
+<main>
+
+<h1>
+ADMFLIP
+</h1>
+
+<p>
+Coinflip your pets.
+</p>
+
+</main>
+
+
+
+<script src="script.js"></script>
 
 </body>
 </html>
