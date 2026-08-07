@@ -3,7 +3,6 @@ const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const fs = require("fs");
 
-
 const app = express();
 
 
@@ -13,15 +12,15 @@ app.use(express.json());
 
 
 
-// Protection
+// RATE LIMIT
 
 const limiter = rateLimit({
 
-    windowMs:60 * 1000,
+    windowMs: 60 * 1000,
 
-    max:30,
+    max: 50,
 
-    message:{
+    message: {
         success:false,
         message:"Too many requests"
     }
@@ -35,78 +34,102 @@ app.use(limiter);
 
 
 
-// =======================
-// PET VALUE READER
-// =======================
+
+// ======================
+// PET VALUE LOADER
+// ======================
 
 
 function loadPets(){
 
-
-    const text =
-    fs.readFileSync(
-        "values.txt",
-        "utf8"
-    );
+    try{
 
 
-    const lines =
-    text
-    .split("\n")
-    .map(x=>x.trim())
-    .filter(x=>x);
+        const text =
+        fs.readFileSync(
+            "./values.txt",
+            "utf8"
+        );
 
 
 
-    let pets=[];
+        const lines =
+        text
+        .split(/\r?\n/)
+        .map(line=>line.trim())
+        .filter(line=>line.length);
 
 
 
-    for(
-        let i=0;
-        i<lines.length;
-        i+=2
-    ){
-
-
-        let name =
-        lines[i];
+        let pets=[];
 
 
 
-        let value =
-        lines[i+1];
+        for(let i=0;i<lines.length;i+=2){
+
+
+            const name = lines[i];
+
+
+            let value = lines[i+1];
 
 
 
-        if(!name || !value)
-            continue;
+            if(!name || !value)
+                continue;
 
 
 
-        value =
-        value
-        .replace(/\./g,"")
-        .replace(/,/g,"");
+            value =
+            value
+            .replace(/\./g,"")
+            .replace(/,/g,"");
 
 
 
-        pets.push({
+            pets.push({
 
-            name:name,
+                name:name,
 
-            value:Number(value)
+                value:Number(value)
 
-        });
+            });
+
+
+        }
+
+
+
+        console.log(
+            "Loaded pets:",
+            pets.length
+        );
+
+
+
+        return pets;
+
+
+
+    }
+
+    catch(error){
+
+
+        console.log(
+            "Values file error:",
+            error
+        );
+
+
+        return [];
 
 
     }
 
 
-    return pets;
-
-
 }
+
 
 
 
@@ -118,9 +141,8 @@ const pets = loadPets();
 
 
 
-// =======================
+
 // HOME
-// =======================
 
 
 app.get("/",(req,res)=>{
@@ -140,9 +162,27 @@ app.get("/",(req,res)=>{
 
 
 
-// =======================
-// PETS API
-// =======================
+// TEST
+
+
+app.get("/test",(req,res)=>{
+
+
+    res.send(
+        "Server working"
+    );
+
+
+});
+
+
+
+
+
+
+
+
+// PETS
 
 
 app.get("/pets",(req,res)=>{
@@ -151,6 +191,8 @@ app.get("/pets",(req,res)=>{
     res.json({
 
         success:true,
+
+        count:pets.length,
 
         pets:pets
 
@@ -167,12 +209,10 @@ app.get("/pets",(req,res)=>{
 
 
 
-// =======================
 // ROBLOX USER SEARCH
-// =======================
 
 
-app.get("/user/:username", async(req,res)=>{
+app.get("/user/:username",async(req,res)=>{
 
 
 try{
@@ -185,7 +225,9 @@ req.params.username;
 
 const response =
 await fetch(
+
 "https://users.roblox.com/v1/usernames/users",
+
 {
 
 method:"POST",
@@ -231,7 +273,6 @@ message:"Roblox username not found"
 
 
 
-
 const user =
 data.data[0];
 
@@ -239,7 +280,8 @@ data.data[0];
 
 
 
-const avatarResponse =
+
+const avatar =
 await fetch(
 
 `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${user.id}&size=150x150&format=Png`
@@ -248,9 +290,9 @@ await fetch(
 
 
 
-
 const avatarData =
-await avatarResponse.json();
+await avatar.json();
+
 
 
 
@@ -265,6 +307,7 @@ user:{
 
 
 username:user.name,
+
 
 id:user.id,
 
@@ -283,6 +326,7 @@ avatarData.data[0].imageUrl
 
 
 }
+
 
 catch(error){
 
@@ -313,9 +357,7 @@ message:"Server error"
 
 
 
-// =======================
-// CREATE VERIFICATION PHRASE
-// =======================
+// PHRASE SYSTEM
 
 
 function generatePhrase(){
@@ -334,6 +376,7 @@ const words=[
 "GoldenLeaf"
 
 ];
+
 
 
 return (
@@ -358,41 +401,12 @@ Math.floor(
 
 
 
-
-let phrases={};
-
-
-
-
-
 app.get("/create",(req,res)=>{
-
-
-const id =
-Date.now();
-
-
-
-const phrase =
-generatePhrase();
-
-
-
-phrases[id]={
-
-phrase:phrase,
-
-time:Date.now()
-
-};
-
 
 
 res.json({
 
-id:id,
-
-phrase:phrase
+phrase:generatePhrase()
 
 });
 
@@ -407,9 +421,7 @@ phrase:phrase
 
 
 
-// =======================
-// CHECK ROBLOX BIO
-// =======================
+// VERIFY BIO
 
 
 app.post("/check",async(req,res)=>{
@@ -429,7 +441,6 @@ phrase
 
 
 
-
 const response =
 await fetch(
 
@@ -440,9 +451,7 @@ await fetch(
 method:"POST",
 
 headers:{
-
 "Content-Type":"application/json"
-
 },
 
 body:JSON.stringify({
@@ -456,7 +465,6 @@ excludeBannedUsers:true
 }
 
 );
-
 
 
 
@@ -475,7 +483,7 @@ return res.json({
 
 success:false,
 
-message:"User not found"
+message:"Roblox username not found"
 
 });
 
@@ -485,9 +493,9 @@ message:"User not found"
 
 
 
+
 const id =
 data.data[0].id;
-
 
 
 
@@ -503,11 +511,8 @@ await fetch(
 
 
 
-
 const profile =
 await profileResponse.json();
-
-
 
 
 
@@ -539,7 +544,6 @@ id:profile.id
 
 
 
-
 res.json({
 
 success:false,
@@ -551,8 +555,8 @@ message:"Verification phrase not found"
 
 
 
-
 }
+
 
 catch(error){
 
@@ -582,12 +586,11 @@ message:"Verification failed"
 
 
 
-
 app.listen(3000,()=>{
 
 
 console.log(
-"ADMFLIP backend running"
+"ADMFLIP backend running on port 3000"
 );
 
 
