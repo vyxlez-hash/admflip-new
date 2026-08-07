@@ -23,7 +23,8 @@ let phrase = "";
 
 
 
-// Load saved account
+
+// Load saved account after refresh
 
 const savedUser = localStorage.getItem("admflipUser");
 
@@ -40,7 +41,9 @@ if(savedUser){
 
 
 
-// Show account
+
+
+// Show logged in user
 
 function showUser(){
 
@@ -49,9 +52,12 @@ function showUser(){
 
         <img src="${currentUser.avatar}">
 
-        ${currentUser.username}
+        <span>${currentUser.username}</span>
 
     `;
+
+
+    loginBtn.classList.add("logged");
 
 
     logoutBtn.style.display = "block";
@@ -64,7 +70,8 @@ function showUser(){
 
 
 
-// Open sign in
+
+// Open login
 
 loginBtn.onclick = ()=>{
 
@@ -84,7 +91,8 @@ loginBtn.onclick = ()=>{
 
 
 
-// Username entered
+
+// Check Roblox username
 
 usernameInput.onchange = async()=>{
 
@@ -94,7 +102,12 @@ usernameInput.onchange = async()=>{
 
 
 
-    if(!username) return;
+    if(!username){
+
+        return;
+
+    }
+
 
 
 
@@ -118,6 +131,7 @@ usernameInput.onchange = async()=>{
 
 
 
+
         if(!data.success){
 
 
@@ -131,21 +145,20 @@ usernameInput.onchange = async()=>{
 
 
 
-        currentUser =
-        data.user;
+
+        currentUser = data.user;
+
 
 
 
         profile.innerHTML = `
 
 
-            <img width="80" src="${currentUser.avatar}">
+        <img width="80" src="${currentUser.avatar}">
 
+        <br><br>
 
-            <br><br>
-
-
-            <b>${currentUser.username}</b>
+        <b>${currentUser.username}</b>
 
 
         `;
@@ -156,7 +169,7 @@ usernameInput.onchange = async()=>{
 
 
 
-        // Create phrase automatically
+        // Generate phrase automatically
 
 
         const phraseResponse =
@@ -173,6 +186,7 @@ usernameInput.onchange = async()=>{
 
 
 
+
         phrase =
         phraseData.phrase;
 
@@ -182,17 +196,21 @@ usernameInput.onchange = async()=>{
 
         phraseText.innerHTML = `
 
+
         Put this phrase in your Roblox bio:
 
         <br><br>
 
         <b>${phrase}</b>
 
+
         `;
 
 
 
-        doneBtn.style.display="block";
+
+
+        doneBtn.style.display = "block";
 
 
 
@@ -227,16 +245,19 @@ doneBtn.onclick = ()=>{
 
     phraseText.innerHTML += `
 
+
     <br><br>
+
 
     After adding it to your Roblox bio,
     click Verify Account.
+
 
     `;
 
 
 
-    verifyBtn.style.display="block";
+    verifyBtn.style.display = "block";
 
 
 };
@@ -248,10 +269,27 @@ doneBtn.onclick = ()=>{
 
 
 
-
-// Verify account
+// Verify Roblox bio
 
 verifyBtn.onclick = async()=>{
+
+
+    if(!currentUser || !phrase){
+
+        alert("Generate a phrase first");
+
+        return;
+
+    }
+
+
+
+    verifyBtn.disabled = true;
+
+    verifyBtn.innerText = "Checking...";
+
+
+
 
 
     try{
@@ -264,16 +302,22 @@ verifyBtn.onclick = async()=>{
 
             {
 
+
                 method:"POST",
+
 
                 headers:{
 
+
                     "Content-Type":"application/json"
+
 
                 },
 
 
+
                 body:JSON.stringify({
+
 
                     username:
                     currentUser.username,
@@ -281,10 +325,12 @@ verifyBtn.onclick = async()=>{
 
                     phrase:phrase
 
+
                 })
 
 
             }
+
 
         );
 
@@ -326,13 +372,26 @@ verifyBtn.onclick = async()=>{
 
         }
 
+
         else{
 
 
-            alert(data.message);
+            alert(
+
+            "Verification phrase not found. Put the phrase in your Roblox bio and try again."
+
+            );
+
+
+
+            verifyBtn.disabled = false;
+
+
+            verifyBtn.innerText = "Verify Account";
 
 
         }
+
 
 
 
@@ -342,13 +401,24 @@ verifyBtn.onclick = async()=>{
     catch(error){
 
 
+
         console.log(error);
+
 
 
         alert("Verification failed");
 
 
+
+        verifyBtn.disabled = false;
+
+
+        verifyBtn.innerText = "Verify Account";
+
+
+
     }
+
 
 
 };
@@ -372,19 +442,33 @@ logoutBtn.onclick = ()=>{
     currentUser = null;
 
 
+    phrase = "";
+
+
+
     loginBtn.innerHTML = `
+
 
         <img src="roblox.png">
 
+
         <span>
+
         Sign In
+
         </span>
+
 
     `;
 
 
 
-    logoutBtn.style.display="none";
+    loginBtn.classList.remove("logged");
+
+
+
+    logoutBtn.style.display = "none";
+
 
 
 };
