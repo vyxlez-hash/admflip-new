@@ -81,33 +81,71 @@ body{
 
 
 
-/* SIGN IN */
+/* SIGN IN BUTTON */
 
 .login{
 
     height:38px;
 
     display:flex;
-
     align-items:center;
+    justify-content:center;
 
     gap:8px;
 
-    background:white;
 
-    color:#111;
+    background:#050505;
 
-    border:1px solid #ddd;
+    color:white;
+
+
+    border:1px solid #8b5cf6;
 
     border-radius:8px;
 
-    padding:0 16px;
+
+    padding:0 18px;
+
 
     font-size:14px;
 
     font-weight:700;
 
+
     cursor:pointer;
+
+
+    transition:.2s ease;
+
+}
+
+
+.login img{
+
+    width:18px;
+
+    height:18px;
+
+    object-fit:contain;
+
+}
+
+
+
+.login:hover{
+
+    background:#120820;
+
+    border-color:#a855f7;
+
+}
+
+
+
+.login:active{
+
+    transform:scale(.96);
+
 }
 
 
