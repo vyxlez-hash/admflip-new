@@ -1,22 +1,232 @@
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    background:#07070b;
+    color:white;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+
+/* HEADER */
+
+.header{
+
+    width:100%;
+    height:80px;
+
+    background:#050505;
+
+    border-bottom:1px solid #2b1645;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:0 35px;
+
+}
+
+
+/* LOGO AREA */
+
 .brand{
 
-width:220px;
+    width:240px;
 
-height:75px;
+    height:80px;
 
-display:flex;
-
-align-items:center;
+    display:flex;
+    align-items:center;
 
 }
 
 
 .brand img{
 
-width:65px;
+    width:70px;
 
-height:65px;
+    height:70px;
 
-object-fit:contain;
+    object-fit:contain;
+
+}
+
+
+
+
+
+/* NAVIGATION */
+
+.menu{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:45px;
+
+}
+
+
+.menu a{
+
+    color:white;
+
+    text-decoration:none;
+
+    font-size:17px;
+
+    font-weight:700;
+
+    padding:12px 20px;
+
+    border-radius:12px;
+
+    transition:0.25s;
+
+}
+
+
+.menu a:hover{
+
+    background:#7c2cff;
+
+    color:white;
+
+    box-shadow:0 0 20px #7c2cff;
+
+}
+
+
+
+
+
+/* LOGIN BUTTON */
+
+.login{
+
+    background:#7c2cff;
+
+    color:white;
+
+    border:none;
+
+    padding:13px 30px;
+
+    border-radius:14px;
+
+    font-size:15px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+    transition:.25s;
+
+}
+
+
+.login:hover{
+
+    background:#9b55ff;
+
+    transform:translateY(-2px);
+
+}
+
+
+
+
+
+/* MAIN CONTENT */
+
+main{
+
+    text-align:center;
+
+    padding-top:100px;
+
+}
+
+
+main h1{
+
+    font-size:55px;
+
+}
+
+
+main p{
+
+    color:#aaa;
+
+    font-size:20px;
+
+}
+
+
+
+
+
+/* PURPLE PANELS */
+
+.panel{
+
+    background:#10091a;
+
+    border:1px solid #3d176d;
+
+    border-radius:20px;
+
+    padding:30px;
+
+}
+
+
+
+
+
+/* MOBILE */
+
+@media(max-width:800px){
+
+    .header{
+
+        padding:0 15px;
+
+    }
+
+
+    .brand{
+
+        width:100px;
+
+    }
+
+
+    .menu{
+
+        gap:5px;
+
+    }
+
+
+    .menu a{
+
+        padding:10px;
+
+        font-size:14px;
+
+    }
+
+
+    .login{
+
+        display:none;
+
+    }
 
 }
