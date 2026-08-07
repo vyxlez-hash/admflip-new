@@ -1,78 +1,180 @@
-const login =
-document.getElementById("loginBtn");
-
-const modal =
-document.getElementById("modal");
+const BACKEND = "https://admflip-new.onrender.com";
 
 
-let phrase="";
+const loginBtn = document.getElementById("loginBtn");
+const modal = document.getElementById("modal");
+
+const usernameInput = document.getElementById("username");
+const phraseText = document.getElementById("phrase");
+const verifyBtn = document.getElementById("verify");
 
 
-login.onclick=()=>{
-
-modal.classList.add("show");
+let phrase = "";
 
 
-fetch("https://YOUR-BACKEND.com/create")
-.then(r=>r.json())
-.then(data=>{
+// Open sign in and generate phrase
 
-phrase=data.phrase;
+if (loginBtn) {
 
-document.getElementById("phrase").innerText=
-"Put this in your Roblox bio: "+phrase;
+    loginBtn.addEventListener("click", async () => {
 
-});
-
-};
+        if (modal) {
+            modal.classList.add("show");
+        }
 
 
+        try {
 
-document.getElementById("verify").onclick=()=>{
-
-
-let username =
-document.getElementById("username").value;
-
-
-fetch(
-"https://YOUR-BACKEND.com/check",
-{
-
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-username,
-phrase
-})
-
-}
-
-)
-
-.then(r=>r.json())
-
-.then(data=>{
+            const response = await fetch(
+                BACKEND + "/create"
+            );
 
 
-if(data.success){
+            const data = await response.json();
 
-alert("Verified!");
 
-}
+            phrase = data.phrase;
 
-else{
 
-alert("Verification failed");
+            if (phraseText) {
+
+                phraseText.innerText =
+                "Put this phrase in your Roblox bio: " + phrase;
+
+            }
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            alert("Could not connect to ADMFLIP server");
+
+        }
+
+
+    });
 
 }
 
 
-});
 
 
-};
+// Verify Roblox account
+
+if (verifyBtn) {
+
+    verifyBtn.addEventListener("click", async () => {
+
+
+        const username =
+        usernameInput.value.trim();
+
+
+
+        if (!username) {
+
+            alert("Enter your Roblox username");
+
+            return;
+
+        }
+
+
+
+        if (!phrase) {
+
+            alert("Click Sign In first to generate a phrase");
+
+            return;
+
+        }
+
+
+
+        try {
+
+
+            const response = await fetch(
+                BACKEND + "/check",
+                {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+
+                    body: JSON.stringify({
+
+                        username: username,
+
+                        phrase: phrase
+
+                    })
+
+                }
+            );
+
+
+
+            const data =
+            await response.json();
+
+
+
+            if (data.success) {
+
+
+                alert(
+                    "Verified as " + data.username
+                );
+
+
+                if (loginBtn) {
+
+                    loginBtn.innerHTML = `
+
+                    <img src="roblox.png">
+
+                    ${data.username}
+
+                    `;
+
+                }
+
+
+                if (modal) {
+
+                    modal.classList.remove("show");
+
+                }
+
+
+            } else {
+
+
+                alert(
+                    data.message || "Verification failed"
+                );
+
+
+            }
+
+
+
+        } catch (error) {
+
+
+            console.error(error);
+
+            alert("Server connection failed");
+
+
+        }
+
+
+    });
+
+}
