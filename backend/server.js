@@ -8,184 +8,130 @@ app.use(express.json());
 
 
 // Temporary storage
-// For production use a database (Redis, MongoDB, etc.)
+// For a real website use a database
 const verificationRequests = {};
 
 
+// Home test route
+app.get("/", (req, res) => {
+    res.send("ADMFLIP backend is online");
+});
 
-// Generate random phrase
 
-function createPhrase(){
+// Create verification phrase
+app.get("/create", (req, res) => {
 
-    return (
+    const id = Date.now().toString();
+
+    const phrase =
         "ADMFLIP-" +
         Math.random()
         .toString(36)
-        .substring(2,8)
-        .toUpperCase()
-    );
-
-}
-
-
-
-
-// Create verification request
-
-app.get("/create", (req,res)=>{
-
-
-    const id =
-    Date.now().toString();
-
-
-    const phrase =
-    createPhrase();
+        .substring(2, 8)
+        .toUpperCase();
 
 
     verificationRequests[id] = {
-
         phrase,
-        created:Date.now()
-
+        created: Date.now()
     };
 
 
     res.json({
-
         id,
         phrase
-
     });
-
 
 });
 
 
 
-
-
-
 // Check Roblox bio
-
-app.post("/check", async(req,res)=>{
-
+app.post("/check", async (req, res) => {
 
     const {
         username,
-        id,
         phrase
     } = req.body;
 
 
+    try {
 
-    try{
+        // Find Roblox user
+        const userResponse = await fetch(
+            "https://users.roblox.com/v1/usernames/users",
+            {
+                method: "POST",
 
+                headers: {
+                    "Content-Type": "application/json"
+                },
 
-        // Find Roblox user ID
-
-        const userResponse =
-        await fetch(
-        "https://users.roblox.com/v1/usernames/users",
-        {
-
-            method:"POST",
-
-            headers:{
-                "Content-Type":"application/json"
-            },
-
-            body:JSON.stringify({
-
-                usernames:[username],
-
-                excludeBannedUsers:true
-
-            })
-
-        });
+                body: JSON.stringify({
+                    usernames: [username],
+                    excludeBannedUsers: true
+                })
+            }
+        );
 
 
-
-        const userData =
-        await userResponse.json();
+        const userData = await userResponse.json();
 
 
-
-        if(!userData.data.length){
+        if (!userData.data || userData.data.length === 0) {
 
             return res.json({
-
                 success:false,
-
-                message:"User not found"
-
+                message:"Roblox user not found"
             });
 
         }
 
 
-
-        const userId =
-        userData.data[0].id;
+        const userId = userData.data[0].id;
 
 
 
-
-
-        // Get profile description
-
-        const profileResponse =
-        await fetch(
-
-        `https://users.roblox.com/v1/users/${userId}`
-
+        // Get Roblox profile
+        const profileResponse = await fetch(
+            `https://users.roblox.com/v1/users/${userId}`
         );
 
 
-
-        const profile =
-        await profileResponse.json();
+        const profile = await profileResponse.json();
 
 
 
-
-        if(profile.description &&
-           profile.description.includes(phrase)){
-
-
+        if (
+            profile.description &&
+            profile.description.includes(phrase)
+        ) {
 
             return res.json({
 
                 success:true,
 
-                username:
-                profile.name,
+                username:profile.name,
 
-                userId
+                userId:profile.id
 
             });
-
 
         }
 
 
 
-
-        res.json({
+        return res.json({
 
             success:false,
 
-            message:"Phrase not found"
+            message:"Verification phrase not found in bio"
 
         });
 
 
 
-    }
-
-
-    catch(error){
+    } catch(error) {
 
 
         console.error(error);
@@ -208,11 +154,12 @@ app.post("/check", async(req,res)=>{
 
 
 
+// Start server
 
-app.listen(3000,()=>{
+app.listen(3000, () => {
 
-console.log(
-"ADMFLIP backend running on port 3000"
-);
+    console.log(
+        "ADMFLIP backend running on port 3000"
+    );
 
 });
