@@ -1,9 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>ADMFLIP</title>
+
+<link rel="icon" href="logo.png">
 
 <link rel="stylesheet" href="style.css">
 
@@ -26,28 +32,57 @@
 
 <nav class="menu">
 
-<a>Coinflip</a>
+<a href="#">
+Coinflip
+</a>
 
-<a>Leaderboard</a>
 
-<a id="chatBtn">Chat</a>
+<a href="#">
+Leaderboard
+</a>
+
+
+<a href="#">
+Chat
+</a>
+
 
 </nav>
 
 
 
 
+
+<div class="account-buttons">
+
+
 <button class="login" id="loginBtn">
 
 <img src="roblox.png">
 
-<span>Sign In</span>
+<span>
+Sign In
+</span>
 
 </button>
 
 
 
+<button class="logout" id="logoutBtn" style="display:none;">
+
+Log Out
+
+</button>
+
+
+
+</div>
+
+
+
 </header>
+
+
 
 
 
@@ -68,13 +103,12 @@ Roblox Sign In
 <input 
 id="username"
 placeholder="Roblox username"
+autocomplete="off"
 >
 
 
 
-
 <div id="profile"></div>
-
 
 
 
@@ -83,7 +117,7 @@ placeholder="Roblox username"
 
 
 
-<button id="done" style="display:none">
+<button id="done" style="display:none;">
 
 Done
 
@@ -91,8 +125,7 @@ Done
 
 
 
-
-<button id="verify" style="display:none">
+<button id="verify" style="display:none;">
 
 Verify Account
 
@@ -104,6 +137,8 @@ Verify Account
 
 
 </div>
+
+
 
 
 
