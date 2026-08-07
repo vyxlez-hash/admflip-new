@@ -1,5 +1,7 @@
 const express = require("express");
 const cors = require("cors");
+const rateLimit = require("express-rate-limit");
+
 
 const app = express();
 
@@ -10,16 +12,45 @@ app.use(express.json());
 
 
 
+
+// Rate limit protection
+
+const limiter = rateLimit({
+
+    windowMs: 60 * 1000,
+
+    max: 30,
+
+    message: {
+
+        success:false,
+
+        message:"Too many requests, try again later"
+
+    }
+
+});
+
+
+app.use(limiter);
+
+
+
+
+
+
 let verificationPhrases = {};
 
 
 
 
-// Home test
+
 
 app.get("/", (req,res)=>{
 
+
     res.send("ADMFLIP backend is online");
+
 
 });
 
@@ -27,7 +58,9 @@ app.get("/", (req,res)=>{
 
 
 
-// Generate Roblox-friendly phrase
+
+
+
 
 function generatePhrase(){
 
@@ -45,6 +78,7 @@ function generatePhrase(){
     ];
 
 
+
     const word =
     words[Math.floor(Math.random()*words.length)];
 
@@ -57,6 +91,7 @@ function generatePhrase(){
 
     return word + number;
 
+
 }
 
 
@@ -65,7 +100,9 @@ function generatePhrase(){
 
 
 
-// Get Roblox user + avatar
+
+
+// Get Roblox user
 
 app.get("/user/:username", async(req,res)=>{
 
@@ -75,6 +112,7 @@ app.get("/user/:username", async(req,res)=>{
 
         const username =
         req.params.username;
+
 
 
 
@@ -102,14 +140,19 @@ app.get("/user/:username", async(req,res)=>{
 
                 })
 
+
             }
 
         );
 
 
 
+
+
         const data =
         await response.json();
+
+
 
 
 
@@ -129,8 +172,13 @@ app.get("/user/:username", async(req,res)=>{
 
 
 
+
+
+
+
         const user =
         data.data[0];
+
 
 
 
@@ -145,6 +193,8 @@ app.get("/user/:username", async(req,res)=>{
 
 
 
+
+
         const avatarData =
         await avatarResponse.json();
 
@@ -152,14 +202,19 @@ app.get("/user/:username", async(req,res)=>{
 
 
 
+
+
         res.json({
+
 
             success:true,
 
 
             user:{
 
+
                 username:user.name,
+
 
                 id:user.id,
 
@@ -167,10 +222,13 @@ app.get("/user/:username", async(req,res)=>{
                 avatar:
                 avatarData.data[0].imageUrl
 
+
             }
 
 
         });
+
+
 
 
     }
@@ -203,7 +261,8 @@ app.get("/user/:username", async(req,res)=>{
 
 
 
-// Create phrase
+
+// Create verification phrase
 
 app.get("/create",(req,res)=>{
 
@@ -213,18 +272,27 @@ app.get("/create",(req,res)=>{
 
 
 
+
     const phrase =
     generatePhrase();
 
 
 
+
+
     verificationPhrases[id]={
+
 
         phrase:phrase,
 
+
         time:Date.now()
 
+
     };
+
+
+
 
 
 
@@ -234,7 +302,9 @@ app.get("/create",(req,res)=>{
 
         phrase:phrase
 
+
     });
+
 
 
 });
@@ -247,7 +317,7 @@ app.get("/create",(req,res)=>{
 
 
 
-// Verify bio
+// Check Roblox bio
 
 app.post("/check", async(req,res)=>{
 
@@ -262,6 +332,27 @@ app.post("/check", async(req,res)=>{
             phrase
 
         } = req.body;
+
+
+
+
+
+        if(!username || !phrase){
+
+
+            return res.json({
+
+                success:false,
+
+                message:"Missing information"
+
+            });
+
+
+        }
+
+
+
 
 
 
@@ -290,12 +381,17 @@ app.post("/check", async(req,res)=>{
 
             })
 
+
         });
 
 
 
         const userData =
         await userResponse.json();
+
+
+
+
 
 
 
@@ -317,8 +413,11 @@ app.post("/check", async(req,res)=>{
 
 
 
+
+
         const userId =
         userData.data[0].id;
+
 
 
 
@@ -333,8 +432,14 @@ app.post("/check", async(req,res)=>{
 
 
 
+
+
+
         const profile =
         await profileResponse.json();
+
+
+
 
 
 
@@ -349,6 +454,7 @@ app.post("/check", async(req,res)=>{
         ){
 
 
+
             return res.json({
 
                 success:true,
@@ -356,6 +462,7 @@ app.post("/check", async(req,res)=>{
                 username:profile.name,
 
                 id:profile.id
+
 
             });
 
@@ -365,13 +472,18 @@ app.post("/check", async(req,res)=>{
 
 
 
+
+
         res.json({
 
             success:false,
 
-            message:"Phrase not found in Roblox bio"
+            message:"Verification phrase not found"
+
 
         });
+
+
 
 
 
@@ -396,6 +508,7 @@ app.post("/check", async(req,res)=>{
     }
 
 
+
 });
 
 
@@ -409,7 +522,7 @@ app.listen(3000,()=>{
 
 
     console.log(
-        "ADMFLIP backend running on port 3000"
+        "ADMFLIP backend is running on port 3000"
     );
 
 
