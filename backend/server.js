@@ -68,6 +68,25 @@ mongoose.connect(process.env.MONGO_URL)
 
 
 const User = mongoose.model(
+    const Settings = mongoose.model(
+
+"Settings",
+
+new mongoose.Schema({
+
+siteOnline:{
+type:Boolean,
+default:true
+},
+
+announcement:{
+type:String,
+default:""
+}
+
+})
+
+);
 
 "User",
 
@@ -443,11 +462,7 @@ const words=[
 
 return (
 
-words[
-Math.floor(
-Math.random()*words.length
-)
-
+words[...] + Math.floor(...)
 ]
 
 +
