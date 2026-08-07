@@ -1,355 +1,175 @@
-*{
-    box-sizing:border-box;
-}
-
-
-body{
-
-    margin:0;
-
-    background:#07070a;
-
-    color:purple;
-
-    font-family:Arial, Helvetica, sans-serif;
-
-}
-
-
-
-/* HEADER */
-
-.header{
-
-    width:100%;
-
-    height:65px;
-
-    background:#050505;
-
-    border-bottom:1px solid #26202f;
-
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:space-between;
-
-
-    padding:0 35px;
-
-}
-
-
-
-/* LOGO */
-
 .brand{
-
-    width:280px;
-
-    height:100px;
-
-
-    display:flex;
-
-    align-items:center;
-
+width:260px;
 }
-
 
 
 .brand img{
-
-    width:68px;
-
-    height:68px;
-
-    object-fit:contain;
-
+width:85px;
+height:85px;
 }
 
-
-
-
-
-/* NAVIGATION */
-
-.menu{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:8px;
-
-}
-
-
-
-.menu a{
-
-
-    color:#f1f1f1;
-
-
-    text-decoration:none;
-
-
-    font-size:16px;
-
-
-    font-weight:600;
-
-
-    padding:12px 24px;
-
-
-    border-radius:10px;
-
-
-    transition:
-    background .2s ease,
-    color .2s ease;
-
-
-}
-
-
-
-.menu a:hover{
-
-
-    background:#24113d;
-
-
-    color:white;
-
-
-}
-
-
-
-.menu a:active{
-
-
-    background:#7c3aed;
-
-
-}
-
-
-
-
-
-
-
-/* ROBLOX SIGN IN */
-
-
-.login{
-
-
-    height:60px;
-
-
-    display:flex;
-
-
-    align-items:center;
-
-
-    gap:20px;
-
-
-
-    background:black;
-
-
-    color:#white;
-
-
-
-    border:none;
-
-
-    border-radius:10px;
-
-
-
-    padding:0 25px;
-
-
-
-    font-size:15px;
-
-
-    font-weight:700;
-
-
-
-    cursor:pointer;
-
-
-
-    transition:.2s;
-
-
-}
-
-
-
-.login img{
-
-
-    width:22px;
-
-
-    height:22px;
-
-
-    object-fit:contain;
-
-
-}
-
-
-
-.login:hover{
-
-
-    background:#e9e9e9;
-
-
-}
-
-
-
-.login:active{
-
-
-    transform:scale(.97);
-
-
-}
-
-
-
-
-
-
-
-/* PAGE CONTENT */
-
-
-main{
-
-
-    text-align:center;
-
-
-    padding-top:120px;
-
-
-}
-
-
-
-main h1{
-
-
-    font-size:60px;
-
-
-    margin-bottom:10px;
-
-
-}
-
-
-
-main p{
-
-
-    color:#a5a5a5;
-
-
-    font-size:20px;
-
-
-}
-
-
-
-
-
-/* MOBILE */
-
-
-@media(max-width:800px){
 
 
 .header{
-
-
-    padding:0 15px;
-
-
-}
-
-
-
-.brand{
-
-
-    width:100px;
-
-
+height:95px;
 }
 
 
 
 .menu{
+position:absolute;
+left:50%;
+transform:translateX(-50%);
+}
 
 
-    gap:0;
 
+.chatPanel{
+
+position:fixed;
+
+right:-350px;
+
+top:95px;
+
+width:330px;
+
+height:500px;
+
+background:#0d0815;
+
+border-left:1px solid #3b2160;
+
+transition:.3s;
 
 }
 
 
 
-.menu a{
+.chatPanel.active{
 
-
-    padding:10px;
-
-
-    font-size:14px;
-
+right:0;
 
 }
 
 
 
-.login span{
+.chatHeader{
+
+padding:20px;
+
+font-weight:bold;
+
+border-bottom:1px solid #333;
+
+display:flex;
+
+justify-content:space-between;
+
+}
 
 
-    display:none;
 
+.chatBody{
+
+text-align:center;
+
+padding:50px;
 
 }
 
 
 
-.login{
+.chatBody button{
 
+background:#7c3aed;
 
-    padding:0 12px;
+color:white;
 
+border:0;
+
+padding:12px 30px;
+
+border-radius:8px;
 
 }
 
+
+
+.modal{
+
+display:none;
+
+position:fixed;
+
+inset:0;
+
+background:rgba(0,0,0,.7);
+
+align-items:center;
+
+justify-content:center;
+
+}
+
+
+
+.modal.active{
+
+display:flex;
+
+}
+
+
+
+.box{
+
+background:#111;
+
+padding:30px;
+
+border-radius:15px;
+
+width:350px;
+
+text-align:center;
+
+}
+
+
+
+.box input{
+
+width:100%;
+
+padding:12px;
+
+margin:10px 0;
+
+background:#222;
+
+border:1px solid #444;
+
+color:white;
+
+border-radius:8px;
+
+}
+
+
+
+.box button{
+
+margin:5px;
+
+padding:10px 20px;
+
+background:#7c3aed;
+
+color:white;
+
+border:0;
+
+border-radius:8px;
 
 }
