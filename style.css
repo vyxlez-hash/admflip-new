@@ -59,3 +59,17 @@ img{max-width:100%}a{color:inherit;text-decoration:none}.hidden{display:none!imp
     min-width:0;
   }
 }
+
+/* ADMFLIP branding: logo only, no text beside it. */
+.brand{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-decoration:none;
+}
+.brand-logo{
+  display:block;
+  width:38px;
+  height:38px;
+  object-fit:contain;
+}
