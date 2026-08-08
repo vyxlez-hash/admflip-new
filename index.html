@@ -3,1336 +3,297 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>ADMFLIP</title>
-<link rel="icon" href="logo.png">
 
-<style>
-*{box-sizing:border-box}
-:root{
---bg:#090711;
---panel:#11101b;
---panel2:#171525;
---purple:#8b5cf6;
---purple2:#a78bfa;
---text:#f5f3ff;
---muted:#9993ad;
---border:#29243b;
-}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,Arial,sans-serif;min-height:100%}
-body{overflow-x:hidden}
-button,input{font:inherit}
-button{cursor:pointer}
-.header{
-height:76px;
-position:sticky;
-top:0;
-z-index:1000;
-display:flex;
-align-items:center;
-justify-content:space-between;
-padding:0 28px;
-background:rgba(9,7,17,.96);
-border-bottom:1px solid var(--border);
-backdrop-filter:blur(15px)
-}
-.brand img{
-width:62px;
-height:62px;
-object-fit:contain;
-display:block;
-filter:brightness(0) invert(1)
-}
-.menu{display:flex;gap:10px}
-.menu a{
-color:#bcb6cd;
-text-decoration:none;
-padding:10px 15px;
-border-radius:10px;
-transition:.2s
-}
-.menu a:hover,.menu a.active{
-background:#1b1728;
-color:white
-}
-.account-buttons{display:flex;gap:8px;align-items:center}
-.login,.logout,.primary,.secondary{
-border:1px solid var(--border);
-border-radius:11px;
-padding:10px 15px;
-background:#171423;
-color:white
-}
-.login{
-display:flex;
-gap:8px;
-align-items:center
-}
-.login img{
-width:25px;
-height:25px;
-border-radius:7px;
-object-fit:cover
-}
-.primary{
-background:var(--purple);
-border-color:var(--purple);
-font-weight:700
-}
-.primary:hover{background:#7c3aed}
-.secondary:hover,.logout:hover{background:#211c31}
-main{
-min-height:calc(100vh - 76px);
-padding:45px 5%;
-transition:margin-left .25s
-}
-body.chat-open main{margin-left:20%}
-.hero{
-max-width:900px;
-padding:75px 0 65px
-}
-.hero h1{
-font-size:clamp(45px,7vw,82px);
-line-height:.95;
-margin:0 0 22px;
-letter-spacing:-4px
-}
-.hero h1 span{color:var(--purple2)}
-.hero p{
-color:var(--muted);
-font-size:18px;
-max-width:620px;
-line-height:1.6
-}
-.hero-actions{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
-.page{display:none}
-.page.active{display:block}
-.section-head{
-display:flex;
-justify-content:space-between;
-align-items:flex-end;
-gap:20px;
-margin-bottom:30px;
-flex-wrap:wrap
-}
-.section-head h2{margin:5px 0;font-size:36px}
-.section-head p{margin:0;color:var(--muted)}
-.label{
-font-size:12px;
-letter-spacing:2px;
-color:var(--purple2);
-font-weight:800
-}
-.search{
-background:#11101b;
-border:1px solid var(--border);
-border-radius:11px;
-padding:12px 15px;
-color:white;
-outline:none;
-min-width:230px
-}
-.search:focus{border-color:var(--purple)}
-.pets{
-display:grid;
-grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
-gap:14px
-}
-.pet{
-background:var(--panel);
-border:1px solid var(--border);
-border-radius:15px;
-padding:15px;
-display:flex;
-gap:12px;
-align-items:center;
-transition:.2s
-}
-.pet:hover{
-transform:translateY(-2px);
-border-color:#493b68
-}
-.pet img{
-width:62px;
-height:62px;
-object-fit:contain;
-border-radius:10px;
-background:#0b0912
-}
-.pet-name{font-weight:700}
-.pet-value{
-margin-top:5px;
-color:var(--purple2);
-font-weight:800
-}
-.coinflips{
-display:grid;
-gap:12px
-}
-.flip{
-background:var(--panel);
-border:1px solid var(--border);
-border-radius:15px;
-padding:18px;
-display:flex;
-align-items:center;
-justify-content:space-between;
-gap:15px;
-flex-wrap:wrap
-}
-.flip-user{font-weight:700}
-.flip-value{color:var(--purple2);font-weight:800}
-.empty{
-border:1px dashed var(--border);
-padding:45px;
-border-radius:15px;
-color:var(--muted);
-text-align:center
-}
-.actions{display:flex;gap:8px}
-.modal{
-position:fixed;
-inset:0;
-z-index:3000;
-background:rgba(0,0,0,.75);
-display:none;
-align-items:center;
-justify-content:center;
-padding:20px
-}
-.modal.show{display:flex}
-.modal-box{
-width:min(460px,100%);
-background:#11101b;
-border:1px solid var(--border);
-border-radius:18px;
-padding:25px;
-box-shadow:0 30px 100px #000
-}
-.modal-box h2{margin-top:0}
-.modal-box input{
-width:100%;
-padding:13px;
-background:#0a0810;
-border:1px solid var(--border);
-border-radius:10px;
-color:white;
-outline:none;
-margin:10px 0
-}
-.profile{text-align:center;margin:15px 0}
-.profile img{
-width:80px;
-height:80px;
-border-radius:15px
-}
-#phrase{
-padding:14px;
-background:#19152a;
-border-radius:10px;
-margin:10px 0;
-line-height:1.5
-}
-.hidden{display:none!important}
-#chat{
-position:fixed;
-left:0;
-top:76px;
-bottom:0;
-width:20%;
-min-width:280px;
-background:#0d0b15;
-border-right:1px solid var(--border);
-z-index:900;
-display:flex;
-flex-direction:column;
-transform:translateX(-100%);
-transition:.25s
-}
-#chat.open{transform:translateX(0)}
-.chat-head{
-height:67px;
-padding:13px 15px;
-display:flex;
-align-items:center;
-justify-content:space-between;
-border-bottom:1px solid var(--border)
-}
-.chat-title{font-weight:800}
-.online{font-size:12px;color:#777184;margin-top:3px}
-.online b{color:#8b5cf6}
-.chat-messages{
-flex:1;
-overflow-y:auto;
-padding:12px
-}
-.message{
-display:flex;
-gap:9px;
-padding:9px 4px
-}
-.message img{
-width:34px;
-height:34px;
-border-radius:10px;
-object-fit:cover
-}
-.message b{font-size:13px}
-.message p{
-margin:3px 0 0;
-font-size:13px;
-color:#c4bfd0;
-word-break:break-word
-}
-.chat-bottom{
-padding:12px;
-border-top:1px solid var(--border)
-}
-.chat-form{display:flex;gap:7px}
-.chat-form input{
-min-width:0;
-flex:1;
-background:#171321;
-border:1px solid var(--border);
-border-radius:9px;
-color:white;
-padding:10px
-}
-.chat-form button{
-background:var(--purple);
-color:white;
-border:0;
-border-radius:9px;
-padding:0 13px
-}
-.rules{
-display:none;
-position:absolute;
-top:58px;
-right:10px;
-width:220px;
-padding:15px;
-background:#171321;
-border:1px solid var(--border);
-border-radius:12px;
-box-shadow:0 15px 40px #000
-}
-.rules.show{display:block}
-.rules strong{display:block;margin-bottom:8px}
-.rules div{color:#aaa3b7;font-size:13px;padding:3px 0}
-#chatButton{
-position:fixed;
-left:12px;
-bottom:18px;
-z-index:1100;
-display:none;
-background:var(--purple);
-color:white;
-border:0;
-border-radius:12px;
-padding:12px 17px;
-font-weight:800
-}
-.inventory{
-display:grid;
-grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
-gap:10px;
-margin:15px 0
-}
-.inventory-item{
-background:#171321;
-border:1px solid var(--border);
-border-radius:11px;
-padding:10px;
-color:white;
-text-align:center
-}
-.inventory-item.selected{
-border-color:var(--purple);
-background:#211936
-}
-.inventory-item img{
-width:60px;
-height:60px;
-object-fit:contain
-}
-.notice{
-padding:12px;
-border-radius:10px;
-background:#171321;
-color:#aaa3b7;
-margin:10px 0
-}
-#maintenance{
-display:none;
-position:fixed;
-inset:0;
-z-index:5000;
-background:#090711;
-align-items:center;
-justify-content:center;
-text-align:center;
-padding:25px
-}
-#maintenance.show{display:flex}
-.maintenance-box{
-max-width:500px;
-background:#11101b;
-border:1px solid var(--border);
-border-radius:20px;
-padding:40px
-}
-@media(max-width:900px){
-.header{padding:0 14px}
-.brand img{width:52px;height:52px}
-.menu a{padding:8px;font-size:13px}
-body.chat-open main{margin-left:0}
-#chat{width:min(88vw,360px)}
-#chatButton{display:block}
-main{padding:30px 18px}
-.hero{padding:45px 0}
-}
-@media(max-width:600px){
-.header{height:65px}
-.header .menu{gap:2px}
-.header .menu a:nth-child(2){display:none}
-.header .login span{display:none}
-main{min-height:calc(100vh - 65px)}
-#chat{top:65px}
-.hero h1{letter-spacing:-2px}
-.pets{grid-template-columns:1fr 1fr}
-.pet{padding:10px}
-.pet img{width:48px;height:48px}
-}
-</style>
+<title>ADMFLIP</title>
+
+<link rel="icon" href="logo.png">
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <header class="header">
 
-<div class="brand">
-<img src="logo.png" alt="ADMFLIP">
-</div>
+    <div class="brand">
+        <img src="logo.png" alt="ADMFLIP">
+        <span>ADMFLIP</span>
+    </div>
 
-<nav class="menu">
-<a href="#" data-page="coinflip">Coinflip</a>
-<a href="#" data-page="values">Values</a>
-<a href="#" id="chatNav">Chat</a>
-</nav>
+    <nav class="nav">
+        <button data-page="coinflip">Coinflip</button>
+        <button data-page="values">Values</button>
+        <button data-page="chat">Chat</button>
+        <button data-page="leaderboard">Leaderboard</button>
+    </nav>
 
-<div class="account-buttons">
-<button class="login" id="loginBtn">
-<img src="roblox.png">
-<span>Sign In</span>
-</button>
+    <div class="account">
 
-<button class="logout" id="logoutBtn" style="display:none">
-Log Out
-</button>
-</div>
+        <button id="loginBtn" class="loginBtn">
+            <span>Sign In</span>
+        </button>
+
+        <button id="logoutBtn" class="logoutBtn hidden">
+            Log Out
+        </button>
+
+    </div>
 
 </header>
 
-<main>
 
-<section class="page" id="homePage">
+<main class="site">
 
-<div class="hero">
+    <section id="coinflipPage" class="page">
 
-<div class="label">ADMFLIP</div>
+        <div class="pageHeader">
+            <div>
+                <small>COINFLIP</small>
+                <h1>Active Coinflips</h1>
+                <p>Find another trader and choose your side.</p>
+            </div>
 
-<h1>
-Trade smarter.<br>
-<span>Flip better.</span>
-</h1>
+            <button id="createCoinflipBtn" class="purpleBtn">
+                Create
+            </button>
+        </div>
 
-<p>
-A clean trading community for Adopt Me traders.
-Check values, create coinflips and connect with other traders.
-</p>
+        <div id="coinflipList" class="coinflipList">
+            <div class="empty">
+                No active coinflips yet.
+            </div>
+        </div>
 
-<div class="hero-actions">
+    </section>
 
-<button class="primary" data-page="coinflip">
-Start Coinflip
-</button>
 
-<button class="secondary" data-page="values">
-View Values
-</button>
+    <section id="valuesPage" class="page hidden">
 
-</div>
+        <div class="pageHeader">
+            <div>
+                <small>VALUES</small>
+                <h1>Pet Values</h1>
+                <p>Search current ADMFLIP pet values.</p>
+            </div>
+        </div>
 
-</div>
+        <input
+            id="petSearch"
+            class="search"
+            placeholder="Search a pet..."
+            autocomplete="off"
+        >
 
-</section>
+        <div id="petList" class="petList">
+            <div class="loading">Loading values...</div>
+        </div>
 
-<section class="page" id="coinflipPage">
+    </section>
 
-<div class="section-head">
 
-<div>
-<div class="label">FLIP</div>
-<h2>Coinflip</h2>
-<p>Find another trader and post your side.</p>
-</div>
+    <section id="leaderboardPage" class="page hidden">
 
-<div class="actions">
-<button class="primary" id="createFlip">
-Create
-</button>
+        <div class="pageHeader">
+            <div>
+                <small>LEADERBOARD</small>
+                <h1>Top Traders</h1>
+                <p>See the traders with the most wagered value.</p>
+            </div>
+        </div>
 
-<button class="secondary" id="historyFlip">
-History
-</button>
-</div>
+        <div id="leaderboardList" class="leaderboardList">
+            <div class="loading">Loading leaderboard...</div>
+        </div>
 
-</div>
+    </section>
 
-<div id="coinflips" class="coinflips">
-<div class="empty">Loading...</div>
-</div>
 
-</section>
-
-<section class="page" id="valuesPage">
-
-<div class="section-head">
-
-<div>
-<div class="label">VALUES</div>
-<h2>Pet Values</h2>
-<p>Browse current pet values.</p>
-</div>
-
-<input
-id="petSearch"
-class="search"
-placeholder="Search pets..."
->
-
-</div>
-
-<div id="pets" class="pets">
-<div class="empty">Loading pet values...</div>
-</div>
-
-</section>
+    <section id="chatPage" class="page hidden">
+        <div class="chatStandalone">
+            <h1>Community</h1>
+            <p>Open the community panel from the left side.</p>
+            <button id="openChatBtn" class="purpleBtn">
+                Open Chat
+            </button>
+        </div>
+    </section>
 
 </main>
 
-<!-- CHAT -->
 
-<aside id="chat">
+<!-- LEFT CHAT -->
 
-<div class="chat-head">
+<aside id="chatPanel" class="chatPanel">
 
-<div>
-<div class="chat-title">Community</div>
-<div class="online">
-<span id="online">42</span> online
-</div>
-</div>
+    <div class="chatHeader">
 
-<button
-class="secondary"
-id="rulesButton"
-style="padding:7px 10px"
->?</button>
+        <div>
+            <strong>Community</strong>
+            <div class="online">
+                <span></span>
+                <b id="onlineCount">42</b> online
+            </div>
+        </div>
 
-<div class="rules" id="rules">
+        <button id="closeChatBtn">×</button>
 
-<strong>Community Rules</strong>
+    </div>
 
-<div>• No advertising</div>
-<div>• No harassment</div>
-<div>• No sexual activities</div>
-<div>• No scams</div>
-<div>• No site links</div>
 
-</div>
+    <div class="chatRulesRow">
+        <button id="rulesBtn">Rules</button>
+    </div>
 
-</div>
 
-<div id="messages" class="chat-messages">
-<div class="notice">
-Welcome to the ADMFLIP community.
-</div>
-</div>
+    <div id="rulesBox" class="rulesBox hidden">
 
-<div class="chat-bottom">
+        <strong>Community Rules</strong>
 
-<div
-id="chatLogin"
-class="notice"
->
-Sign in to chat.
-</div>
+        <ul>
+            <li>No advertising.</li>
+            <li>No harassment.</li>
+            <li>No sexual content.</li>
+            <li>No scams or impersonation.</li>
+            <li>No external site links.</li>
+        </ul>
 
-<form
-id="chatForm"
-class="chat-form"
-style="display:none"
->
+    </div>
 
-<input
-id="chatInput"
-maxlength="300"
-placeholder="Message..."
-autocomplete="off"
->
 
-<button>Send</button>
+    <div id="chatMessages" class="chatMessages">
 
-</form>
+        <div class="announcement">
 
-</div>
+            <div class="announcementTitle">
+                ADMFLIP
+            </div>
+
+            <div>
+                Welcome to the community.
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <form id="chatForm" class="chatForm">
+
+        <input
+            id="chatInput"
+            placeholder="Sign in to chat..."
+            maxlength="300"
+            autocomplete="off"
+        >
+
+        <button type="submit">
+            Send
+        </button>
+
+    </form>
 
 </aside>
 
-<button id="chatButton">Chat</button>
 
-<!-- LOGIN -->
+<!-- MOBILE CHAT BUTTON -->
 
-<div class="modal" id="loginModal">
-
-<div class="modal-box">
-
-<h2>Roblox Sign In</h2>
-
-<input
-id="username"
-placeholder="Roblox username"
-autocomplete="off"
->
-
-<div id="profile" class="profile hidden"></div>
-
-<div id="phrase" class="hidden"></div>
-
-<button
-id="verify"
-class="primary"
-style="display:none;width:100%"
->
-Verify
+<button id="mobileChatBtn" class="mobileChatBtn">
+    Chat
 </button>
 
-</div>
+
+<!-- SIGN IN MODAL -->
+
+<div id="loginModal" class="modal hidden">
+
+    <div class="modalBox">
+
+        <button id="closeLoginBtn" class="modalClose">
+            ×
+        </button>
+
+        <img class="modalLogo" src="logo.png" alt="ADMFLIP">
+
+        <h2>Sign in</h2>
+
+        <p>
+            Verify your Roblox account to use ADMFLIP.
+        </p>
+
+        <input
+            id="usernameInput"
+            placeholder="Roblox username"
+            maxlength="20"
+            autocomplete="off"
+        >
+
+        <button id="findUserBtn" class="purpleBtn full">
+            Continue
+        </button>
+
+        <div id="loginProfile"></div>
+
+        <div id="phraseBox" class="phraseBox hidden"></div>
+
+        <button id="verifyBtn" class="purpleBtn full hidden">
+            Verify Roblox
+        </button>
+
+    </div>
 
 </div>
 
-<!-- COINFLIP -->
 
-<div class="modal" id="flipModal">
+<!-- CREATE COINFLIP MODAL -->
 
-<div class="modal-box">
+<div id="coinflipModal" class="modal hidden">
 
-<h2>Create Coinflip</h2>
+    <div class="modalBox large">
 
-<p style="color:#9993ad">
-Choose a pet from your inventory.
-</p>
+        <button id="closeCoinflipBtn" class="modalClose">
+            ×
+        </button>
 
-<div id="inventory" class="inventory"></div>
+        <h2>Create Coinflip</h2>
 
-<div class="actions">
+        <p>
+            Choose a pet from your inventory and your side.
+        </p>
 
-<button
-class="secondary side"
-data-side="Heads"
->
-Heads
-</button>
+        <div id="createInventory" class="createInventory">
+            <div class="loading">Loading inventory...</div>
+        </div>
 
-<button
-class="secondary side"
-data-side="Tails"
->
-Tails
-</button>
+        <div class="sideButtons">
 
-</div>
+            <button class="sideBtn" data-side="heads">
+                Heads
+            </button>
 
-<br>
+            <button class="sideBtn" data-side="tails">
+                Tails
+            </button>
 
-<button
-id="submitFlip"
-class="primary"
-style="width:100%"
->
-Create Coinflip
-</button>
+        </div>
 
-</div>
+        <button id="submitCoinflipBtn" class="purpleBtn full">
+            Create Coinflip
+        </button>
 
-</div>
+        <button id="depositBtn" class="depositBtn hidden">
+            Deposit via Discord — automatic bot soon
+        </button>
 
-<div id="maintenance">
-
-<div class="maintenance-box">
-
-<h2>ADMFLIP is offline</h2>
-
-<p style="color:#9993ad">
-The site is currently undergoing maintenance.
-Please try again later.
-</p>
+    </div>
 
 </div>
 
-</div>
 
-<script>
+<!-- SITE MESSAGE -->
 
-const API="https://admflip-new.onrender.com";
+<div id="toast" class="toast"></div>
 
-let user=null;
-let token=localStorage.getItem("admflipToken");
-let page=localStorage.getItem("admflipPage")||"home";
-let selectedPet=null;
-let selectedSide=null;
-let pets=[];
 
-const $=id=>document.getElementById(id);
-
-function esc(v){
-return String(v??"")
-.replaceAll("&","&amp;")
-.replaceAll("<","&lt;")
-.replaceAll(">","&gt;")
-.replaceAll('"',"&quot;")
-.replaceAll("'","&#039;");
-}
-
-function authHeaders(){
-return token?{"Authorization":"Bearer "+token}:{"Content-Type":"application/json"};
-}
-
-function showPage(name,save=true){
-
-document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
-
-$(name+"Page").classList.add("active");
-
-if(save){
-page=name;
-localStorage.setItem("admflipPage",name);
-}
-
-document.querySelectorAll("[data-page]").forEach(x=>{
-x.classList.toggle("active",x.dataset.page===name);
-});
-
-if(name==="values")renderPets();
-if(name==="coinflip")loadFlips();
-}
-
-document.querySelectorAll("[data-page]").forEach(x=>{
-x.onclick=e=>{
-e.preventDefault();
-showPage(x.dataset.page);
-};
-});
-
-$("chatNav").onclick=e=>{
-e.preventDefault();
-toggleChat();
-};
-
-$("chatButton").onclick=toggleChat;
-
-function toggleChat(){
-$("chat").classList.toggle("open");
-localStorage.setItem(
-"admflipChat",
-$("chat").classList.contains("open")?"1":"0"
-);
-}
-
-if(localStorage.getItem("admflipChat")==="1"){
-$("chat").classList.add("open");
-}
-
-$("rulesButton").onclick=()=>{
-$("rules").classList.toggle("show");
-};
-
-$("loginBtn").onclick=()=>{
-if(!user)$("loginModal").classList.add("show");
-};
-
-$("logoutBtn").onclick=()=>{
-user=null;
-token=null;
-localStorage.removeItem("admflipUser");
-localStorage.removeItem("admflipToken");
-updateLogin();
-updateChat();
-};
-
-function updateLogin(){
-
-if(user){
-
-$("loginBtn").innerHTML=`
-<img src="${esc(user.avatar||"roblox.png")}" onerror="this.src='roblox.png'">
-<span>${esc(user.username)}</span>
-`;
-
-$("logoutBtn").style.display="block";
-
-}else{
-
-$("loginBtn").innerHTML=`
-<img src="roblox.png">
-<span>Sign In</span>
-`;
-
-$("logoutBtn").style.display="none";
-}
-}
-
-function updateChat(){
-
-$("chatLogin").style.display=user?"none":"block";
-$("chatForm").style.display=user?"flex":"none";
-}
-
-$("username").onchange=async()=>{
-
-const name=$("username").value.trim();
-
-if(!name)return;
-
-try{
-
-const r=await fetch(
-API+"/user/"+encodeURIComponent(name)
-);
-
-const d=await r.json();
-
-if(!d.success){
-alert(d.message||"Roblox username not found");
-return;
-}
-
-user=d.user;
-
-$("profile").classList.remove("hidden");
-
-$("profile").innerHTML=`
-<img src="${esc(user.avatar)}" onerror="this.src='roblox.png'">
-<br><br>
-<b>${esc(user.username)}</b>
-`;
-
-const r2=await fetch(API+"/create");
-const d2=await r2.json();
-
-$("phrase").classList.remove("hidden");
-
-$("phrase").innerHTML=`
-Put this phrase in your Roblox bio:
-<br><br>
-<b>${esc(d2.phrase)}</b>
-`;
-
-$("verify").style.display="block";
-
-}catch(e){
-
-alert("Login server error.");
-}
-};
-
-$("verify").onclick=async()=>{
-
-$("verify").disabled=true;
-$("verify").textContent="Checking...";
-
-try{
-
-const r=await fetch(API+"/check",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-username:user.username,
-phrase:$("phrase").innerText
-.split("\n")
-.pop()
-.trim()
-})
-});
-
-const d=await r.json();
-
-if(!d.success){
-alert(d.message||"Verification failed.");
-return;
-}
-
-user={
-id:d.id,
-robloxId:d.id,
-username:d.username||user.username,
-avatar:user.avatar
-};
-
-token=d.token;
-
-localStorage.setItem(
-"admflipUser",
-JSON.stringify(user)
-);
-
-localStorage.setItem(
-"admflipToken",
-token
-);
-
-updateLogin();
-updateChat();
-
-$("loginModal").classList.remove("show");
-
-}catch(e){
-
-alert("Login server error.");
-
-}finally{
-
-$("verify").disabled=false;
-$("verify").textContent="Verify";
-
-}
-};
-
-async function loadPets(){
-
-try{
-
-const r=await fetch(API+"/pets",{cache:"no-store"});
-const d=await r.json();
-
-pets=Array.isArray(d.pets)?d.pets:[];
-
-renderPets();
-
-}catch(e){
-
-$("pets").innerHTML=
-`<div class="empty">Unable to load pet values.</div>`;
-}
-}
-
-function renderPets(){
-
-const q=$("petSearch").value.toLowerCase();
-
-const list=pets.filter(x=>
-String(x.name||"").toLowerCase().includes(q)
-);
-
-if(!list.length){
-$("pets").innerHTML=
-`<div class="empty">No pets found.</div>`;
-return;
-}
-
-$("pets").innerHTML=list.map(p=>{
-
-const image=p.image||p.imageUrl||"logo.png";
-
-return `
-<div class="pet">
-<img
-src="${esc(image)}"
-onerror="this.src='logo.png'"
->
-<div>
-<div class="pet-name">${esc(p.name)}</div>
-<div class="pet-value">${Number(p.value||0).toLocaleString()}</div>
-</div>
-</div>
-`;
-
-}).join("");
-}
-
-$("petSearch").oninput=renderPets;
-
-async function loadFlips(){
-
-try{
-
-const r=await fetch(API+"/coinflips",{cache:"no-store"});
-const d=await r.json();
-
-const list=d.coinflips||[];
-
-if(!list.length){
-$("coinflips").innerHTML=
-`<div class="empty">No active coinflips yet.</div>`;
-return;
-}
-
-$("coinflips").innerHTML=list.map(x=>`
-
-<div class="flip">
-
-<div>
-<div class="flip-user">${esc(x.username||"Trader")}</div>
-<div style="color:#777184">
-${esc(x.side||"Heads")}
-</div>
-</div>
-
-<div class="flip-value">
-${Number(x.value||0).toLocaleString()}
-</div>
-
-<button
-class="primary"
-onclick="joinFlip('${esc(x._id)}')"
->
-Join
-</button>
-
-</div>
-
-`).join("");
-
-}catch(e){
-
-$("coinflips").innerHTML=
-`<div class="empty">Unable to load coinflips.</div>`;
-}
-}
-
-async function openCreate(){
-
-if(!user){
-$("loginModal").classList.add("show");
-return;
-}
-
-try{
-
-const r=await fetch(
-API+"/inventory/"+encodeURIComponent(user.id),
-{headers:authHeaders()}
-);
-
-const d=await r.json();
-
-if(!d.success){
-alert(d.message||"Unable to load inventory.");
-return;
-}
-
-const inv=d.inventory||[];
-
-if(!inv.length){
-
-$("inventory").innerHTML=`
-<div class="notice">
-You have no pets deposited yet.
-<br><br>
-<button
-class="primary"
-onclick="alert('Discord deposit is coming soon.')"
->
-Deposit via Discord
-</button>
-</div>
-`;
-
-}else{
-
-$("inventory").innerHTML=inv.map((p,i)=>`
-
-<button
-class="inventory-item"
-data-index="${i}"
->
-<img
-src="${esc(p.image||"logo.png")}"
-onerror="this.src='logo.png'"
->
-<br>
-${esc(p.name)}
-<br>
-<b>${Number(p.value||0).toLocaleString()}</b>
-</button>
-
-`).join("");
-
-document.querySelectorAll(".inventory-item").forEach(b=>{
-b.onclick=()=>{
-document.querySelectorAll(".inventory-item")
-.forEach(x=>x.classList.remove("selected"));
-
-b.classList.add("selected");
-
-selectedPet=inv[Number(b.dataset.index)];
-};
-});
-}
-
-$("flipModal").classList.add("show");
-
-}catch(e){
-
-alert("Unable to load inventory.");
-}
-}
-
-$("createFlip").onclick=openCreate;
-
-document.querySelectorAll(".side").forEach(b=>{
-b.onclick=()=>{
-selectedSide=b.dataset.side;
-document.querySelectorAll(".side")
-.forEach(x=>x.classList.remove("selected"));
-b.classList.add("selected");
-};
-});
-
-$("submitFlip").onclick=async()=>{
-
-if(!selectedPet){
-alert("Choose a pet.");
-return;
-}
-
-if(!selectedSide){
-alert("Choose Heads or Tails.");
-return;
-}
-
-try{
-
-const r=await fetch(API+"/coinflips",{
-method:"POST",
-headers:{
-...authHeaders(),
-"Content-Type":"application/json"
-},
-body:JSON.stringify({
-petId:selectedPet._id,
-side:selectedSide
-})
-});
-
-const d=await r.json();
-
-if(!d.success){
-alert(d.message||"Unable to create coinflip.");
-return;
-}
-
-selectedPet=null;
-selectedSide=null;
-
-$("flipModal").classList.remove("show");
-
-loadFlips();
-
-}catch(e){
-
-alert("Coinflip server unavailable.");
-}
-};
-
-$("historyFlip").onclick=async()=>{
-
-if(!user){
-alert("Sign in first.");
-return;
-}
-
-try{
-
-const r=await fetch(
-API+"/coinflips/history",
-{headers:authHeaders()}
-);
-
-const d=await r.json();
-
-const list=d.coinflips||[];
-
-$("coinflips").innerHTML=list.length?
-list.map(x=>`
-<div class="flip">
-<div>
-<div class="flip-user">${esc(x.username||user.username)}</div>
-<div style="color:#777184">
-${esc(x.status||"Finished")}
-</div>
-</div>
-<div class="flip-value">
-${Number(x.value||0).toLocaleString()}
-</div>
-</div>
-`).join("")
-:
-`<div class="empty">No coinflip history.</div>`;
-
-}catch(e){
-alert("Unable to load history.");
-}
-};
-
-async function joinFlip(id){
-
-if(!user){
-$("loginModal").classList.add("show");
-return;
-}
-
-try{
-
-const r=await fetch(API+"/coinflips/"+id+"/join",{
-method:"POST",
-headers:authHeaders()
-});
-
-const d=await r.json();
-
-alert(d.message||"Coinflip updated.");
-
-loadFlips();
-
-}catch(e){
-alert("Unable to join coinflip.");
-}
-}
-
-$("chatForm").onsubmit=async e=>{
-
-e.preventDefault();
-
-if(!user){
-alert("Sign in to chat.");
-return;
-}
-
-const input=$("chatInput");
-const text=input.value.trim();
-
-if(!text)return;
-
-if(/https?:\/\/|www\.|discord\.gg|discord\.com\/invite|t\.me\/|bit\.ly\//i.test(text)){
-alert("Links are not allowed in chat.");
-return;
-}
-
-try{
-
-const r=await fetch(API+"/chat",{
-method:"POST",
-headers:{
-...authHeaders(),
-"Content-Type":"application/json"
-},
-body:JSON.stringify({text})
-});
-
-const d=await r.json();
-
-if(!d.success){
-alert(d.message||"Message failed.");
-return;
-}
-
-input.value="";
-loadChat();
-
-}catch(e){
-alert("Chat server unavailable.");
-}
-};
-
-async function loadChat(){
-
-try{
-
-const r=await fetch(API+"/chat",{cache:"no-store"});
-const d=await r.json();
-
-const list=d.messages||[];
-
-$("messages").innerHTML=list.map(m=>`
-<div class="message">
-<img
-src="${esc(m.avatar||"roblox.png")}"
-onerror="this.src='roblox.png'"
->
-<div>
-<b>${esc(m.username)}</b>
-<p>${esc(m.text)}</p>
-</div>
-</div>
-`).join("");
-
-$("messages").scrollTop=$("messages").scrollHeight;
-
-}catch(e){}
-}
-
-async function status(){
-
-try{
-
-const r=await fetch(API+"/status",{cache:"no-store"});
-const d=await r.json();
-
-$("maintenance").classList.toggle(
-"show",
-d.online===false
-);
-
-}catch(e){}
-}
-
-function online(){
-
-let n=Number(localStorage.getItem("admflipOnline")||42);
-
-$("online").textContent=n;
-
-setInterval(()=>{
-
-n+=Math.floor(Math.random()*5)-2;
-
-n=Math.max(30,Math.min(54,n));
-
-$("online").textContent=n;
-
-localStorage.setItem("admflipOnline",n);
-
-},70000);
-}
-
-try{
-user=JSON.parse(localStorage.getItem("admflipUser")||"null");
-}catch(e){user=null}
-
-updateLogin();
-updateChat();
-showPage(page,false);
-loadPets();
-loadChat();
-status();
-online();
-
-setInterval(loadChat,5000);
-setInterval(status,30000);
-
-</script>
+<script src="script.js"></script>
 
 </body>
 </html>
