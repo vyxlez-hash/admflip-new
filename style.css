@@ -73,3 +73,156 @@ img{max-width:100%}a{color:inherit;text-decoration:none}.hidden{display:none!imp
   height:38px;
   object-fit:contain;
 }
+
+/* ========================= ADMFLIP RESPONSIVE POLISH ========================= */
+:root{
+  --width:1240px;
+}
+
+.header{
+  padding:0 clamp(14px,3vw,36px);
+}
+
+.brand-logo,
+.brand img{
+  width:54px;
+  height:54px;
+}
+
+.brand{
+  width:58px;
+  height:58px;
+}
+
+.navigation{
+  margin-left:22px;
+}
+
+.main,
+#app{
+  width:min(1240px,calc(100% - 32px));
+  margin-left:auto;
+  margin-right:auto;
+}
+
+.stats-row{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin:22px 0;
+}
+
+.stat{
+  min-height:88px;
+  padding:18px 20px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018));
+  box-shadow:0 10px 35px rgba(0,0,0,.14);
+}
+
+.stat span{
+  display:block;
+  color:var(--muted2);
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.12em;
+}
+
+.stat strong{
+  display:block;
+  margin-top:8px;
+  font-size:25px;
+  line-height:1.1;
+  letter-spacing:-.02em;
+}
+
+@media (max-width:900px){
+  .header{
+    height:64px;
+  }
+  .brand,.brand-logo,.brand img{
+    width:48px;
+    height:48px;
+  }
+  .navigation{
+    margin-left:10px;
+    gap:2px;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .navigation::-webkit-scrollbar{display:none}
+  .nav-item{
+    padding:0 10px;
+    white-space:nowrap;
+  }
+  .header-right .login span{
+    display:none;
+  }
+  .login{
+    width:42px;
+    padding:0;
+  }
+  .main,#app{
+    width:min(100% - 20px,1240px);
+  }
+}
+
+@media (max-width:650px){
+  .header{
+    padding:0 10px;
+    gap:8px;
+  }
+  .header-left{
+    min-width:0;
+    flex:1;
+  }
+  .brand{
+    flex:0 0 48px;
+  }
+  .navigation{
+    flex:1;
+    min-width:0;
+  }
+  .nav-item{
+    font-size:11px;
+    height:34px;
+  }
+  .stats-row{
+    grid-template-columns:1fr;
+    gap:9px;
+    margin:15px 0;
+  }
+  .stat{
+    min-height:72px;
+    padding:14px 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .stat strong{
+    margin-top:0;
+    font-size:22px;
+  }
+  .page-head{
+    flex-direction:column;
+    align-items:stretch;
+    gap:14px;
+  }
+  .page-head .primary{
+    width:100%;
+  }
+}
+
+@media (max-width:420px){
+  .navigation .nav-item{
+    padding:0 8px;
+  }
+  .brand,.brand-logo,.brand img{
+    width:44px;
+    height:44px;
+  }
+  .account-box .profile-button span{
+    display:none;
+  }
+}
