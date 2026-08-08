@@ -28,18 +28,22 @@
 
   const $ = (selector) => document.querySelector(selector);
 
-  const $$ = (selector) => [...document.querySelectorAll(selector)];
+  const $$ = (selector) => [
+    ...document.querySelectorAll(selector)
+  ];
 
-  function el(id) {
-    return document.getElementById(id);
-  }
+  const el = (id) => document.getElementById(id);
 
   function show(element) {
-    if (element) element.classList.remove("hidden");
+    if (element) {
+      element.classList.remove("hidden");
+    }
   }
 
   function hide(element) {
-    if (element) element.classList.add("hidden");
+    if (element) {
+      element.classList.add("hidden");
+    }
   }
 
   function escapeHTML(value) {
@@ -52,7 +56,11 @@
   }
 
   function formatValue(value) {
-    if (value === null || value === undefined || value === "") {
+    if (
+      value === null ||
+      value === undefined ||
+      value === ""
+    ) {
       return "—";
     }
 
@@ -76,7 +84,11 @@
   }
 
   function petName(pet) {
-    return pet?.name || pet?.petName || "Unknown Pet";
+    return (
+      pet?.name ||
+      pet?.petName ||
+      "Unknown Pet"
+    );
   }
 
   function petValue(pet) {
@@ -92,39 +104,34 @@
   async function api(path, options = {}) {
     const url = `${API_BASE}${path}`;
 
+    const response = await fetch(url, {
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+      },
+      ...options
+    });
+
+    const text = await response.text();
+
+    let data = null;
+
     try {
-      const response = await fetch(url, {
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(options.headers || {})
-        },
-        ...options
-      });
-
-      const text = await response.text();
-
-      let data = null;
-
-      try {
-        data = text ? JSON.parse(text) : null;
-      } catch {
-        data = text;
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          data?.message ||
-          data?.error ||
-          `Request failed (${response.status})`
-        );
-      }
-
-      return data;
-    } catch (error) {
-      console.warn("ADMFLIP API:", path, error.message);
-      throw error;
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = text;
     }
+
+    if (!response.ok) {
+      throw new Error(
+        data?.message ||
+        data?.error ||
+        `Request failed (${response.status})`
+      );
+    }
+
+    return data;
   }
 
   function toast(message) {
@@ -159,20 +166,25 @@
     profile: "profilePage"
   };
 
-  function openPage(page) {
+  function openPage(page, updateHash = true) {
     if (!pages[page]) {
       page = "coinflip";
     }
 
     state.page = page;
 
-    Object.entries(pages).forEach(([name, id]) => {
-      const pageElement = el(id);
+    Object.entries(pages).forEach(
+      ([name, id]) => {
+        const pageElement = el(id);
 
-      if (!pageElement) return;
+        if (!pageElement) return;
 
-      pageElement.classList.toggle("hidden", name !== page);
-    });
+        pageElement.classList.toggle(
+          "hidden",
+          name !== page
+        );
+      }
+    );
 
     $$(".nav-item").forEach((button) => {
       button.classList.toggle(
@@ -197,7 +209,17 @@
       loadCoinflips();
     }
 
-    history.replaceState(null, "", `#${page}`);
+    if (page === "profile") {
+      renderProfile();
+    }
+
+    if (updateHash) {
+      history.replaceState(
+        null,
+        "",
+        `#${page}`
+      );
+    }
   }
 
   function setupNavigation() {
@@ -215,17 +237,25 @@
     });
 
     window.addEventListener("hashchange", () => {
-      const page = location.hash.replace("#", "") || "coinflip";
+      const page =
+        location.hash.replace("#", "") ||
+        "coinflip";
 
       if (pages[page]) {
-        openPage(page);
+        openPage(page, false);
       }
     });
 
     const initialPage =
-      location.hash.replace("#", "") || "coinflip";
+      location.hash.replace("#", "") ||
+      "coinflip";
 
-    openPage(pages[initialPage] ? initialPage : "coinflip");
+    openPage(
+      pages[initialPage]
+        ? initialPage
+        : "coinflip",
+      false
+    );
   }
 
   /* =======================================================
@@ -241,7 +271,7 @@
     panel.className = "chat-panel";
 
     panel.innerHTML = `
-      <div class="chat-header">
+      <div class="chat-head">
 
         <div>
           <strong>ADMFLIP CHAT</strong>
@@ -304,19 +334,22 @@
 
     document.body.appendChild(panel);
 
-    $("#chatClose")?.addEventListener("click", closeChat);
+    el("chatClose")?.addEventListener(
+      "click",
+      closeChat
+    );
 
-    $("#rulesBtnPanel")?.addEventListener(
+    el("rulesBtnPanel")?.addEventListener(
       "click",
       openRules
     );
 
-    $("#panelChatForm")?.addEventListener(
+    el("panelChatForm")?.addEventListener(
       "submit",
       sendPanelMessage
     );
 
-    hideChatPanel();
+    closeChat();
   }
 
   function openChat() {
@@ -324,7 +357,9 @@
 
     if (!panel) return;
 
+    panel.classList.add("open");
     panel.style.display = "flex";
+
     state.chatOpen = true;
 
     loadChat();
@@ -335,16 +370,10 @@
 
     if (!panel) return;
 
+    panel.classList.remove("open");
     panel.style.display = "none";
+
     state.chatOpen = false;
-  }
-
-  function hideChatPanel() {
-    const panel = el("chatPanel");
-
-    if (panel) {
-      panel.style.display = "none";
-    }
   }
 
   function setupMobileChat() {
@@ -361,11 +390,14 @@
       document.body.appendChild(button);
     }
 
-    button.addEventListener("click", openChat);
+    button.addEventListener(
+      "click",
+      openChat
+    );
   }
 
   /* =======================================================
-     CHAT PAGE
+     CHAT
   ======================================================= */
 
   async function loadChat() {
@@ -385,7 +417,13 @@
         "--";
 
       setOnlineCount(online);
-    } catch {
+
+    } catch (error) {
+      console.warn(
+        "Chat loading failed:",
+        error
+      );
+
       renderChat([]);
     }
   }
@@ -451,7 +489,8 @@
         })
         .join("");
 
-      container.scrollTop = container.scrollHeight;
+      container.scrollTop =
+        container.scrollHeight;
     });
   }
 
@@ -470,12 +509,18 @@
   }
 
   async function sendChatMessage(input) {
-    const text = input.value.trim();
+    if (!input) return;
+
+    const text =
+      input.value.trim();
 
     if (!text) return;
 
     if (!state.user) {
-      toast("Sign in before chatting.");
+      toast(
+        "Sign in before chatting."
+      );
+      openLogin();
       return;
     }
 
@@ -492,8 +537,17 @@
       input.value = "";
 
       await loadChat();
-    } catch {
-      toast("Unable to send message.");
+
+    } catch (error) {
+      console.warn(
+        "Message failed:",
+        error
+      );
+
+      toast(
+        "Unable to send message."
+      );
+
     } finally {
       input.disabled = false;
       input.focus();
@@ -503,21 +557,17 @@
   function sendPageMessage(event) {
     event.preventDefault();
 
-    const input = el("chatInput");
-
-    if (input) {
-      sendChatMessage(input);
-    }
+    sendChatMessage(
+      el("chatInput")
+    );
   }
 
   function sendPanelMessage(event) {
     event.preventDefault();
 
-    const input = el("panelChatInput");
-
-    if (input) {
-      sendChatMessage(input);
-    }
+    sendChatMessage(
+      el("panelChatInput")
+    );
   }
 
   function setupChat() {
@@ -551,7 +601,8 @@
     `;
 
     try {
-      const data = await api("/api/values");
+      const data =
+        await api("/api/values");
 
       const pets =
         Array.isArray(data)
@@ -563,19 +614,18 @@
       state.pets = pets;
 
       renderValues(pets);
-    } catch {
-      /*
-        If your backend isn't connected yet, this keeps
-        the page functional instead of breaking the UI.
-      */
 
-      if (!state.pets.length) {
-        grid.innerHTML = `
-          <div class="loading">
-            Values are currently unavailable.
-          </div>
-        `;
-      }
+    } catch (error) {
+      console.warn(
+        "Values loading failed:",
+        error
+      );
+
+      grid.innerHTML = `
+        <div class="loading">
+          Values are currently unavailable.
+        </div>
+      `;
     }
   }
 
@@ -600,22 +650,27 @@
   }
 
   function petCard(pet) {
+    const name =
+      petName(pet);
+
     return `
       <article
         class="pet-card"
-        data-pet-name="${escapeHTML(petName(pet))}"
+        data-pet-name="${escapeHTML(name)}"
       >
 
         <img
           class="pet-image"
-          src="${escapeHTML(petImage(pet))}"
-          alt="${escapeHTML(petName(pet))}"
+          src="${escapeHTML(
+            petImage(pet)
+          )}"
+          alt="${escapeHTML(name)}"
           loading="lazy"
           onerror="this.src='/logo.png'"
         >
 
         <div class="pet-name">
-          ${escapeHTML(petName(pet))}
+          ${escapeHTML(name)}
         </div>
 
         <div class="pet-meta">
@@ -625,7 +680,9 @@
           </span>
 
           <strong class="pet-value">
-            ${formatValue(petValue(pet))}
+            ${formatValue(
+              petValue(pet)
+            )}
           </strong>
 
         </div>
@@ -635,27 +692,33 @@
   }
 
   function setupValueSearch() {
-    const input = el("valueSearch");
+    const input =
+      el("valueSearch");
 
     if (!input) return;
 
-    input.addEventListener("input", () => {
-      const query = input.value
-        .trim()
-        .toLowerCase();
+    input.addEventListener(
+      "input",
+      () => {
+        const query =
+          input.value
+            .trim()
+            .toLowerCase();
 
-      const cards = $$("#valuesGrid .pet-card");
+        $$("#valuesGrid .pet-card")
+          .forEach((card) => {
+            const name =
+              card.dataset.petName
+                ?.toLowerCase() || "";
 
-      cards.forEach((card) => {
-        const name =
-          card.dataset.petName?.toLowerCase() || "";
-
-        card.style.display =
-          !query || name.includes(query)
-            ? ""
-            : "none";
-      });
-    });
+            card.style.display =
+              !query ||
+              name.includes(query)
+                ? ""
+                : "none";
+          });
+      }
+    );
   }
 
   /* =======================================================
@@ -663,12 +726,14 @@
   ======================================================= */
 
   async function loadCoinflips() {
-    const container = el("coinflips");
+    const container =
+      el("coinflips");
 
     if (!container) return;
 
     try {
-      const data = await api("/api/coinflips");
+      const data =
+        await api("/api/coinflips");
 
       const flips =
         Array.isArray(data)
@@ -681,18 +746,27 @@
 
       renderCoinflips(flips);
 
-      const count = el("activeCount");
+      const count =
+        el("activeCount");
 
       if (count) {
-        count.textContent = flips.length;
+        count.textContent =
+          flips.length;
       }
-    } catch {
+
+    } catch (error) {
+      console.warn(
+        "Coinflip loading failed:",
+        error
+      );
+
       renderCoinflips([]);
     }
   }
 
   function renderCoinflips(flips) {
-    const container = el("coinflips");
+    const container =
+      el("coinflips");
 
     if (!container) return;
 
@@ -708,7 +782,7 @@
 
     container.innerHTML = flips
       .map((flip) => {
-        const user =
+        const username =
           flip.username ||
           flip.user?.username ||
           "Trader";
@@ -718,11 +792,14 @@
           flip.item ||
           {};
 
-        const image = petImage(pet);
+        const image =
+          petImage(pet);
 
-        const name = petName(pet);
+        const name =
+          petName(pet);
 
-        const value = petValue(pet);
+        const value =
+          petValue(pet);
 
         const side =
           flip.side ||
@@ -734,11 +811,15 @@
             <div class="cf-users">
 
               <span>
-                ${escapeHTML(user)}
+                ${escapeHTML(
+                  username
+                )}
               </span>
 
               <span class="cf-side-label">
-                ${escapeHTML(side)}
+                ${escapeHTML(
+                  side
+                )}
               </span>
 
             </div>
@@ -750,19 +831,28 @@
                 <div class="cf-pet">
 
                   <img
-                    src="${escapeHTML(image)}"
-                    alt="${escapeHTML(name)}"
+                    src="${escapeHTML(
+                      image
+                    )}"
+                    alt="${escapeHTML(
+                      name
+                    )}"
                     onerror="this.src='/logo.png'"
                   >
 
                   <div>
 
                     <b>
-                      ${escapeHTML(name)}
+                      ${escapeHTML(
+                        name
+                      )}
                     </b>
 
                     <small>
-                      Value: ${formatValue(value)}
+                      Value:
+                      ${formatValue(
+                        value
+                      )}
                     </small>
 
                   </div>
@@ -820,46 +910,76 @@
   ======================================================= */
 
   function setupCreateCoinflip() {
-    el("createCoinflipBtn")?.addEventListener(
-      "click",
-      openCreate
-    );
+    el("createCoinflipBtn")
+      ?.addEventListener(
+        "click",
+        openCreate
+      );
 
-    $$(".side-btn").forEach((button) => {
-      button.addEventListener("click", () => {
-        $$(".side-btn").forEach((item) => {
-          item.classList.remove("selected");
-        });
+    $$(".side-btn")
+      .forEach((button) => {
+        button.addEventListener(
+          "click",
+          () => {
+            $$(".side-btn")
+              .forEach((item) => {
+                item.classList.remove(
+                  "selected"
+                );
+              });
 
-        button.classList.add("selected");
+            button.classList.add(
+              "selected"
+            );
 
-        state.selectedSide =
-          button.dataset.side;
+            state.selectedSide =
+              button.dataset.side;
+          }
+        );
       });
-    });
 
-    el("postCoinflip")?.addEventListener(
-      "click",
-      postCoinflip
-    );
+    el("postCoinflip")
+      ?.addEventListener(
+        "click",
+        postCoinflip
+      );
   }
 
   async function openCreate() {
     if (!state.user) {
-      toast("Sign in before creating a coinflip.");
+      toast(
+        "Sign in before creating a coinflip."
+      );
+
       openLogin();
+
       return;
     }
 
-    const modal = getModal("createModal");
-
-    if (!modal) return;
+    const modal =
+      createModal(
+        "createModal",
+        createModalHTML()
+      );
 
     show(modal);
 
-    const grid = el("createInventory");
+    const grid =
+      el("createInventory");
 
     if (!grid) return;
+
+    state.selectedPet = null;
+    state.selectedSide = null;
+
+    hide(el("sideArea"));
+
+    $$(".side-btn")
+      .forEach((button) => {
+        button.classList.remove(
+          "selected"
+        );
+      });
 
     grid.innerHTML = `
       <div class="loading">
@@ -867,11 +987,9 @@
       </div>
     `;
 
-    state.selectedPet = null;
-    state.selectedSide = null;
-
     try {
-      const data = await api("/api/inventory");
+      const data =
+        await api("/api/inventory");
 
       const pets =
         Array.isArray(data)
@@ -881,7 +999,13 @@
             [];
 
       renderCreateInventory(pets);
-    } catch {
+
+    } catch (error) {
+      console.warn(
+        "Inventory failed:",
+        error
+      );
+
       grid.innerHTML = `
         <div class="loading">
           Inventory unavailable.
@@ -890,8 +1014,85 @@
     }
   }
 
+  function createModalHTML() {
+    return `
+      <div class="modal-card large">
+
+        <button
+          id="closeCreate"
+          class="modal-close"
+          type="button"
+        >×</button>
+
+        <div class="eyebrow">
+          NEW FLIP
+        </div>
+
+        <h2>
+          Create Coinflip
+        </h2>
+
+        <p class="muted">
+          Select a pet and choose your side.
+        </p>
+
+        <div
+          id="createInventory"
+          class="pet-grid"
+        >
+          <div class="loading">
+            Loading...
+          </div>
+        </div>
+
+        <div
+          id="sideArea"
+          class="side-area hidden"
+        >
+
+          <h3>
+            Choose your side
+          </h3>
+
+          <div class="side-buttons">
+
+            <button
+              class="side-btn"
+              data-side="heads"
+              type="button"
+            >
+              <span>H</span>
+              HEADS
+            </button>
+
+            <button
+              class="side-btn"
+              data-side="tails"
+              type="button"
+            >
+              <span>T</span>
+              TAILS
+            </button>
+
+          </div>
+
+          <button
+            id="postCoinflip"
+            class="primary full"
+            type="button"
+          >
+            Post Coinflip
+          </button>
+
+        </div>
+
+      </div>
+    `;
+  }
+
   function renderCreateInventory(pets) {
-    const grid = el("createInventory");
+    const grid =
+      el("createInventory");
 
     if (!grid) return;
 
@@ -914,13 +1115,19 @@
 
           <img
             class="pet-image"
-            src="${escapeHTML(petImage(pet))}"
-            alt="${escapeHTML(petName(pet))}"
+            src="${escapeHTML(
+              petImage(pet)
+            )}"
+            alt="${escapeHTML(
+              petName(pet)
+            )}"
             onerror="this.src='/logo.png'"
           >
 
           <div class="pet-name">
-            ${escapeHTML(petName(pet))}
+            ${escapeHTML(
+              petName(pet)
+            )}
           </div>
 
           <div class="pet-meta">
@@ -930,7 +1137,9 @@
             </span>
 
             <strong class="pet-value">
-              ${formatValue(petValue(pet))}
+              ${formatValue(
+                petValue(pet)
+              )}
             </strong>
 
           </div>
@@ -941,48 +1150,111 @@
 
     $$("#createInventory .pet-card")
       .forEach((card, index) => {
-        card.addEventListener("click", () => {
-          $$("#createInventory .pet-card")
-            .forEach((item) => {
-              item.classList.remove("selected");
-            });
+        card.addEventListener(
+          "click",
+          () => {
+            $$("#createInventory .pet-card")
+              .forEach((item) => {
+                item.classList.remove(
+                  "selected"
+                );
+              });
 
-          card.classList.add("selected");
+            card.classList.add(
+              "selected"
+            );
 
-          state.selectedPet = pets[index];
+            state.selectedPet =
+              pets[index];
 
-          show(el("sideArea"));
-        });
+            show(el("sideArea"));
+          }
+        );
       });
+
+    el("closeCreate")
+      ?.addEventListener(
+        "click",
+        () => closeModal("createModal")
+      );
+
+    $$(".side-btn")
+      .forEach((button) => {
+        button.addEventListener(
+          "click",
+          () => {
+            $$(".side-btn")
+              .forEach((item) => {
+                item.classList.remove(
+                  "selected"
+                );
+              });
+
+            button.classList.add(
+              "selected"
+            );
+
+            state.selectedSide =
+              button.dataset.side;
+          }
+        );
+      });
+
+    el("postCoinflip")
+      ?.addEventListener(
+        "click",
+        postCoinflip
+      );
   }
 
   async function postCoinflip() {
     if (!state.selectedPet) {
-      toast("Select a pet first.");
+      toast(
+        "Select a pet first."
+      );
+
       return;
     }
 
     if (!state.selectedSide) {
-      toast("Choose heads or tails.");
+      toast(
+        "Choose heads or tails."
+      );
+
       return;
     }
 
     try {
-      await api("/api/coinflips", {
-        method: "POST",
-        body: JSON.stringify({
-          pet: state.selectedPet,
-          side: state.selectedSide
-        })
-      });
+      await api(
+        "/api/coinflips",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            pet: state.selectedPet,
+            side: state.selectedSide
+          })
+        }
+      );
 
-      toast("Coinflip created.");
+      toast(
+        "Coinflip created."
+      );
 
-      closeModal("createModal");
+      closeModal(
+        "createModal"
+      );
 
       await loadCoinflips();
-    } catch {
-      toast("Could not create coinflip.");
+
+    } catch (error) {
+      console.warn(
+        "Coinflip creation failed:",
+        error
+      );
+
+      toast(
+        "Could not create coinflip."
+      );
     }
   }
 
@@ -991,7 +1263,8 @@
   ======================================================= */
 
   async function loadLeaderboard() {
-    const container = el("leaderboard");
+    const container =
+      el("leaderboard");
 
     if (!container) return;
 
@@ -1002,7 +1275,10 @@
     `;
 
     try {
-      const data = await api("/api/leaderboard");
+      const data =
+        await api(
+          "/api/leaderboard"
+        );
 
       const players =
         Array.isArray(data)
@@ -1011,8 +1287,16 @@
             data?.leaderboard ||
             [];
 
-      renderLeaderboard(players);
-    } catch {
+      renderLeaderboard(
+        players
+      );
+
+    } catch (error) {
+      console.warn(
+        "Leaderboard failed:",
+        error
+      );
+
       container.innerHTML = `
         <div class="loading">
           Leaderboard unavailable.
@@ -1022,7 +1306,8 @@
   }
 
   function renderLeaderboard(players) {
-    const container = el("leaderboard");
+    const container =
+      el("leaderboard");
 
     if (!container) return;
 
@@ -1036,189 +1321,214 @@
       return;
     }
 
-    container.innerHTML = players
-      .map((player, index) => {
-        const username =
-          player.username ||
-          player.name ||
-          "User";
+    container.innerHTML =
+      players
+        .map((player, index) => {
+          const username =
+            player.username ||
+            player.name ||
+            "User";
 
-        const avatar =
-          player.avatar ||
-          "/logo.png";
+          const avatar =
+            player.avatar ||
+            "/logo.png";
 
-        const wagered =
-          player.wagered ??
-          player.total ??
-          player.value ??
-          0;
+          const wagered =
+            player.wagered ??
+            player.total ??
+            player.value ??
+            0;
 
-        return `
-          <div class="rank-row">
+          return `
+            <div class="rank-row">
 
-            <div class="rank">
-              #${index + 1}
-            </div>
+              <div class="rank">
+                #${index + 1}
+              </div>
 
-            <div class="rank-player">
+              <div class="rank-player">
 
-              <img
-                src="${escapeHTML(avatar)}"
-                alt=""
-                onerror="this.src='/logo.png'"
-              >
+                <img
+                  src="${escapeHTML(
+                    avatar
+                  )}"
+                  alt=""
+                  onerror="this.src='/logo.png'"
+                >
 
-              <div>
+                <div>
 
-                <strong>
-                  ${escapeHTML(username)}
-                </strong>
+                  <strong>
+                    ${escapeHTML(
+                      username
+                    )}
+                  </strong>
 
-                <small>
-                  Trader
-                </small>
+                  <small>
+                    Trader
+                  </small>
+
+                </div>
 
               </div>
 
-            </div>
+              <div class="rank-value">
+                ${formatValue(
+                  wagered
+                )}
+              </div>
 
-            <div class="rank-value">
-              ${formatValue(wagered)}
             </div>
-
-          </div>
-        `;
-      })
-      .join("");
+          `;
+        })
+        .join("");
   }
 
   /* =======================================================
      MODALS
   ======================================================= */
 
-  function getModal(id) {
+  function createModal(id, content) {
     let modal = el(id);
 
-    if (modal) return modal;
+    if (modal) {
+      return modal;
+    }
 
-    modal = document.createElement("div");
-
-    modal.id = id;
-    modal.className = "modal hidden";
-
-    return modal;
-  }
-
-  function createModal(id, content) {
-    if (el(id)) return el(id);
-
-    const modal = document.createElement("div");
+    modal =
+      document.createElement(
+        "div"
+      );
 
     modal.id = id;
-    modal.className = "modal hidden";
+    modal.className =
+      "modal hidden";
 
-    modal.innerHTML = content;
+    modal.innerHTML =
+      content;
 
-    document.body.appendChild(modal);
+    document.body.appendChild(
+      modal
+    );
 
     return modal;
   }
 
   function closeModal(id) {
-    hide(el(id));
+    const modal = el(id);
+
+    if (modal) {
+      hide(modal);
+    }
   }
 
   function openLogin() {
-    const modal = createModal(
-      "loginModal",
-      loginModalHTML()
-    );
+    const modal =
+      createModal(
+        "loginModal",
+        `
+          <div class="modal-card">
+
+            <button
+              id="closeLogin"
+              class="modal-close"
+              type="button"
+            >×</button>
+
+            <div class="login-logo">
+              <img
+                src="/logo.png"
+                alt="ADMFLIP"
+              >
+            </div>
+
+            <div class="eyebrow">
+              ACCOUNT
+            </div>
+
+            <h2>
+              Roblox Sign In
+            </h2>
+
+            <p class="muted">
+              Enter your Roblox username to continue.
+            </p>
+
+            <input
+              id="username"
+              class="input"
+              type="text"
+              placeholder="Roblox username"
+              autocomplete="off"
+            >
+
+            <button
+              id="loginContinue"
+              class="primary full"
+              type="button"
+            >
+              Continue
+            </button>
+
+            <div
+              id="loginMessage"
+              class="message"
+            ></div>
+
+          </div>
+        `
+      );
 
     show(modal);
 
     setupLoginModal();
   }
 
-  function loginModalHTML() {
-    return `
-      <div class="modal-card">
-
-        <button
-          id="closeLogin"
-          class="modal-close"
-          type="button"
-        >×</button>
-
-        <div class="login-logo">
-          <img src="/logo.png" alt="ADMFLIP">
-        </div>
-
-        <div class="eyebrow">
-          ACCOUNT
-        </div>
-
-        <h2>
-          Roblox Sign In
-        </h2>
-
-        <p class="muted">
-          Enter your Roblox username to continue.
-        </p>
-
-        <input
-          id="username"
-          class="input"
-          type="text"
-          placeholder="Roblox username"
-          autocomplete="off"
-        >
-
-        <button
-          id="loginContinue"
-          class="primary full"
-          type="button"
-          style="margin-top:13px"
-        >
-          Continue
-        </button>
-
-        <div
-          id="loginMessage"
-          class="message"
-        ></div>
-
-      </div>
-    `;
-  }
-
   function setupLoginModal() {
-    el("closeLogin")?.addEventListener(
-      "click",
-      () => closeModal("loginModal")
-    );
-
-    el("loginContinue")?.addEventListener(
-      "click",
-      performLogin
-    );
-
-    el("username")?.addEventListener(
-      "keydown",
-      (event) => {
-        if (event.key === "Enter") {
-          performLogin();
+    el("closeLogin")
+      ?.addEventListener(
+        "click",
+        () => {
+          closeModal(
+            "loginModal"
+          );
         }
-      }
-    );
+      );
+
+    el("loginContinue")
+      ?.addEventListener(
+        "click",
+        performLogin
+      );
+
+    el("username")
+      ?.addEventListener(
+        "keydown",
+        (event) => {
+          if (
+            event.key === "Enter"
+          ) {
+            performLogin();
+          }
+        }
+      );
+
+    setTimeout(() => {
+      el("username")?.focus();
+    }, 50);
   }
 
   async function performLogin() {
-    const input = el("username");
-    const message = el("loginMessage");
+    const input =
+      el("username");
+
+    const message =
+      el("loginMessage");
 
     if (!input) return;
 
-    const username = input.value.trim();
+    const username =
+      input.value.trim();
 
     if (!username) {
       if (message) {
@@ -1230,22 +1540,21 @@
     }
 
     if (message) {
-      message.textContent = "Checking account...";
+      message.textContent =
+        "Checking account...";
     }
 
     try {
-      /*
-        This only sends a username to your backend.
-        Do not collect Roblox passwords, cookies,
-        .ROBLOSECURITY tokens, or authentication secrets.
-      */
-
-      const data = await api("/api/login", {
-        method: "POST",
-        body: JSON.stringify({
-          username
-        })
-      });
+      const data =
+        await api(
+          "/api/login",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              username
+            })
+          }
+        );
 
       state.user =
         data?.user || {
@@ -1253,16 +1562,26 @@
         };
 
       saveUser();
-
       updateAccountUI();
 
-      closeModal("loginModal");
+      closeModal(
+        "loginModal"
+      );
 
-      toast(`Welcome, ${state.user.username}!`);
-    } catch {
+      toast(
+        `Welcome, ${state.user.username}!`
+      );
+
+    } catch (error) {
+      console.warn(
+        "Login endpoint failed:",
+        error
+      );
+
       /*
-        Frontend fallback so the UI can still be tested
-        before the backend authentication route exists.
+        Local frontend fallback.
+        This does NOT collect passwords,
+        cookies, .ROBLOSECURITY or tokens.
       */
 
       state.user = {
@@ -1272,156 +1591,189 @@
       saveUser();
       updateAccountUI();
 
-      closeModal("loginModal");
+      closeModal(
+        "loginModal"
+      );
 
-      toast(`Signed in as ${username}`);
+      toast(
+        `Signed in as ${username}`
+      );
     }
   }
 
   function openRules() {
-    const modal = createModal(
-      "rulesModal",
-      rulesModalHTML()
-    );
+    const modal =
+      createModal(
+        "rulesModal",
+        `
+          <div class="modal-card rules-box">
+
+            <button
+              id="closeRules"
+              class="modal-close"
+              type="button"
+            >×</button>
+
+            <div class="eyebrow">
+              COMMUNITY
+            </div>
+
+            <h2>
+              Chat Rules
+            </h2>
+
+            <p class="muted">
+              Keep ADMFLIP welcoming and useful.
+            </p>
+
+            <div class="rule">
+              <b>
+                01 · Respect everyone
+              </b>
+              <span>
+                Harassment, hate speech and targeted
+                abuse are not allowed.
+              </span>
+            </div>
+
+            <div class="rule">
+              <b>
+                02 · No spam
+              </b>
+              <span>
+                Avoid repeated messages and flooding.
+              </span>
+            </div>
+
+            <div class="rule">
+              <b>
+                03 · No begging
+              </b>
+              <span>
+                Do not repeatedly ask users for pets.
+              </span>
+            </div>
+
+            <div class="rule">
+              <b>
+                04 · No advertising
+              </b>
+              <span>
+                Unrelated websites and communities
+                are not allowed.
+              </span>
+            </div>
+
+            <div class="rule">
+              <b>
+                05 · No scams
+              </b>
+              <span>
+                Do not impersonate staff or intentionally
+                mislead users.
+              </span>
+            </div>
+
+            <div class="rule">
+              <b>
+                06 · Keep it appropriate
+              </b>
+              <span>
+                Sexual or adult content is not allowed.
+              </span>
+            </div>
+
+          </div>
+        `
+      );
 
     show(modal);
 
-    el("closeRules")?.addEventListener(
-      "click",
-      () => closeModal("rulesModal")
-    );
-  }
-
-  function rulesModalHTML() {
-    return `
-      <div class="modal-card rules-box">
-
-        <button
-          id="closeRules"
-          class="modal-close"
-          type="button"
-        >×</button>
-
-        <div class="eyebrow">
-          COMMUNITY
-        </div>
-
-        <h2>
-          Chat Rules
-        </h2>
-
-        <p class="muted">
-          Keep ADMFLIP welcoming and useful.
-        </p>
-
-        <div class="rule">
-          <b>01 · Respect everyone</b>
-          <span>
-            Harassment, hate speech and targeted abuse
-            are not allowed.
-          </span>
-        </div>
-
-        <div class="rule">
-          <b>02 · No spam</b>
-          <span>
-            Avoid repeated messages and flooding.
-          </span>
-        </div>
-
-        <div class="rule">
-          <b>03 · No begging</b>
-          <span>
-            Do not repeatedly ask users for pets.
-          </span>
-        </div>
-
-        <div class="rule">
-          <b>04 · No advertising</b>
-          <span>
-            Unrelated websites and communities are not allowed.
-          </span>
-        </div>
-
-        <div class="rule">
-          <b>05 · No scams</b>
-          <span>
-            Do not impersonate staff or intentionally
-            mislead users.
-          </span>
-        </div>
-
-        <div class="rule">
-          <b>06 · Keep it appropriate</b>
-          <span>
-            Sexual or adult content is not allowed.
-          </span>
-        </div>
-
-      </div>
-    `;
+    el("closeRules")
+      ?.addEventListener(
+        "click",
+        () => {
+          closeModal(
+            "rulesModal"
+          );
+        }
+      );
   }
 
   function openInventory() {
     if (!state.user) {
-      toast("Sign in first.");
+      toast(
+        "Sign in first."
+      );
+
       openLogin();
+
       return;
     }
 
-    const modal = createModal(
-      "inventoryModal",
-      `
-        <div class="modal-card large">
+    const modal =
+      createModal(
+        "inventoryModal",
+        `
+          <div class="modal-card large">
 
-          <button
-            id="closeInventory"
-            class="modal-close"
-            type="button"
-          >×</button>
+            <button
+              id="closeInventory"
+              class="modal-close"
+              type="button"
+            >×</button>
 
-          <div class="eyebrow">
-            YOUR ITEMS
-          </div>
-
-          <h2>
-            Inventory
-          </h2>
-
-          <p class="muted">
-            Pets available for coinflips.
-          </p>
-
-          <div
-            id="inventoryGrid"
-            class="pet-grid"
-          >
-            <div class="loading">
-              Loading...
+            <div class="eyebrow">
+              YOUR ITEMS
             </div>
-          </div>
 
-        </div>
-      `
-    );
+            <h2>
+              Inventory
+            </h2>
+
+            <p class="muted">
+              Pets available for coinflips.
+            </p>
+
+            <div
+              id="inventoryGrid"
+              class="pet-grid"
+            >
+              <div class="loading">
+                Loading...
+              </div>
+            </div>
+
+          </div>
+        `
+      );
 
     show(modal);
 
-    el("closeInventory")?.addEventListener(
-      "click",
-      () => closeModal("inventoryModal")
-    );
+    el("closeInventory")
+      ?.addEventListener(
+        "click",
+        () => {
+          closeModal(
+            "inventoryModal"
+          );
+        }
+      );
 
     loadInventory();
   }
 
   async function loadInventory() {
-    const grid = el("inventoryGrid");
+    const grid =
+      el("inventoryGrid");
 
     if (!grid) return;
 
     try {
-      const data = await api("/api/inventory");
+      const data =
+        await api(
+          "/api/inventory"
+        );
 
       const pets =
         Array.isArray(data)
@@ -1440,10 +1792,19 @@
         return;
       }
 
-      grid.innerHTML = pets
-        .map((pet) => petCard(pet))
-        .join("");
-    } catch {
+      grid.innerHTML =
+        pets
+          .map((pet) =>
+            petCard(pet)
+          )
+          .join("");
+
+    } catch (error) {
+      console.warn(
+        "Inventory failed:",
+        error
+      );
+
       grid.innerHTML = `
         <div class="loading">
           Inventory unavailable.
@@ -1460,7 +1821,9 @@
     try {
       localStorage.setItem(
         "admflip_user",
-        JSON.stringify(state.user)
+        JSON.stringify(
+          state.user
+        )
       );
     } catch {}
   }
@@ -1468,11 +1831,15 @@
   function loadSavedUser() {
     try {
       const saved =
-        localStorage.getItem("admflip_user");
+        localStorage.getItem(
+          "admflip_user"
+        );
 
       if (saved) {
-        state.user = JSON.parse(saved);
+        state.user =
+          JSON.parse(saved);
       }
+
     } catch {
       state.user = null;
     }
@@ -1481,8 +1848,11 @@
   }
 
   function updateAccountUI() {
-    const login = el("loginBtn");
-    const account = el("accountBox");
+    const login =
+      el("loginBtn");
+
+    const account =
+      el("accountBox");
 
     if (!state.user) {
       show(login);
@@ -1499,22 +1869,25 @@
 
     if (username) {
       username.textContent =
-        state.user.username || "User";
+        state.user.username ||
+        "User";
     }
 
     const avatar =
       el("accountAvatar");
 
-    if (avatar && state.user.avatar) {
-      avatar.src = state.user.avatar;
+    if (
+      avatar &&
+      state.user.avatar
+    ) {
+      avatar.src =
+        state.user.avatar;
     }
 
-    const chatInputs = [
+    [
       el("chatInput"),
       el("panelChatInput")
-    ];
-
-    chatInputs.forEach((input) => {
+    ].forEach((input) => {
       if (input) {
         input.placeholder =
           "Type a message...";
@@ -1533,42 +1906,49 @@
 
     updateAccountUI();
 
-    toast("Signed out.");
+    toast(
+      "Signed out."
+    );
   }
 
   function setupAccount() {
-    el("loginBtn")?.addEventListener(
-      "click",
-      openLogin
-    );
+    el("loginBtn")
+      ?.addEventListener(
+        "click",
+        openLogin
+      );
 
-    el("inventoryBtn")?.addEventListener(
-      "click",
-      openInventory
-    );
+    el("inventoryBtn")
+      ?.addEventListener(
+        "click",
+        openInventory
+      );
 
-    el("logoutBtn")?.addEventListener(
-      "click",
-      logout
-    );
+    el("logoutBtn")
+      ?.addEventListener(
+        "click",
+        logout
+      );
 
-    el("profileBtn")?.addEventListener(
-      "click",
-      () => {
-        openPage("profile");
-        renderProfile();
-      }
-    );
+    el("profileBtn")
+      ?.addEventListener(
+        "click",
+        () => {
+          openPage("profile");
+        }
+      );
   }
 
   function renderProfile() {
-    const container = el("profileContent");
+    const container =
+      el("profileContent");
 
     if (!container) return;
 
     if (!state.user) {
       container.innerHTML = `
         <div class="profile-card">
+
           <h2>
             Not signed in
           </h2>
@@ -1584,13 +1964,15 @@
           >
             Sign In
           </button>
+
         </div>
       `;
 
-      el("profileLoginButton")?.addEventListener(
-        "click",
-        openLogin
-      );
+      el("profileLoginButton")
+        ?.addEventListener(
+          "click",
+          openLogin
+        );
 
       return;
     }
@@ -1603,7 +1985,8 @@
           <img
             class="profile-avatar"
             src="${escapeHTML(
-              state.user.avatar || "/logo.png"
+              state.user.avatar ||
+              "/logo.png"
             )}"
             alt=""
             onerror="this.src='/logo.png'"
@@ -1611,7 +1994,8 @@
 
           <h2>
             ${escapeHTML(
-              state.user.username || "User"
+              state.user.username ||
+              "User"
             )}
           </h2>
 
@@ -1629,7 +2013,8 @@
 
           <strong>
             ${formatValue(
-              state.user.wagered || 0
+              state.user.wagered ||
+              0
             )}
           </strong>
 
@@ -1643,7 +2028,8 @@
 
           <strong>
             ${formatValue(
-              state.user.coinflips || 0
+              state.user.coinflips ||
+              0
             )}
           </strong>
 
@@ -1657,7 +2043,8 @@
 
           <strong>
             ${formatValue(
-              state.user.wins || 0
+              state.user.wins ||
+              0
             )}
           </strong>
 
@@ -1668,26 +2055,38 @@
   }
 
   /* =======================================================
-     MODAL BACKDROP
+     MODAL EVENTS
   ======================================================= */
 
-  document.addEventListener("click", (event) => {
-    if (!event.target.classList.contains("modal")) {
-      return;
+  document.addEventListener(
+    "click",
+    (event) => {
+      if (
+        event.target.classList.contains(
+          "modal"
+        )
+      ) {
+        hide(event.target);
+      }
     }
+  );
 
-    event.target.classList.add("hidden");
-  });
+  document.addEventListener(
+    "keydown",
+    (event) => {
+      if (event.key !== "Escape") {
+        return;
+      }
 
-  document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape") return;
+      $$(".modal").forEach(
+        (modal) => {
+          hide(modal);
+        }
+      );
 
-    $$(".modal").forEach((modal) => {
-      modal.classList.add("hidden");
-    });
-
-    closeChat();
-  });
+      closeChat();
+    }
+  );
 
   /* =======================================================
      INITIALIZATION
@@ -1701,35 +2100,31 @@
     setupValueSearch();
     loadSavedUser();
 
-    /*
-      Initial data.
-      Errors are intentionally caught so a missing
-      backend endpoint doesn't destroy the frontend.
-    */
-
     await Promise.allSettled([
       loadCoinflips(),
       loadValues(),
       loadChat()
     ]);
 
-    /*
-      Refresh dynamic information periodically.
-    */
-
     setInterval(() => {
-      if (state.page === "coinflip") {
+      if (
+        state.page === "coinflip"
+      ) {
         loadCoinflips();
       }
 
-      if (state.page === "chat" || state.chatOpen) {
+      if (
+        state.page === "chat" ||
+        state.chatOpen
+      ) {
         loadChat();
       }
     }, 15000);
   }
 
   if (
-    document.readyState === "loading"
+    document.readyState ===
+    "loading"
   ) {
     document.addEventListener(
       "DOMContentLoaded",
