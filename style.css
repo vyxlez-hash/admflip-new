@@ -744,3 +744,508 @@ h3{margin-bottom:12px;font-size:15px}
     max-height:calc(100vh - 18px);
   }
 }
+/* =========================================================
+   ADMFLIP — PURPLE UI THEME / COMPACT HEADER
+   Paste at the VERY END of style.css
+   ========================================================= */
+
+:root{
+  --purple:#a855f7;
+  --purple2:#9333ea;
+  --purple3:#c084fc;
+  --purple-soft:rgba(168,85,247,.16);
+  --purple-border:rgba(168,85,247,.55);
+  --purple-border-strong:rgba(192,132,252,.8);
+}
+
+/* =========================================================
+   HEADER — USE THE SPACE
+   ========================================================= */
+
+.header{
+  height:60px;
+  padding:0 18px;
+  border-bottom:1px solid var(--purple-border);
+  box-shadow:0 5px 25px rgba(88,28,135,.12);
+}
+
+.header-left{
+  gap:0;
+}
+
+.brand{
+  width:130px;
+  min-width:130px;
+  height:36px;
+}
+
+.brand-logo,
+.brand img{
+  width:130px;
+  height:28px;
+}
+
+/* Navigation closer to logo */
+.navigation{
+  margin-left:8px;
+  gap:3px;
+}
+
+.nav-item{
+  height:38px;
+  padding:0 17px;
+  border:1px solid transparent;
+  border-radius:9px;
+  color:#b7a8c8;
+  font-size:12px;
+  font-weight:900;
+  transition:.18s ease;
+}
+
+.nav-item:hover{
+  color:#fff;
+  background:rgba(168,85,247,.12);
+  border-color:rgba(168,85,247,.35);
+}
+
+.nav-item.active{
+  color:#fff;
+  background:rgba(168,85,247,.18);
+  border-color:var(--purple-border);
+  box-shadow:0 0 18px rgba(168,85,247,.12);
+}
+
+/* Header right */
+.header-right{
+  gap:8px;
+}
+
+.header-right .login{
+  min-width:128px;
+  height:42px;
+  padding:0 20px;
+  border:1px solid var(--purple-border);
+  border-radius:10px;
+  background:linear-gradient(
+    135deg,
+    rgba(168,85,247,.22),
+    rgba(91,33,182,.16)
+  );
+  color:#fff;
+  font-size:12px;
+  font-weight:900;
+  box-shadow:0 0 20px rgba(168,85,247,.10);
+}
+
+.header-right .login:hover{
+  border-color:var(--purple-border-strong);
+  background:linear-gradient(
+    135deg,
+    rgba(168,85,247,.34),
+    rgba(126,34,206,.25)
+  );
+  box-shadow:0 0 28px rgba(168,85,247,.2);
+}
+
+/* =========================================================
+   EVERY BUTTON PURPLE
+   ========================================================= */
+
+button{
+  border-color:var(--purple-border);
+}
+
+.primary,
+.chat-form button{
+  background:linear-gradient(
+    135deg,
+    var(--purple),
+    var(--purple2)
+  );
+  color:#fff;
+  border:1px solid var(--purple-border-strong);
+  box-shadow:0 7px 22px rgba(168,85,247,.16);
+}
+
+.primary:hover,
+.chat-form button:hover{
+  background:linear-gradient(
+    135deg,
+    #b565f7,
+    #a23bea
+  );
+  border-color:#d8b4fe;
+  box-shadow:0 10px 30px rgba(168,85,247,.28);
+}
+
+/* Secondary buttons */
+.small-button,
+.profile-button,
+.side-btn,
+.chat-close,
+.rules-icon{
+  border-color:var(--purple-border);
+  background:rgba(168,85,247,.08);
+  color:#d8b4fe;
+}
+
+.small-button:hover,
+.profile-button:hover,
+.side-btn:hover,
+.chat-close:hover,
+.rules-icon:hover{
+  background:rgba(168,85,247,.17);
+  border-color:var(--purple-border-strong);
+  color:#fff;
+}
+
+/* Selected buttons */
+.side-btn.selected{
+  background:linear-gradient(
+    135deg,
+    var(--purple),
+    var(--purple2)
+  );
+  border-color:#d8b4fe;
+  color:#fff;
+}
+
+/* =========================================================
+   ALL CARDS / PANELS — PURPLE BORDERS
+   ========================================================= */
+
+.stat,
+.pet-card,
+.coinflip,
+.chat-page-card,
+.leaderboard,
+.profile-card,
+.profile-stat,
+.chat-panel,
+.modal-box,
+.login-profile,
+.phrase,
+.search,
+.input,
+.chat-form input{
+  border-color:var(--purple-border);
+}
+
+/* Hover cards */
+.stat:hover,
+.pet-card:hover,
+.profile-card:hover,
+.profile-stat:hover{
+  border-color:var(--purple-border-strong);
+  box-shadow:0 0 24px rgba(168,85,247,.10);
+}
+
+/* Pet selected */
+.pet-card.selected{
+  border-color:var(--purple-border-strong);
+  background:rgba(168,85,247,.10);
+  box-shadow:0 0 20px rgba(168,85,247,.12);
+}
+
+/* =========================================================
+   COINFLIPS
+   ========================================================= */
+
+.coinflips{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.coinflip{
+  border:1px solid var(--purple-border);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(168,85,247,.055),
+      rgba(16,19,26,.98)
+    );
+  box-shadow:
+    0 0 0 1px rgba(168,85,247,.04),
+    0 12px 40px rgba(76,29,149,.08);
+  transition:.18s ease;
+}
+
+.coinflip:hover{
+  border-color:var(--purple-border-strong);
+  transform:translateY(-1px);
+  box-shadow:
+    0 0 0 1px rgba(168,85,247,.10),
+    0 15px 45px rgba(76,29,149,.18);
+}
+
+.cf-users{
+  border-bottom-color:rgba(168,85,247,.25);
+}
+
+.coin{
+  border-color:var(--purple-border);
+  background:rgba(168,85,247,.12);
+  color:#d8b4fe;
+}
+
+.waiting-icon{
+  border-color:var(--purple-border);
+  color:#c084fc;
+}
+
+/* =========================================================
+   SEARCH / INPUTS
+   ========================================================= */
+
+.search:focus,
+.input:focus,
+.chat-form input:focus{
+  border-color:var(--purple-border-strong);
+  box-shadow:0 0 0 3px rgba(168,85,247,.10);
+}
+
+/* =========================================================
+   CHAT
+   ========================================================= */
+
+.chat-page-card{
+  border-color:var(--purple-border);
+  box-shadow:0 0 30px rgba(76,29,149,.08);
+}
+
+.chat-header{
+  border-bottom-color:rgba(168,85,247,.25);
+}
+
+.chat-form{
+  border-top-color:rgba(168,85,247,.25);
+}
+
+.chat-message:hover{
+  background:rgba(168,85,247,.035);
+  border-radius:9px;
+}
+
+.chat-panel{
+  border-right-color:var(--purple-border);
+  box-shadow:15px 0 60px rgba(76,29,149,.25);
+}
+
+/* Online dot */
+.online-dot{
+  background:#c084fc;
+  box-shadow:0 0 10px rgba(192,132,252,.65);
+}
+
+/* =========================================================
+   PINNED ANNOUNCEMENTS
+   ========================================================= */
+
+.chat-announcement,
+.chat-message.chat-announcement,
+.chat-message[data-type="announcement"]{
+  border-color:var(--purple-border-strong);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(168,85,247,.15),
+      rgba(91,33,182,.06)
+    );
+  box-shadow:
+    0 0 20px rgba(168,85,247,.10);
+}
+
+.chat-announcement-pin{
+  border-color:rgba(192,132,252,.5);
+  background:rgba(168,85,247,.12);
+  color:#d8b4fe;
+}
+
+/* =========================================================
+   LEADERBOARD
+   ========================================================= */
+
+.leaderboard{
+  box-shadow:0 10px 35px rgba(76,29,149,.08);
+}
+
+.leaderboard-head{
+  border-bottom-color:rgba(168,85,247,.25);
+}
+
+.rank-row{
+  border-bottom-color:rgba(168,85,247,.18);
+}
+
+.rank-player img{
+  border:1px solid rgba(168,85,247,.35);
+}
+
+/* =========================================================
+   MODAL / LOGIN
+   ========================================================= */
+
+.modal{
+  background:rgba(10,5,15,.80);
+}
+
+.modal-box{
+  border-color:var(--purple-border);
+  box-shadow:
+    0 30px 100px rgba(0,0,0,.65),
+    0 0 45px rgba(88,28,135,.12);
+}
+
+/* Banner stays full width */
+.login-banner-wrap{
+  border-bottom-color:var(--purple-border);
+}
+
+.login-banner{
+  border-color:var(--purple-border);
+}
+
+/* Remove Roblox logo from login modal */
+.login-logo{
+  display:none !important;
+}
+
+/* Login inputs */
+.login-modal-box .input{
+  border-color:var(--purple-border);
+}
+
+.login-modal-box .input:focus{
+  border-color:var(--purple-border-strong);
+}
+
+/* Verification phrase */
+.login-modal-box .phrase{
+  border-color:var(--purple-border);
+  background:rgba(168,85,247,.07);
+}
+
+.login-modal-box .phrase strong{
+  border:1px solid rgba(168,85,247,.25);
+}
+
+/* =========================================================
+   STATS
+   ========================================================= */
+
+.stat{
+  background:
+    linear-gradient(
+      145deg,
+      rgba(168,85,247,.07),
+      rgba(255,255,255,.015)
+    );
+}
+
+.stat strong{
+  color:#fff;
+}
+
+/* =========================================================
+   LINKS / ACCENTS
+   ========================================================= */
+
+a:hover{
+  color:#c084fc;
+}
+
+.eyebrow{
+  color:#a78bba;
+}
+
+/* =========================================================
+   MOBILE HEADER
+   ========================================================= */
+
+@media(max-width:900px){
+  .header{
+    height:58px;
+    padding:0 10px;
+  }
+
+  .brand{
+    width:112px;
+    min-width:112px;
+  }
+
+  .brand-logo,
+  .brand img{
+    width:112px;
+    height:26px;
+  }
+
+  .navigation{
+    margin-left:5px;
+  }
+
+  .nav-item{
+    padding:0 11px;
+    font-size:11px;
+  }
+
+  .header-right .login{
+    min-width:48px;
+    width:48px;
+    padding:0;
+  }
+}
+
+@media(max-width:650px){
+  .header{
+    height:56px;
+  }
+
+  .brand{
+    width:100px;
+    min-width:100px;
+  }
+
+  .brand-logo,
+  .brand img{
+    width:100px;
+    height:24px;
+  }
+
+  .navigation{
+    margin-left:3px;
+  }
+
+  .nav-item{
+    padding:0 8px;
+    height:34px;
+    font-size:10px;
+  }
+}
+
+/* =========================================================
+   PURPLE SCROLLBAR
+   ========================================================= */
+
+*{
+  scrollbar-width:thin;
+  scrollbar-color:rgba(168,85,247,.65) transparent;
+}
+
+*::-webkit-scrollbar{
+  width:7px;
+  height:7px;
+}
+
+*::-webkit-scrollbar-track{
+  background:transparent;
+}
+
+*::-webkit-scrollbar-thumb{
+  background:rgba(168,85,247,.55);
+  border-radius:999px;
+}
+
+*::-webkit-scrollbar-thumb:hover{
+  background:rgba(192,132,252,.8);
+}
