@@ -3,171 +3,130 @@ const BACKEND =
 
 
 // ======================
-// SITE STATUS
-// ======================
-
-async function checkSiteStatus(){
-
-    try{
-
-        const response =
-            await fetch(
-                BACKEND + "/status"
-            );
-
-        const data =
-            await response.json();
-
-
-        const maintenance =
-            document.getElementById(
-                "maintenance"
-            );
-
-        const site =
-            document.getElementById(
-                "site"
-            );
-
-        const announcement =
-            document.getElementById(
-                "announcement"
-            );
-
-
-        if(!data.online){
-
-            maintenance.classList.remove(
-                "hidden"
-            );
-
-            site.style.display =
-                "none";
-
-        } else {
-
-            maintenance.classList.add(
-                "hidden"
-            );
-
-            site.style.display =
-                "block";
-
-        }
-
-
-        if(data.announcement){
-
-            announcement.classList.remove(
-                "hidden"
-            );
-
-            announcement.textContent =
-                "📢 " +
-                data.announcement;
-
-        } else {
-
-            announcement.classList.add(
-                "hidden"
-            );
-
-        }
-
-    }
-
-    catch(error){
-
-        console.log(
-            "Status error:",
-            error
-        );
-
-    }
-
-}
-
-
-checkSiteStatus();
-
-
-setInterval(
-    checkSiteStatus,
-    15000
-);
-
-
-
-
-
-// ======================
-// LOGIN
+// ELEMENTS
 // ======================
 
 const loginBtn =
-    document.getElementById(
-        "loginBtn"
-    );
+    document.getElementById("loginBtn");
 
 const logoutBtn =
-    document.getElementById(
-        "logoutBtn"
-    );
+    document.getElementById("logoutBtn");
 
 const modal =
-    document.getElementById(
-        "modal"
-    );
+    document.getElementById("modal");
+
+const modalClose =
+    document.getElementById("modalClose");
 
 const usernameInput =
-    document.getElementById(
-        "username"
-    );
+    document.getElementById("username");
 
 const profile =
-    document.getElementById(
-        "profile"
-    );
+    document.getElementById("profile");
 
 const phraseText =
-    document.getElementById(
-        "phrase"
-    );
+    document.getElementById("phrase");
 
 const verifyBtn =
+    document.getElementById("verify");
+
+const chatPanel =
+    document.getElementById("chatPanel");
+
+const mobileChatButton =
+    document.getElementById("mobileChatButton");
+
+const mobileChatClose =
+    document.getElementById("mobileChatClose");
+
+const chatMessages =
+    document.getElementById("chatMessages");
+
+const chatForm =
+    document.getElementById("chatForm");
+
+const chatInput =
+    document.getElementById("chatInput");
+
+const chatLoginMessage =
     document.getElementById(
-        "verify"
+        "chatLoginMessage"
     );
 
+const announcement =
+    document.getElementById(
+        "announcement"
+    );
+
+const maintenance =
+    document.getElementById(
+        "maintenance"
+    );
+
+const site =
+    document.getElementById(
+        "site"
+    );
+
+
+// ======================
+// USER
+// ======================
 
 let currentUser = null;
 
 let phrase = "";
+
+let lastChatSignature = "";
 
 
 // ======================
 // LOAD SAVED USER
 // ======================
 
-const savedUser =
-    localStorage.getItem(
-        "admflipUser"
-    );
+function loadSavedUser(){
+
+    const saved =
+        localStorage.getItem(
+            "admflipUser"
+        );
 
 
-if(savedUser){
+    if(!saved){
+
+        updateLoginUI();
+
+        updateChatUI();
+
+        return;
+
+    }
+
 
     try{
 
-        currentUser =
-            JSON.parse(
-                savedUser
-            );
+        const parsed =
+            JSON.parse(saved);
 
-        showUser();
+
+        if(
+            parsed &&
+            parsed.id &&
+            parsed.username
+        ){
+
+            currentUser =
+                parsed;
+
+        }
 
     }
     catch(error){
+
+        console.log(
+            "Saved login error:",
+            error
+        );
 
         localStorage.removeItem(
             "admflipUser"
@@ -175,74 +134,126 @@ if(savedUser){
 
     }
 
-}
 
+    updateLoginUI();
 
-
-
-
-// ======================
-// SHOW USER
-// ======================
-
-function showUser(){
-
-    if(!currentUser)
-        return;
-
-
-    loginBtn.innerHTML = `
-
-        <img src="${escapeAttribute(
-            currentUser.avatar
-        )}">
-
-        <span>
-            ${escapeHtml(
-                currentUser.username
-            )}
-        </span>
-
-    `;
-
-
-    loginBtn.classList.add(
-        "logged"
-    );
-
-
-    logoutBtn.style.display =
-        "block";
-
-
-    updateChatLoginState();
-
-    loadChat();
+    updateChatUI();
 
 }
 
 
+// ======================
+// LOGIN UI
+// ======================
 
+function updateLoginUI(){
+
+    if(currentUser){
+
+        loginBtn.innerHTML = `
+
+            <img
+                src="${escapeAttribute(
+                    currentUser.avatar || "roblox.png"
+                )}"
+                alt=""
+            >
+
+            <span>
+                ${escapeHtml(
+                    currentUser.username
+                )}
+            </span>
+
+        `;
+
+        loginBtn.classList.add(
+            "logged"
+        );
+
+
+        logoutBtn.style.display =
+            "block";
+
+    }
+    else{
+
+        loginBtn.innerHTML = `
+
+            <img
+                src="roblox.png"
+                alt=""
+            >
+
+            <span>
+                Sign In
+            </span>
+
+        `;
+
+        loginBtn.classList.remove(
+            "logged"
+        );
+
+
+        logoutBtn.style.display =
+            "none";
+
+    }
+
+}
 
 
 // ======================
 // OPEN LOGIN
 // ======================
 
-loginBtn.onclick = ()=>{
+loginBtn.onclick = () => {
 
-    if(!currentUser){
+    if(currentUser){
 
-        modal.classList.add(
-            "show"
-        );
+        return;
 
     }
+
+
+    modal.classList.add(
+        "show"
+    );
 
 };
 
 
+// ======================
+// CLOSE LOGIN
+// ======================
 
+modalClose.onclick = () => {
+
+    modal.classList.remove(
+        "show"
+    );
+
+};
+
+
+modal.addEventListener(
+    "click",
+    (event) => {
+
+        if(
+            event.target ===
+            modal
+        ){
+
+            modal.classList.remove(
+                "show"
+            );
+
+        }
+
+    }
+);
 
 
 // ======================
@@ -250,15 +261,17 @@ loginBtn.onclick = ()=>{
 // ======================
 
 usernameInput.onchange =
-async()=>{
-
+async () => {
 
     const username =
         usernameInput.value.trim();
 
 
-    if(!username)
+    if(!username){
+
         return;
+
+    }
 
 
     try{
@@ -280,7 +293,7 @@ async()=>{
         if(!data.success){
 
             alert(
-                "Roblox username not found"
+                "Roblox username not found."
             );
 
             return;
@@ -299,20 +312,30 @@ async()=>{
 
         profile.innerHTML = `
 
-            <img
-                width="80"
-                src="${escapeAttribute(
-                    currentUser.avatar
-                )}"
-            >
+            <div class="profile-card">
 
-            <br><br>
+                <img
+                    src="${escapeAttribute(
+                        currentUser.avatar
+                    )}"
+                    alt=""
+                >
 
-            <b>
-                ${escapeHtml(
-                    currentUser.username
-                )}
-            </b>
+                <div>
+
+                    <strong>
+                        ${escapeHtml(
+                            currentUser.username
+                        )}
+                    </strong>
+
+                    <span>
+                        Roblox account found
+                    </span>
+
+                </div>
+
+            </div>
 
         `;
 
@@ -339,16 +362,19 @@ async()=>{
 
         phraseText.innerHTML = `
 
-            Put this phrase in your
-            Roblox bio:
+            <div class="phrase-box">
 
-            <br><br>
+                <span>
+                    Put this phrase in your Roblox bio:
+                </span>
 
-            <b>
-                ${escapeHtml(
-                    phrase
-                )}
-            </b>
+                <strong>
+                    ${escapeHtml(
+                        phrase
+                    )}
+                </strong>
+
+            </div>
 
         `;
 
@@ -363,7 +389,7 @@ async()=>{
         console.log(error);
 
         alert(
-            "Server error"
+            "Server error."
         );
 
     }
@@ -371,15 +397,18 @@ async()=>{
 };
 
 
-
-
-
 // ======================
 // VERIFY
 // ======================
 
 verifyBtn.onclick =
-async()=>{
+async () => {
+
+    if(!currentUser){
+
+        return;
+
+    }
 
 
     verifyBtn.disabled =
@@ -395,14 +424,17 @@ async()=>{
             await fetch(
                 BACKEND + "/check",
                 {
-                    method:"POST",
 
-                    headers:{
+                    method: "POST",
+
+                    headers: {
+
                         "Content-Type":
                             "application/json"
+
                     },
 
-                    body:JSON.stringify({
+                    body: JSON.stringify({
 
                         username:
                             currentUser.username,
@@ -422,6 +454,14 @@ async()=>{
 
         if(data.success){
 
+            currentUser.id =
+                data.id;
+
+
+            currentUser.username =
+                data.username;
+
+
             localStorage.setItem(
                 "admflipUser",
                 JSON.stringify(
@@ -435,19 +475,23 @@ async()=>{
             );
 
 
-            showUser();
+            updateLoginUI();
+
+            updateChatUI();
+
+            await loadChat();
 
 
             alert(
-                "Verified successfully"
+                "Verified successfully."
             );
-
 
         }
         else{
 
             alert(
-                "Verification phrase not found. Put it in your Roblox bio first."
+                data.message ||
+                "Verification phrase not found."
             );
 
 
@@ -465,7 +509,7 @@ async()=>{
         console.log(error);
 
         alert(
-            "Verification failed"
+            "Verification failed."
         );
 
 
@@ -480,15 +524,11 @@ async()=>{
 };
 
 
-
-
-
 // ======================
 // LOGOUT
 // ======================
 
-logoutBtn.onclick = ()=>{
-
+logoutBtn.onclick = () => {
 
     localStorage.removeItem(
         "admflipUser"
@@ -503,67 +543,18 @@ logoutBtn.onclick = ()=>{
         "";
 
 
-    loginBtn.innerHTML = `
+    updateLoginUI();
 
-        <img src="roblox.png">
-
-        <span>
-            Sign In
-        </span>
-
-    `;
-
-
-    loginBtn.classList.remove(
-        "logged"
-    );
-
-
-    logoutBtn.style.display =
-        "none";
-
-
-    updateChatLoginState();
+    updateChatUI();
 
 };
 
 
-
-
-
 // ======================
-// CHAT
+// CHAT UI
 // ======================
 
-const chatMessages =
-    document.getElementById(
-        "chatMessages"
-    );
-
-const chatForm =
-    document.getElementById(
-        "chatForm"
-    );
-
-const chatInput =
-    document.getElementById(
-        "chatInput"
-    );
-
-const chatLoginMessage =
-    document.getElementById(
-        "chatLoginMessage"
-    );
-
-
-let lastChatSignature = "";
-
-
-// ======================
-// CHAT LOGIN STATE
-// ======================
-
-function updateChatLoginState(){
+function updateChatUI(){
 
     if(currentUser){
 
@@ -580,14 +571,69 @@ function updateChatLoginState(){
             "none";
 
         chatLoginMessage.style.display =
-            "block";
+            "flex";
 
     }
 
 }
 
 
+// ======================
+// MOBILE CHAT
+// ======================
 
+mobileChatButton.onclick =
+() => {
+
+    chatPanel.classList.add(
+        "mobile-open"
+    );
+
+};
+
+
+mobileChatClose.onclick =
+() => {
+
+    chatPanel.classList.remove(
+        "mobile-open"
+    );
+
+};
+
+
+// Close mobile chat when clicking outside
+
+document.addEventListener(
+    "click",
+    (event) => {
+
+        if(
+            window.innerWidth > 700
+        ){
+
+            return;
+
+        }
+
+
+        if(
+            !chatPanel.contains(
+                event.target
+            ) &&
+            !mobileChatButton.contains(
+                event.target
+            )
+        ){
+
+            chatPanel.classList.remove(
+                "mobile-open"
+            );
+
+        }
+
+    }
+);
 
 
 // ======================
@@ -604,12 +650,24 @@ async function loadChat(){
             );
 
 
+        if(!response.ok){
+
+            return;
+
+        }
+
+
         const data =
             await response.json();
 
 
-        if(!data.success)
+        if(
+            !data.success
+        ){
+
             return;
+
+        }
 
 
         const messages =
@@ -647,16 +705,13 @@ async function loadChat(){
     catch(error){
 
         console.log(
-            "Chat load error:",
+            "Chat error:",
             error
         );
 
     }
 
 }
-
-
-
 
 
 // ======================
@@ -669,106 +724,122 @@ function renderChat(messages){
         "";
 
 
-    for(
-        const message of messages
-    ){
+    messages.forEach(
+        (message) => {
 
-        const row =
-            document.createElement(
-                "div"
+            const row =
+                document.createElement(
+                    "div"
+                );
+
+
+            row.className =
+                "chat-message";
+
+
+            if(
+                message.type ===
+                "announcement"
+            ){
+
+                row.classList.add(
+                    "announcement-message"
+                );
+
+            }
+
+
+            const avatar =
+                document.createElement(
+                    "img"
+                );
+
+
+            avatar.className =
+                "chat-avatar";
+
+
+            avatar.src =
+                message.avatar ||
+                "roblox.png";
+
+
+            avatar.onerror =
+                () => {
+
+                    avatar.src =
+                        "roblox.png";
+
+                };
+
+
+            const content =
+                document.createElement(
+                    "div"
+                );
+
+
+            content.className =
+                "chat-content";
+
+
+            const name =
+                document.createElement(
+                    "div"
+                );
+
+
+            name.className =
+                "chat-name";
+
+
+            name.textContent =
+                message.username ||
+                "User";
+
+
+            const text =
+                document.createElement(
+                    "div"
+                );
+
+
+            text.className =
+                "chat-text";
+
+
+            // textContent prevents HTML injection
+
+            text.textContent =
+                message.message;
+
+
+            content.appendChild(
+                name
             );
 
 
-        row.className =
-            message.type ===
-            "announcement"
-                ? "chat-message announcement-message"
-                : "chat-message";
-
-
-        const avatar =
-            document.createElement(
-                "img"
+            content.appendChild(
+                text
             );
 
 
-        avatar.className =
-            "chat-avatar";
-
-
-        avatar.src =
-            message.avatar ||
-            "roblox.png";
-
-
-        avatar.alt =
-            "";
-
-
-        const content =
-            document.createElement(
-                "div"
+            row.appendChild(
+                avatar
             );
 
 
-        content.className =
-            "chat-content";
-
-
-        const name =
-            document.createElement(
-                "div"
+            row.appendChild(
+                content
             );
 
 
-        name.className =
-            "chat-name";
-
-
-        name.textContent =
-            message.username ||
-            "User";
-
-
-        const text =
-            document.createElement(
-                "div"
+            chatMessages.appendChild(
+                row
             );
 
-
-        text.className =
-            "chat-text";
-
-
-        text.textContent =
-            message.message;
-
-
-        content.appendChild(
-            name
-        );
-
-
-        content.appendChild(
-            text
-        );
-
-
-        row.appendChild(
-            avatar
-        );
-
-
-        row.appendChild(
-            content
-        );
-
-
-        chatMessages.appendChild(
-            row
-        );
-
-    }
+        }
+    );
 
 
     chatMessages.scrollTop =
@@ -777,36 +848,30 @@ function renderChat(messages){
 }
 
 
-
-
-
 // ======================
-// BLOCK LINKS
+// LINK FILTER
 // ======================
 
 function containsLink(text){
 
-    const linkPattern =
-        /(?:https?:\/\/|http:\/\/|www\.|ftp:\/\/|discord\.gg\/|discord\.com\/invite\/|t\.me\/|bit\.ly\/|tinyurl\.com\/)/i;
+    const pattern =
+        /(?:https?:\/\/|http:\/\/|www\.|ftp:\/\/|discord\.gg\/|discord\.com\/invite\/|t\.me\/|telegram\.me\/|bit\.ly\/|tinyurl\.com\/|t\.co\/|youtu\.be\/|youtube\.com\/)/i;
 
 
-    return linkPattern.test(
+    return pattern.test(
         text
     );
 
 }
 
 
-
-
-
 // ======================
-// SEND CHAT
+// SEND MESSAGE
 // ======================
 
 chatForm.addEventListener(
     "submit",
-    async(event)=>{
+    async (event) => {
 
         event.preventDefault();
 
@@ -826,14 +891,19 @@ chatForm.addEventListener(
             chatInput.value.trim();
 
 
-        if(!message)
+        if(!message){
+
             return;
 
+        }
 
-        if(message.length > 500){
+
+        if(
+            message.length > 500
+        ){
 
             alert(
-                "Message is too long."
+                "Message cannot be longer than 500 characters."
             );
 
             return;
@@ -841,7 +911,11 @@ chatForm.addEventListener(
         }
 
 
-        if(containsLink(message)){
+        if(
+            containsLink(
+                message
+            )
+        ){
 
             alert(
                 "Links are not allowed in chat."
@@ -863,14 +937,16 @@ chatForm.addEventListener(
                     BACKEND + "/chat",
                     {
 
-                        method:"POST",
+                        method: "POST",
 
-                        headers:{
+                        headers: {
+
                             "Content-Type":
                                 "application/json"
+
                         },
 
-                        body:JSON.stringify({
+                        body: JSON.stringify({
 
                             username:
                                 currentUser.username,
@@ -916,10 +992,7 @@ chatForm.addEventListener(
         }
         catch(error){
 
-            console.log(
-                "Chat send error:",
-                error
-            );
+            console.log(error);
 
             alert(
                 "Could not send message."
@@ -939,25 +1012,80 @@ chatForm.addEventListener(
 );
 
 
-
-
-
 // ======================
-// CHAT REFRESH
+// SITE STATUS
 // ======================
 
-updateChatLoginState();
+async function checkSiteStatus(){
 
-loadChat();
+    try{
 
-
-setInterval(
-    loadChat,
-    3000
-);
-
+        const response =
+            await fetch(
+                BACKEND + "/status"
+            );
 
 
+        const data =
+            await response.json();
+
+
+        if(
+            data.online === false
+        ){
+
+            maintenance.classList.remove(
+                "hidden"
+            );
+
+            site.style.display =
+                "none";
+
+        }
+        else{
+
+            maintenance.classList.add(
+                "hidden"
+            );
+
+            site.style.display =
+                "block";
+
+        }
+
+
+        if(
+            data.announcement
+        ){
+
+            announcement.classList.remove(
+                "hidden"
+            );
+
+            announcement.textContent =
+                "📢 " +
+                data.announcement;
+
+        }
+        else{
+
+            announcement.classList.add(
+                "hidden"
+            );
+
+        }
+
+    }
+    catch(error){
+
+        console.log(
+            "Status error:",
+            error
+        );
+
+    }
+
+}
 
 
 // ======================
@@ -985,3 +1113,30 @@ function escapeAttribute(value){
         .replaceAll(">", "&gt;");
 
 }
+
+
+// ======================
+// START
+// ======================
+
+loadSavedUser();
+
+loadChat();
+
+checkSiteStatus();
+
+
+// Refresh chat every 3 seconds
+
+setInterval(
+    loadChat,
+    3000
+);
+
+
+// Check site status every 15 sec
+
+setInterval(
+    checkSiteStatus,
+    15000
+);
