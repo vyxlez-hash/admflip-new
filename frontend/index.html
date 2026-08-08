@@ -1,92 +1,80 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>ADMFLIP — Adopt Me Coinflips</title>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <meta
     name="description"
     content="ADMFLIP — Adopt Me pet coinflips, values, trading and leaderboards."
   >
 
-  <link rel="icon" href="/logo.png">
+  <title>ADMFLIP — Adopt Me Coinflips</title>
 
   <link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
 
-  <!-- =========================
-       BACKGROUND
-  ========================== -->
-
-  <div class="background-glow"></div>
-
-  <!-- =========================
+  <!-- =====================================================
        HEADER
-  ========================== -->
+  ====================================================== -->
 
   <header class="header">
 
-    <div class="header-left">
+    <a href="#" class="brand" data-page="coinflip">
+      <img
+        src="/logo.png"
+        alt="ADMFLIP"
+      >
+    </a>
 
-      <a href="#" class="brand" data-page="coinflip">
+    <nav class="menu">
 
-        <img
-          src="/logo.png"
-          class="brand-logo"
-          alt="ADMFLIP"
-        >
+      <button
+        class="nav-item active"
+        data-page="coinflip"
+        type="button"
+      >
+        Coinflip
+      </button>
 
-        <div class="brand-text">
-          <strong>ADMFLIP</strong>
-          <span>ADOPT ME COINFLIPS</span>
-        </div>
+      <button
+        class="nav-item"
+        data-page="leaderboard"
+        type="button"
+      >
+        Leaderboard
+      </button>
 
-      </a>
+      <button
+        class="nav-item"
+        data-page="values"
+        type="button"
+      >
+        Values
+      </button>
 
-      <nav class="navigation">
+      <button
+        class="nav-item"
+        data-page="chat"
+        type="button"
+      >
+        Chat
+      </button>
 
-        <button
-          class="nav-item active"
-          data-page="coinflip"
-        >
-          Coinflip
-        </button>
+    </nav>
 
-        <button
-          class="nav-item"
-          data-page="leaderboard"
-        >
-          Leaderboard
-        </button>
-
-        <button
-          class="nav-item"
-          data-page="values"
-        >
-          Values
-        </button>
-
-        <button
-          class="nav-item"
-          data-page="chat"
-        >
-          Chat
-        </button>
-
-      </nav>
-
-    </div>
-
-    <div class="header-right">
+    <div class="account-buttons">
 
       <button
         id="loginBtn"
         class="login"
+        type="button"
       >
         <img
           src="/roblox.png"
@@ -104,6 +92,7 @@
         <button
           id="profileBtn"
           class="profile-button"
+          type="button"
         >
 
           <img
@@ -121,6 +110,7 @@
         <button
           id="inventoryBtn"
           class="small-button"
+          type="button"
         >
           Inventory
         </button>
@@ -128,6 +118,7 @@
         <button
           id="logoutBtn"
           class="small-button"
+          type="button"
         >
           Logout
         </button>
@@ -139,22 +130,23 @@
   </header>
 
 
-  <!-- =========================
-       MAIN
-  ========================== -->
+  <!-- =====================================================
+       APP
+  ====================================================== -->
 
-  <main class="main">
+  <main id="app">
 
-    <!-- =======================
-         COINFLIP PAGE
-    ======================== -->
+
+    <!-- ===================================================
+         COINFLIP
+    ==================================================== -->
 
     <section
       id="coinflipPage"
       class="page"
     >
 
-      <div class="page-head">
+      <div class="hero">
 
         <div>
 
@@ -175,6 +167,7 @@
         <button
           id="createCoinflipBtn"
           class="primary"
+          type="button"
         >
           + Create Coinflip
         </button>
@@ -237,9 +230,9 @@
     </section>
 
 
-    <!-- =======================
-         VALUES PAGE
-    ======================== -->
+    <!-- ===================================================
+         VALUES
+    ==================================================== -->
 
     <section
       id="valuesPage"
@@ -267,13 +260,19 @@
       </div>
 
 
-      <input
-        id="valueSearch"
-        class="search"
-        type="text"
-        placeholder="Search for a pet..."
-        autocomplete="off"
-      >
+      <div class="search-wrap">
+
+        <span>⌕</span>
+
+        <input
+          id="valueSearch"
+          class="search"
+          type="text"
+          placeholder="Search for a pet..."
+          autocomplete="off"
+        >
+
+      </div>
 
 
       <div
@@ -290,9 +289,9 @@
     </section>
 
 
-    <!-- =======================
-         LEADERBOARD PAGE
-    ======================== -->
+    <!-- ===================================================
+         LEADERBOARD
+    ==================================================== -->
 
     <section
       id="leaderboardPage"
@@ -350,9 +349,111 @@
     </section>
 
 
-    <!-- =======================
-         PROFILE PAGE
-    ======================== -->
+    <!-- ===================================================
+         CHAT PAGE
+    ==================================================== -->
+
+    <section
+      id="chatPage"
+      class="page hidden"
+    >
+
+      <div class="page-head">
+
+        <div>
+
+          <div class="eyebrow">
+            COMMUNITY
+          </div>
+
+          <h1>
+            Chat
+          </h1>
+
+          <p>
+            Talk with other ADMFLIP traders.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="chat-page-card">
+
+        <div class="chat-page-header">
+
+          <div>
+
+            <strong>
+              ADMFLIP CHAT
+            </strong>
+
+            <span>
+
+              <i class="online-dot"></i>
+
+              <b id="onlineCount">
+                --
+              </b>
+
+              online
+
+            </span>
+
+          </div>
+
+          <button
+            id="rulesBtn"
+            class="rules-icon"
+            type="button"
+            title="Chat rules"
+          >
+            ?
+          </button>
+
+        </div>
+
+
+        <div
+          id="chatMessages"
+          class="chat-messages"
+        >
+
+          <div class="loading">
+            Loading chat...
+          </div>
+
+        </div>
+
+
+        <form
+          id="chatForm"
+          class="chat-form"
+        >
+
+          <input
+            id="chatInput"
+            type="text"
+            placeholder="Sign in to chat..."
+            maxlength="250"
+            autocomplete="off"
+          >
+
+          <button type="submit">
+            Send
+          </button>
+
+        </form>
+
+      </div>
+
+    </section>
+
+
+    <!-- ===================================================
+         PROFILE
+    ==================================================== -->
 
     <section
       id="profilePage"
@@ -366,16 +467,29 @@
   </main>
 
 
-  <!-- =========================
-       CHAT
-  ========================== -->
+  <!-- =====================================================
+       MOBILE CHAT
+  ====================================================== -->
+
+  <button
+    id="mobileChatButton"
+    class="mobile-chat-button"
+    type="button"
+  >
+    Chat
+  </button>
+
+
+  <!-- =====================================================
+       CHAT SIDE PANEL
+  ====================================================== -->
 
   <aside
     id="chatPanel"
     class="chat-panel"
   >
 
-    <div class="chat-header">
+    <div class="chat-head">
 
       <div>
 
@@ -387,7 +501,7 @@
 
           <i class="online-dot"></i>
 
-          <b id="onlineCount">
+          <b id="panelOnlineCount">
             --
           </b>
 
@@ -397,32 +511,20 @@
 
       </div>
 
-
-      <div class="chat-actions">
-
-        <button
-          id="rulesBtn"
-          class="rules-icon"
-          title="Chat rules"
-        >
-          ?
-        </button>
-
-        <button
-          id="chatClose"
-          class="chat-close"
-          title="Close"
-        >
-          ×
-        </button>
-
-      </div>
+      <button
+        id="chatClose"
+        class="chat-close"
+        type="button"
+        title="Close"
+      >
+        ×
+      </button>
 
     </div>
 
 
     <div
-      id="chatMessages"
+      id="panelChatMessages"
       class="chat-messages"
     >
 
@@ -434,21 +536,19 @@
 
 
     <form
-      id="chatForm"
+      id="panelChatForm"
       class="chat-form"
     >
 
       <input
-        id="chatInput"
+        id="panelChatInput"
         type="text"
         placeholder="Sign in to chat..."
         maxlength="250"
         autocomplete="off"
       >
 
-      <button
-        type="submit"
-      >
+      <button type="submit">
         Send
       </button>
 
@@ -457,30 +557,21 @@
   </aside>
 
 
-  <!-- Mobile chat button -->
-
-  <button
-    id="mobileChatButton"
-    class="mobile-chat-button"
-  >
-    Chat
-  </button>
-
-
-  <!-- =========================
+  <!-- =====================================================
        LOGIN MODAL
-  ========================== -->
+  ====================================================== -->
 
   <div
     id="loginModal"
     class="modal hidden"
   >
 
-    <div class="modal-card">
+    <div class="modal-box">
 
       <button
         id="closeLogin"
         class="modal-close"
+        type="button"
       >
         ×
       </button>
@@ -535,6 +626,7 @@
       <button
         id="verify"
         class="primary full"
+        type="button"
         style="display:none"
       >
         Verify
@@ -551,20 +643,21 @@
   </div>
 
 
-  <!-- =========================
+  <!-- =====================================================
        INVENTORY MODAL
-  ========================== -->
+  ====================================================== -->
 
   <div
     id="inventoryModal"
     class="modal hidden"
   >
 
-    <div class="modal-card large">
+    <div class="modal-box large">
 
       <button
         id="closeInventory"
         class="modal-close"
+        type="button"
       >
         ×
       </button>
@@ -589,7 +682,9 @@
         id="inventoryGrid"
         class="pet-grid"
       >
+
         Loading...
+
       </div>
 
     </div>
@@ -597,20 +692,21 @@
   </div>
 
 
-  <!-- =========================
+  <!-- =====================================================
        CREATE COINFLIP MODAL
-  ========================== -->
+  ====================================================== -->
 
   <div
     id="createModal"
     class="modal hidden"
   >
 
-    <div class="modal-card large">
+    <div class="modal-box large">
 
       <button
         id="closeCreate"
         class="modal-close"
+        type="button"
       >
         ×
       </button>
@@ -635,7 +731,9 @@
         id="createInventory"
         class="pet-grid"
       >
+
         Loading...
+
       </div>
 
 
@@ -654,6 +752,7 @@
           <button
             class="side-btn"
             data-side="heads"
+            type="button"
           >
 
             <span>
@@ -668,6 +767,7 @@
           <button
             class="side-btn"
             data-side="tails"
+            type="button"
           >
 
             <span>
@@ -684,6 +784,7 @@
         <button
           id="postCoinflip"
           class="primary full"
+          type="button"
         >
           Post Coinflip
         </button>
@@ -695,20 +796,21 @@
   </div>
 
 
-  <!-- =========================
+  <!-- =====================================================
        RULES MODAL
-  ========================== -->
+  ====================================================== -->
 
   <div
     id="rulesModal"
     class="modal hidden"
   >
 
-    <div class="modal-card">
+    <div class="modal-box rules-box">
 
       <button
         id="closeRules"
         class="modal-close"
+        type="button"
       >
         ×
       </button>
@@ -811,19 +913,15 @@
   </div>
 
 
-  <!-- =========================
+  <!-- =====================================================
        TOAST
-  ========================== -->
+  ====================================================== -->
 
   <div
     id="toast"
     class="toast"
   ></div>
 
-
-  <!-- =========================
-       JAVASCRIPT
-  ========================== -->
 
   <script src="/script.js"></script>
 
