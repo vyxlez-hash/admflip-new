@@ -1,91 +1,95 @@
 const BACKEND = "https://admflip-new.onrender.com";
 
-const $ = id => document.getElementById(id);
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const inventoryBtn = document.getElementById("inventoryBtn");
+
+const modal = document.getElementById("modal");
+const usernameInput = document.getElementById("username");
+const profile = document.getElementById("profile");
+const phraseText = document.getElementById("phrase");
+const verifyBtn = document.getElementById("verify");
+
+const chatPanel = document.getElementById("chatPanel");
+const chatNav = document.getElementById("chatNav");
+const chatClose = document.getElementById("chatClose");
+const mobileChatBtn = document.getElementById("mobileChatBtn");
+
+const chatMessages = document.getElementById("chatMessages");
+const chatInput = document.getElementById("chatInput");
+const chatSend = document.getElementById("chatSend");
+
+const rulesBtn = document.getElementById("rulesBtn");
+const rulesModal = document.getElementById("rulesModal");
+const rulesClose = document.getElementById("rulesClose");
+
+const createCoinflipBtn =
+    document.getElementById("createCoinflipBtn");
+
+const coinflipsList =
+    document.getElementById("coinflipsList");
+
+const petsGrid =
+    document.getElementById("petsGrid");
+
+const petSearch =
+    document.getElementById("petSearch");
+
+const leaderboardList =
+    document.getElementById("leaderboardList");
+
 
 let currentUser = null;
-let authToken = localStorage.getItem("admflipToken") || "";
-let currentPhrase = "";
-let selectedPet = null;
-let selectedSide = null;
-let currentTipTarget = null;
+let phrase = "";
 
-let chatTimer = null;
-let onlineTimer = null;
+let allPets = [];
+
+let selectedCoinflipPet = null;
+let selectedCoinflipSide = null;
+
+let chatOpen = false;
+
+let lastChatTime = 0;
+
+let onlineCount = 32;
 
 
 /* =========================
    HELPERS
 ========================= */
 
-function escapeHTML(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+function escapeHtml(value) {
+
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 }
 
-function money(value) {
-  return Number(value || 0).toLocaleString();
-}
 
 function petImage(name) {
-  return `https://amvgg.com/items/${encodeURIComponent(
-    String(name || "").trim()
-  )}.webp`;
+
+    return `https://amvgg.com/items/${encodeURIComponent(name)}.webp`;
 }
 
-function avatarImage(url) {
-  return url || "roblox.png";
-}
 
-function toast(message) {
-  const el = $("toast");
+function showSiteMessage(message) {
 
-  el.textContent = message;
-  el.classList.add("show");
+    const box =
+        document.getElementById("siteMessage");
 
-  clearTimeout(toast.timer);
+    if (!box) return;
 
-  toast.timer = setTimeout(() => {
-    el.classList.remove("show");
-  }, 3500);
-}
+    box.textContent = message;
+    box.classList.add("show");
 
-async function api(path, options = {}) {
+    clearTimeout(box._timer);
 
-  const headers = {
-    "Content-Type": "application/json",
-    ...(options.headers || {})
-  };
-
-  if (authToken) {
-    headers.Authorization = `Bearer ${authToken}`;
-  }
-
-  const response = await fetch(BACKEND + path, {
-    ...options,
-    headers
-  });
-
-  let data;
-
-  try {
-    data = await response.json();
-  } catch {
-    throw new Error("Invalid server response");
-  }
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      throw new Error("Please sign in first.");
-    }
-
-    throw new Error(data.message || "Request failed");
-  }
-
-  return data;
+    box._timer = setTimeout(() => {
+        box.classList.remove("show");
+    }, 3500);
 }
 
 
@@ -93,210 +97,236 @@ async function api(path, options = {}) {
    LOGIN
 ========================= */
 
-function saveLogin(user, token) {
-  currentUser = user;
-  authToken = token;
+function showUser() {
 
-  localStorage.setItem(
-    "admflipUser",
-    JSON.stringify(user)
-  );
+    if (!currentUser) return;
 
-  localStorage.setItem(
-    "admflipToken",
-    token
-  );
+    loginBtn.innerHTML = `
+        <img
+            src="${escapeHtml(currentUser.avatar || "roblox.png")}"
+            alt=""
+        >
+        <span>
+            ${escapeHtml(currentUser.username)}
+        </span>
+    `;
+
+    loginBtn.classList.add("logged");
+
+    logoutBtn.style.display = "block";
+
+    inventoryBtn.style.display = "block";
 }
 
-function loadLogin() {
 
-  const saved = localStorage.getItem("admflipUser");
+function restoreLogin() {
 
-  if (!saved || !authToken) {
-    updateAccountUI();
-    return;
-  }
+    const saved =
+        localStorage.getItem("admflipUser");
 
-  try {
-    currentUser = JSON.parse(saved);
-    updateAccountUI();
+    if (!saved) return;
 
-    api("/me")
-      .then(data => {
-        currentUser = data.user;
+    try {
 
-        localStorage.setItem(
-          "admflipUser",
-          JSON.stringify(currentUser)
+        currentUser = JSON.parse(saved);
+
+        if (
+            currentUser &&
+            currentUser.username &&
+            currentUser.id
+        ) {
+            showUser();
+        }
+
+    } catch {
+
+        localStorage.removeItem("admflipUser");
+
+    }
+}
+
+
+restoreLogin();
+
+
+loginBtn.onclick = () => {
+
+    if (currentUser) {
+
+        showPage("inventory");
+
+        return;
+    }
+
+    modal.classList.add("show");
+};
+
+
+usernameInput.addEventListener("change", async () => {
+
+    const username =
+        usernameInput.value.trim();
+
+    if (!username) return;
+
+    try {
+
+        const response = await fetch(
+            `${BACKEND}/user/${encodeURIComponent(username)}`
         );
 
-        updateAccountUI();
-        updateChatState();
-      })
-      .catch(() => {
-        localStorage.removeItem("admflipUser");
-        localStorage.removeItem("admflipToken");
+        const data = await response.json();
 
-        currentUser = null;
-        authToken = "";
+        if (!data.success) {
 
-        updateAccountUI();
-      });
+            showSiteMessage(
+                "Roblox username not found."
+            );
 
-  } catch {
-    localStorage.removeItem("admflipUser");
-    localStorage.removeItem("admflipToken");
-  }
-}
+            return;
+        }
 
-function updateAccountUI() {
+        currentUser = data.user;
 
-  if (currentUser) {
+        profile.classList.remove("hidden");
 
-    $("loginBtn").innerHTML = `
-      <img src="${escapeHTML(
-        avatarImage(currentUser.avatar)
-      )}" alt="">
-      <span>${escapeHTML(currentUser.username)}</span>
-    `;
+        profile.innerHTML = `
+            <img
+                width="80"
+                height="80"
+                src="${escapeHtml(currentUser.avatar)}"
+                alt=""
+            >
 
-    $("logoutBtn").style.display = "block";
-    $("inventoryBtn").style.display = "block";
+            <br><br>
 
-  } else {
+            <b>${escapeHtml(currentUser.username)}</b>
+        `;
 
-    $("loginBtn").innerHTML = `
-      <img src="roblox.png" alt="">
-      <span>Sign In</span>
-    `;
 
-    $("logoutBtn").style.display = "none";
-    $("inventoryBtn").style.display = "none";
-  }
+        const phraseResponse =
+            await fetch(`${BACKEND}/create`);
 
-  updateChatState();
-}
+        const phraseData =
+            await phraseResponse.json();
 
-$("loginBtn").onclick = async () => {
+        phrase =
+            phraseData.phrase;
 
-  if (currentUser) {
-    showPage("inventory");
-    loadInventory();
-    return;
-  }
+        phraseText.classList.remove("hidden");
 
-  $("modal").classList.add("show");
-  $("username").focus();
-};
+        phraseText.innerHTML = `
+            Put this phrase in your Roblox bio:
 
-$("closeModal").onclick = () => {
-  $("modal").classList.remove("show");
-};
+            <br><br>
 
-$("username").addEventListener("change", async () => {
+            <b>${escapeHtml(phrase)}</b>
+        `;
 
-  const username = $("username").value.trim();
+        verifyBtn.style.display = "block";
 
-  if (!username) return;
+    } catch (error) {
 
-  try {
+        console.error(error);
 
-    const data = await api(
-      `/user/${encodeURIComponent(username)}`
-    );
-
-    if (!data.success) {
-      toast("Roblox username not found.");
-      return;
+        showSiteMessage(
+            "Server error. Try again."
+        );
     }
-
-    const user = data.user;
-
-    $("profile").classList.remove("hidden");
-
-    $("profile").innerHTML = `
-      <img src="${escapeHTML(user.avatar)}" alt="">
-      <br><br>
-      <strong>${escapeHTML(user.username)}</strong>
-    `;
-
-    const phraseData = await api("/create");
-
-    currentPhrase = phraseData.phrase;
-
-    $("phrase").classList.remove("hidden");
-
-    $("phrase").innerHTML = `
-      Put this phrase in your Roblox bio:
-      <br><br>
-      <strong>${escapeHTML(currentPhrase)}</strong>
-    `;
-
-    $("verify").style.display = "block";
-
-  } catch (error) {
-    toast(error.message);
-  }
 });
 
-$("verify").onclick = async () => {
 
-  $("verify").disabled = true;
-  $("verify").textContent = "Checking...";
+verifyBtn.onclick = async () => {
 
-  try {
+    if (!currentUser) return;
 
-    const data = await api("/check", {
-      method: "POST",
-      body: JSON.stringify({
-        username: $("username").value.trim(),
-        phrase: currentPhrase
-      })
-    });
+    verifyBtn.disabled = true;
+    verifyBtn.innerText = "Checking...";
 
-    if (!data.success) {
-      toast(data.message || "Verification failed.");
-      return;
+    try {
+
+        const response = await fetch(
+            `${BACKEND}/check`,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    username:
+                        currentUser.username,
+
+                    phrase
+                })
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (!data.success) {
+
+            showSiteMessage(
+                "Verification phrase not found."
+            );
+
+            verifyBtn.disabled = false;
+            verifyBtn.innerText = "Verify";
+
+            return;
+        }
+
+
+        localStorage.setItem(
+            "admflipUser",
+            JSON.stringify(currentUser)
+        );
+
+        modal.classList.remove("show");
+
+        showUser();
+
+        showSiteMessage(
+            `Welcome, ${currentUser.username}!`
+        );
+
+        loadInventory();
+        loadCoinflips();
+
+    } catch (error) {
+
+        console.error(error);
+
+        showSiteMessage(
+            "Verification failed."
+        );
+
+        verifyBtn.disabled = false;
+        verifyBtn.innerText = "Verify";
     }
-
-    saveLogin(data.user, data.token);
-
-    $("modal").classList.remove("show");
-
-    $("username").value = "";
-    $("profile").classList.add("hidden");
-    $("phrase").classList.add("hidden");
-    $("verify").style.display = "none";
-
-    updateAccountUI();
-
-    toast("Verified successfully.");
-
-    loadInventory();
-    loadChat();
-
-  } catch (error) {
-
-    toast(error.message);
-
-  } finally {
-
-    $("verify").disabled = false;
-    $("verify").textContent = "Verify";
-  }
 };
 
-$("logoutBtn").onclick = () => {
 
-  currentUser = null;
-  authToken = "";
+logoutBtn.onclick = () => {
 
-  localStorage.removeItem("admflipUser");
-  localStorage.removeItem("admflipToken");
+    localStorage.removeItem("admflipUser");
 
-  updateAccountUI();
+    currentUser = null;
+    phrase = "";
 
-  toast("Logged out.");
+    loginBtn.innerHTML = `
+        <img src="roblox.png" alt="">
+        <span>Sign In</span>
+    `;
+
+    loginBtn.classList.remove("logged");
+
+    logoutBtn.style.display = "none";
+    inventoryBtn.style.display = "none";
+
+    showSiteMessage("Signed out.");
 };
 
 
@@ -306,343 +336,573 @@ $("logoutBtn").onclick = () => {
 
 function showPage(page) {
 
-  const pages = [
-    "coinflip",
-    "values",
-    "leaderboard",
-    "inventory"
-  ];
+    document
+        .querySelectorAll(".page")
+        .forEach(section => {
+            section.classList.remove("active");
+        });
 
-  pages.forEach(name => {
 
-    const el = $(name + "Page");
+    const target =
+        document.getElementById(`${page}Page`);
 
-    if (el) {
-      el.classList.toggle(
-        "hidden-page",
-        name !== page
-      );
+    if (!target) return;
+
+    target.classList.add("active");
+
+    localStorage.setItem(
+        "admflipPage",
+        page
+    );
+
+
+    if (page === "values") {
+        loadPets();
     }
-  });
 
-  document.querySelectorAll(".menu button[data-page]")
-    .forEach(button => {
-      button.classList.toggle(
-        "active",
-        button.dataset.page === page
-      );
-    });
+    if (page === "leaderboard") {
+        loadLeaderboard();
+    }
 
-  sessionStorage.setItem(
-    "admflipPage",
-    page
-  );
+    if (page === "inventory") {
 
-  if (page === "coinflip") loadCoinflips();
-  if (page === "values") loadValues();
-  if (page === "leaderboard") loadLeaderboard();
-  if (page === "inventory") loadInventory();
+        if (!currentUser) {
+
+            showSiteMessage(
+                "Sign in first."
+            );
+
+            return;
+        }
+
+        loadInventory();
+    }
+
+    if (page === "coinflip") {
+        loadCoinflips();
+    }
 }
 
-document.querySelectorAll(".menu button[data-page]")
-  .forEach(button => {
 
-    button.onclick = () => {
-      showPage(button.dataset.page);
-    };
+document
+    .querySelectorAll("[data-page]")
+    .forEach(link => {
 
-  });
+        link.addEventListener("click", event => {
+
+            event.preventDefault();
+
+            showPage(
+                link.dataset.page
+            );
+        });
+    });
+
+
+inventoryBtn.onclick = () => {
+
+    if (!currentUser) {
+
+        modal.classList.add("show");
+
+        return;
+    }
+
+    showPage("inventory");
+};
+
+
+/* =========================
+   RESTORE PAGE AFTER REFRESH
+========================= */
+
+const savedPage =
+    localStorage.getItem("admflipPage") ||
+    "coinflip";
+
+showPage(savedPage);
 
 
 /* =========================
    CHAT
 ========================= */
 
-function updateChatState() {
+function openChat() {
 
-  if (currentUser) {
+    chatOpen = true;
 
-    $("chatLoginMessage").style.display = "none";
-    $("chatForm").style.display = "flex";
+    chatPanel.classList.add("open");
 
-  } else {
+    localStorage.setItem(
+        "admflipChatOpen",
+        "1"
+    );
 
-    $("chatLoginMessage").style.display = "block";
-    $("chatForm").style.display = "none";
-  }
+    loadChat();
 }
+
+
+function closeChat() {
+
+    chatOpen = false;
+
+    chatPanel.classList.remove("open");
+
+    localStorage.setItem(
+        "admflipChatOpen",
+        "0"
+    );
+}
+
+
+chatNav.onclick = event => {
+
+    event.preventDefault();
+
+    if (chatOpen) {
+        closeChat();
+    } else {
+        openChat();
+    }
+};
+
+
+chatClose.onclick = closeChat;
+
+mobileChatBtn.onclick = () => {
+
+    if (chatOpen) {
+        closeChat();
+    } else {
+        openChat();
+    }
+};
+
+
+if (
+    localStorage.getItem("admflipChatOpen") === "1"
+) {
+    openChat();
+}
+
 
 async function loadChat() {
 
-  try {
+    try {
 
-    const data = await api("/chat");
+        const response =
+            await fetch(`${BACKEND}/chat`);
 
-    $("chatMessages").innerHTML = "";
+        if (!response.ok) {
+            throw new Error("Chat unavailable");
+        }
 
-    data.messages.forEach(message => {
+        const data =
+            await response.json();
 
-      const div = document.createElement("div");
+        renderChat(
+            data.messages || []
+        );
 
-      div.className = "chat-message";
+    } catch {
 
-      div.innerHTML = `
-        <img
-          src="${escapeHTML(
-            avatarImage(message.avatar)
-          )}"
-          alt=""
-        >
-
-        <div class="chat-message-content">
-
-          <div>
-            <span class="chat-name">
-              ${escapeHTML(message.username)}
-            </span>
-
-            <span class="chat-time">
-              ${new Date(message.createdAt)
-                .toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit"
-                })}
-            </span>
-          </div>
-
-          <div class="chat-text">
-            ${escapeHTML(message.text)}
-          </div>
-
-        </div>
-      `;
-
-      div.querySelector("img").onclick = () => {
-        openUserProfile(message.robloxId);
-      };
-
-      $("chatMessages").appendChild(div);
-    });
-
-    $("chatMessages").scrollTop =
-      $("chatMessages").scrollHeight;
-
-  } catch (error) {
-    console.log(error.message);
-  }
+        chatMessages.innerHTML = `
+            <div class="chat-empty">
+                Sign in to join ADMFLIP chat.
+            </div>
+        `;
+    }
 }
 
-$("chatForm").onsubmit = async event => {
 
-  event.preventDefault();
+function renderChat(messages) {
 
-  if (!currentUser) {
-    toast("Sign in first.");
-    return;
-  }
+    if (!messages.length) {
 
-  const input = $("chatInput");
-  const text = input.value.trim();
+        chatMessages.innerHTML = `
+            <div class="chat-empty">
+                Welcome to ADMFLIP chat.
+            </div>
+        `;
 
-  if (!text) return;
+        return;
+    }
 
-  try {
 
-    await api("/chat", {
-      method: "POST",
-      body: JSON.stringify({ text })
-    });
+    chatMessages.innerHTML =
+        messages.map(message => {
 
-    input.value = "";
+            return `
+                <div class="chat-message">
 
-    await loadChat();
+                    <img
+                        src="${escapeHtml(
+                            message.avatar ||
+                            "roblox.png"
+                        )}"
+                        alt=""
+                    >
 
-  } catch (error) {
+                    <div>
 
-    toast(error.message);
-  }
-};
+                        <div class="chat-user">
+                            ${escapeHtml(
+                                message.username ||
+                                "User"
+                            )}
+                        </div>
 
-$("rulesBtn").onclick = () => {
-  $("rulesOverlay").classList.remove("hidden");
-};
+                        <div class="chat-text">
+                            ${escapeHtml(
+                                message.message
+                            )}
+                        </div>
 
-$("closeRules").onclick = () => {
-  $("rulesOverlay").classList.add("hidden");
-};
+                    </div>
 
-$("chatTopBtn").onclick = () => {
+                </div>
+            `;
 
-  if (window.innerWidth <= 900) {
+        }).join("");
 
-    $("chatPanel").classList.toggle("mobile-open");
 
-  } else {
-
-    $("chatPanel").scrollIntoView({
-      behavior: "smooth"
-    });
-  }
-};
-
-$("mobileChatBtn").onclick = () => {
-  $("chatPanel").classList.toggle("mobile-open");
-};
-
-function updateOnline() {
-
-  const number =
-    Math.floor(
-      20 + Math.random() * 26
-    );
-
-  $("onlineCount").textContent = number;
+    chatMessages.scrollTop =
+        chatMessages.scrollHeight;
 }
 
-function startOnlineCounter() {
 
-  updateOnline();
+chatSend.onclick =
+    sendChatMessage;
 
-  clearInterval(onlineTimer);
 
-  onlineTimer = setInterval(
-    updateOnline,
-    100000
-  );
+chatInput.addEventListener(
+    "keydown",
+    event => {
+
+        if (event.key === "Enter") {
+            sendChatMessage();
+        }
+
+    }
+);
+
+
+async function sendChatMessage() {
+
+    if (!currentUser) {
+
+        showSiteMessage(
+            "Sign in to chat."
+        );
+
+        return;
+    }
+
+
+    const message =
+        chatInput.value.trim();
+
+    if (!message) return;
+
+
+    /*
+      Block ALL links, not only http.
+      This catches:
+      https://...
+      http://...
+      www....
+      discord.gg/...
+      domain.com
+    */
+
+    const linkPattern =
+        /(?:https?:\/\/|www\.|discord\.gg\/|t\.me\/|[a-z0-9-]+\.(?:com|net|org|gg|io|xyz|me|co|dev|app)(?:\/|$))/i;
+
+    if (linkPattern.test(message)) {
+
+        showSiteMessage(
+            "Links are not allowed in chat."
+        );
+
+        return;
+    }
+
+
+    if (
+        Date.now() - lastChatTime <
+        2500
+    ) {
+
+        showSiteMessage(
+            "Slow down."
+        );
+
+        return;
+    }
+
+
+    lastChatTime = Date.now();
+
+    chatSend.disabled = true;
+
+
+    try {
+
+        const response =
+            await fetch(`${BACKEND}/chat`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+
+                    robloxId:
+                        currentUser.id,
+
+                    username:
+                        currentUser.username,
+
+                    avatar:
+                        currentUser.avatar,
+
+                    message
+                })
+            });
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok || !data.success) {
+
+            showSiteMessage(
+                data.message ||
+                "Message failed."
+            );
+
+            return;
+        }
+
+
+        chatInput.value = "";
+
+        renderChat(
+            data.messages || []
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        showSiteMessage(
+            "Chat server error."
+        );
+
+    } finally {
+
+        chatSend.disabled = false;
+    }
 }
 
 
 /* =========================
-   VALUES
+   ONLINE COUNT
 ========================= */
 
-let allPets = [];
+function randomOnline() {
 
-async function loadValues() {
+    onlineCount =
+        Math.floor(
+            Math.random() * 26
+        ) + 20;
 
-  try {
+    const element =
+        document.getElementById(
+            "onlineCount"
+        );
 
-    const data = await api("/pets");
-
-    allPets = data.pets || [];
-
-    renderValues(allPets);
-
-  } catch (error) {
-
-    $("valuesList").innerHTML = `
-      <div class="empty-state">
-        <h3>Values unavailable</h3>
-        <p>
-          The values service could not be reached.
-          You can still use the rest of ADMFLIP.
-        </p>
-      </div>
-    `;
-  }
+    if (element) {
+        element.textContent =
+            onlineCount;
+    }
 }
 
-function renderValues(pets) {
 
-  if (!pets.length) {
+randomOnline();
 
-    $("valuesList").innerHTML = `
-      <div class="empty-state">
-        No pets found.
-      </div>
-    `;
+setInterval(
+    randomOnline,
+    100000
+);
 
-    return;
-  }
 
-  $("valuesList").innerHTML =
-    pets.map(petCard).join("");
+/* =========================
+   RULES
+========================= */
 
-  document.querySelectorAll(
-    "#valuesList .pet-image"
-  ).forEach(img => {
+rulesBtn.onclick = () => {
 
-    img.onerror = () => {
-      img.classList.add("missing");
-    };
-
-  });
-}
-
-function petCard(pet, selectable = false) {
-
-  const image =
-    pet.image ||
-    petImage(pet.name);
-
-  const selected =
-    selectedPet &&
-    selectedPet.itemId === pet.itemId;
-
-  return `
-    <div
-      class="pet-card ${selected ? "selected" : ""}"
-      ${selectable ? `data-item="${escapeHTML(
-        pet.itemId || ""
-      )}"` : ""}
-    >
-
-      <div class="pet-image-wrap">
-
-        <img
-          class="pet-image"
-          src="${escapeHTML(image)}"
-          alt="${escapeHTML(pet.name)}"
-          loading="lazy"
-        >
-
-      </div>
-
-      <div class="pet-name">
-        ${escapeHTML(pet.name)}
-      </div>
-
-      ${
-        pet.variants
-          ? `<div class="pet-meta">
-              ${pet.variants.map(
-                x => `<span class="variant">${escapeHTML(x)}</span>`
-              ).join("")}
-            </div>`
-          : ""
-      }
-
-      ${
-        pet.rarity
-          ? `<div class="pet-meta">
-              ${escapeHTML(pet.rarity)}
-            </div>`
-          : ""
-      }
-
-      <div class="pet-value">
-        ${money(pet.value)}
-      </div>
-
-    </div>
-  `;
-}
-
-$("valueSearch").oninput = () => {
-
-  const search =
-    $("valueSearch").value
-      .trim()
-      .toLowerCase();
-
-  renderValues(
-    allPets.filter(
-      pet =>
-        pet.name.toLowerCase()
-          .includes(search)
-    )
-  );
+    rulesModal.classList.add("show");
 };
+
+
+rulesClose.onclick = () => {
+
+    rulesModal.classList.remove("show");
+};
+
+
+rulesModal.addEventListener(
+    "click",
+    event => {
+
+        if (
+            event.target ===
+            rulesModal
+        ) {
+            rulesModal.classList.remove(
+                "show"
+            );
+        }
+
+    }
+);
+
+
+/* =========================
+   PET VALUES
+========================= */
+
+async function loadPets() {
+
+    petsGrid.innerHTML = `
+        <div class="loading">
+            Loading pet values...
+        </div>
+    `;
+
+    try {
+
+        const response =
+            await fetch(`${BACKEND}/pets`);
+
+        const data =
+            await response.json();
+
+        if (
+            !data.success ||
+            !Array.isArray(data.pets)
+        ) {
+            throw new Error("Invalid pets");
+        }
+
+        allPets = data.pets;
+
+        renderPets(allPets);
+
+    } catch (error) {
+
+        console.error(error);
+
+        petsGrid.innerHTML = `
+            <div class="loading">
+                Unable to load pet values.
+            </div>
+        `;
+    }
+}
+
+
+function renderPets(pets) {
+
+    if (!pets.length) {
+
+        petsGrid.innerHTML = `
+            <div class="loading">
+                No pets found.
+            </div>
+        `;
+
+        return;
+    }
+
+
+    petsGrid.innerHTML =
+        pets.map(pet => {
+
+            const name =
+                pet.name || "Unknown";
+
+            const value =
+                Number(pet.value || 0);
+
+
+            return `
+                <div class="pet-value-card">
+
+                    <div class="pet-value-image">
+
+                        <img
+                            src="${petImage(name)}"
+                            alt="${escapeHtml(name)}"
+                            loading="lazy"
+                            onerror="
+                                this.style.display='none';
+                                this.parentElement.classList.add('no-image');
+                            "
+                        >
+
+                        <span>
+                            ${escapeHtml(
+                                name
+                                .slice(0, 2)
+                                .toUpperCase()
+                            )}
+                        </span>
+
+                    </div>
+
+                    <div class="pet-value-info">
+
+                        <strong>
+                            ${escapeHtml(name)}
+                        </strong>
+
+                        <b>
+                            ${value.toLocaleString()}
+                        </b>
+
+                    </div>
+
+                </div>
+            `;
+
+        }).join("");
+}
+
+
+petSearch.addEventListener(
+    "input",
+    () => {
+
+        const search =
+            petSearch.value
+                .trim()
+                .toLowerCase();
+
+        const filtered =
+            allPets.filter(pet =>
+                String(pet.name || "")
+                    .toLowerCase()
+                    .includes(search)
+            );
+
+        renderPets(filtered);
+    }
+);
 
 
 /* =========================
@@ -651,196 +911,773 @@ $("valueSearch").oninput = () => {
 
 async function loadInventory() {
 
-  if (!currentUser) {
+    if (!currentUser) return;
 
-    $("inventoryList").innerHTML = `
-      <div class="empty-state">
-        <h3>Sign in first</h3>
-        <p>Your inventory is available after Roblox verification.</p>
-      </div>
+
+    const grid =
+        document.getElementById(
+            "inventoryGrid"
+        );
+
+    grid.innerHTML = `
+        <div class="loading">
+            Loading inventory...
+        </div>
     `;
 
-    return;
-  }
 
-  try {
+    try {
 
-    const data = await api("/inventory");
+        const response =
+            await fetch(
+                `${BACKEND}/inventory/${encodeURIComponent(
+                    currentUser.id
+                )}`
+            );
 
-    $("inventoryTitle").textContent =
-      `${currentUser.username}'s Inventory`;
 
-    $("inventoryTotal").textContent =
-      `${money(data.totalValue)} value`;
+        const data =
+            await response.json();
 
-    if (!data.inventory.length) {
 
-      $("inventoryList").innerHTML = `
-        <div class="empty-state">
-          <h3>Your inventory is empty</h3>
-          <button class="primary" onclick="depositPets()">
-            Deposit
-          </button>
-        </div>
-      `;
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+            throw new Error(
+                data.message ||
+                "Inventory error"
+            );
+        }
 
-      return;
+
+        currentUser.inventory =
+            data.inventory || [];
+
+
+        localStorage.setItem(
+            "admflipUser",
+            JSON.stringify(currentUser)
+        );
+
+
+        renderInventory(
+            currentUser.inventory
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        /*
+          If the backend inventory endpoint
+          isn't available yet, use the locally
+          saved inventory rather than destroying it.
+        */
+
+        renderInventory(
+            currentUser.inventory || []
+        );
     }
-
-    $("inventoryList").innerHTML =
-      data.inventory.map(
-        pet => petCard(pet)
-      ).join("");
-
-  } catch (error) {
-
-    toast(error.message);
-  }
 }
 
-$("inventoryBtn").onclick = () => {
 
-  showPage("inventory");
-  loadInventory();
-};
+function renderInventory(inventory) {
 
-$("depositBtn").onclick = depositPets;
+    const grid =
+        document.getElementById(
+            "inventoryGrid"
+        );
 
-function depositPets() {
 
-  toast(
-    "Deposit via Discord is temporary. Automatic deposits are coming soon."
-  );
+    if (!inventory.length) {
+
+        grid.innerHTML = `
+            <div class="loading">
+                Your inventory is empty.
+            </div>
+        `;
+
+        return;
+    }
+
+
+    grid.innerHTML =
+        inventory.map((pet, index) => {
+
+            const name =
+                pet.name || "Unknown";
+
+            const value =
+                Number(pet.value || 0);
+
+
+            return `
+                <div
+                    class="pet-value-card"
+                    data-inventory-index="${index}"
+                >
+
+                    <div class="pet-value-image">
+
+                        <img
+                            src="${petImage(name)}"
+                            alt="${escapeHtml(name)}"
+                            loading="lazy"
+                            onerror="
+                                this.style.display='none';
+                                this.parentElement.classList.add('no-image');
+                            "
+                        >
+
+                        <span>
+                            ${escapeHtml(
+                                name
+                                .slice(0, 2)
+                                .toUpperCase()
+                            )}
+                        </span>
+
+                    </div>
+
+                    <div class="pet-value-info">
+
+                        <strong>
+                            ${escapeHtml(name)}
+                        </strong>
+
+                        <b>
+                            ${value.toLocaleString()}
+                        </b>
+
+                    </div>
+
+                </div>
+            `;
+
+        }).join("");
 }
 
 
 /* =========================
-   CREATE COINFLIP
+   COINFLIP CREATOR
 ========================= */
 
-$("createFlipBtn").onclick = async () => {
+createCoinflipBtn.onclick = () => {
 
-  if (!currentUser) {
-    toast("Sign in first.");
-    $("modal").classList.add("show");
-    return;
-  }
+    if (!currentUser) {
 
-  selectedPet = null;
-  selectedSide = null;
+        showSiteMessage(
+            "Sign in first to create a coinflip."
+        );
 
-  $("sideChooser").classList.add("hidden");
+        modal.classList.add("show");
 
-  $("createFlipModal").classList.add("show");
-
-  try {
-
-    const data = await api("/inventory");
-
-    if (!data.inventory.length) {
-
-      $("createInventory").innerHTML = "";
-
-      $("noPetsCreate").classList.remove("hidden");
-
-      return;
+        return;
     }
 
-    $("noPetsCreate").classList.add("hidden");
 
-    $("createInventory").innerHTML =
-      data.inventory.map(
-        pet => petCard(pet, true)
-      ).join("");
-
-    document.querySelectorAll(
-      "#createInventory .pet-card"
-    ).forEach(card => {
-
-      card.onclick = () => {
-
-        const item =
-          data.inventory.find(
-            x => x.itemId === card.dataset.item
-          );
-
-        if (!item) return;
-
-        selectedPet = item;
-
-        document.querySelectorAll(
-          "#createInventory .pet-card"
-        ).forEach(x =>
-          x.classList.remove("selected")
+    const container =
+        document.getElementById(
+            "coinflipCreate"
         );
 
-        card.classList.add("selected");
 
-        $("sideChooser").classList.remove(
-          "hidden"
+    if (
+        container.style.display !==
+        "none"
+    ) {
+
+        container.style.display =
+            "none";
+
+        container.innerHTML = "";
+
+        return;
+    }
+
+
+    loadInventoryForCoinflip();
+};
+
+
+async function loadInventoryForCoinflip() {
+
+    let inventory =
+        currentUser.inventory || [];
+
+
+    try {
+
+        const response =
+            await fetch(
+                `${BACKEND}/inventory/${encodeURIComponent(
+                    currentUser.id
+                )}`
+            );
+
+
+        if (response.ok) {
+
+            const data =
+                await response.json();
+
+            if (data.success) {
+
+                inventory =
+                    data.inventory || [];
+
+                currentUser.inventory =
+                    inventory;
+
+                localStorage.setItem(
+                    "admflipUser",
+                    JSON.stringify(currentUser)
+                );
+            }
+        }
+
+    } catch {}
+
+
+    renderCoinflipCreator(
+        inventory
+    );
+}
+
+
+function renderCoinflipCreator(
+    inventory
+) {
+
+    const container =
+        document.getElementById(
+            "coinflipCreate"
         );
-      };
 
-    });
 
-  } catch (error) {
+    container.style.display =
+        "block";
 
-    toast(error.message);
-  }
-};
 
-$("closeCreate").onclick = () => {
-  $("createFlipModal").classList.remove("show");
-};
+    selectedCoinflipPet = null;
+    selectedCoinflipSide = null;
 
-document.querySelectorAll(
-  ".side-buttons button"
-).forEach(button => {
 
-  button.onclick = () => {
+    container.innerHTML = `
 
-    selectedSide = button.dataset.side;
+        <div class="cf-create-box">
 
-    document.querySelectorAll(
-      ".side-buttons button"
-    ).forEach(x =>
-      x.classList.remove("selected")
+            <div class="cf-create-header">
+
+                <div>
+                    <h2>Create Coinflip</h2>
+                    <p>
+                        Choose a pet from your inventory.
+                    </p>
+                </div>
+
+                <button
+                    class="cf-close"
+                    id="closeCf"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <div
+                class="cf-inventory"
+                id="cfInventory"
+            ></div>
+
+
+            <div
+                class="cf-side-section"
+                id="cfSideSection"
+                style="display:none"
+            >
+
+                <h3>
+                    Choose your side
+                </h3>
+
+                <div class="cf-sides">
+
+                    <button
+                        class="cf-side"
+                        data-side="heads"
+                    >
+                        <span>H</span>
+                        Heads
+                    </button>
+
+                    <button
+                        class="cf-side"
+                        data-side="tails"
+                    >
+                        <span>T</span>
+                        Tails
+                    </button>
+
+                </div>
+
+
+                <button
+                    id="postCoinflipBtn"
+                    class="cf-post"
+                    disabled
+                >
+                    Choose a side
+                </button>
+
+            </div>
+
+        </div>
+    `;
+
+
+    document
+        .getElementById("closeCf")
+        .onclick = () => {
+
+            container.innerHTML = "";
+            container.style.display =
+                "none";
+        };
+
+
+    const inventoryBox =
+        document.getElementById(
+            "cfInventory"
+        );
+
+
+    if (!inventory.length) {
+
+        inventoryBox.innerHTML = `
+            <div class="loading">
+                You have no pets to coinflip.
+            </div>
+        `;
+
+        return;
+    }
+
+
+    inventory.forEach(
+        (pet, index) => {
+
+            const card =
+                document.createElement(
+                    "button"
+                );
+
+
+            card.type = "button";
+
+            card.className =
+                "cf-pet-card";
+
+
+            card.dataset.index =
+                index;
+
+
+            const name =
+                pet.name ||
+                "Unknown Pet";
+
+
+            const value =
+                Number(
+                    pet.value || 0
+                );
+
+
+            card.innerHTML = `
+
+                <div class="cf-pet-image-wrap">
+
+                    <img
+                        class="cf-pet-image"
+                        src="${petImage(name)}"
+                        alt="${escapeHtml(name)}"
+                        loading="lazy"
+                    >
+
+                    <div class="cf-no-image">
+                        ${escapeHtml(
+                            name
+                                .slice(0, 2)
+                                .toUpperCase()
+                        )}
+                    </div>
+
+                </div>
+
+
+                <div class="cf-pet-info">
+
+                    <strong>
+                        ${escapeHtml(name)}
+                    </strong>
+
+                    <span>
+                        ${value.toLocaleString()}
+                    </span>
+
+                </div>
+
+
+                <div class="cf-selected-check">
+                    ✓
+                </div>
+            `;
+
+
+            const image =
+                card.querySelector(
+                    ".cf-pet-image"
+                );
+
+
+            image.onerror = () => {
+
+                image.style.display =
+                    "none";
+
+                image
+                    .parentElement
+                    .classList
+                    .add("no-image");
+            };
+
+
+            card.onclick = () => {
+
+                selectCoinflipPet(
+                    pet,
+                    index
+                );
+            };
+
+
+            inventoryBox.appendChild(
+                card
+            );
+        }
     );
 
-    button.classList.add("selected");
-  };
-});
 
-$("postFlip").onclick = async () => {
+    document
+        .querySelectorAll(".cf-side")
+        .forEach(button => {
 
-  if (!selectedPet || !selectedSide) {
-    toast("Choose a pet and side.");
-    return;
-  }
+            button.onclick = () => {
 
-  try {
+                selectCoinflipSide(
+                    button.dataset.side
+                );
+            };
+        });
 
-    await api("/coinflips", {
-      method: "POST",
-      body: JSON.stringify({
-        itemId: selectedPet.itemId,
-        side: selectedSide
-      })
-    });
 
-    $("createFlipModal").classList.remove(
-      "show"
-    );
+    document
+        .getElementById(
+            "postCoinflipBtn"
+        )
+        .onclick =
+        postCoinflip;
+}
 
-    toast("Coinflip posted.");
 
-    showPage("coinflip");
+function selectCoinflipPet(
+    pet,
+    index
+) {
 
-  } catch (error) {
+    selectedCoinflipPet = {
+        name: pet.name,
+        value: Number(
+            pet.value || 0
+        ),
+        index
+    };
 
-    toast(error.message);
-  }
-};
+
+    document
+        .querySelectorAll(
+            ".cf-pet-card"
+        )
+        .forEach(card => {
+
+            card.classList.remove(
+                "selected"
+            );
+        });
+
+
+    const selected =
+        document.querySelector(
+            `.cf-pet-card[data-index="${index}"]`
+        );
+
+
+    if (selected) {
+
+        selected.classList.add(
+            "selected"
+        );
+    }
+
+
+    document
+        .getElementById(
+            "cfSideSection"
+        )
+        .style.display =
+        "block";
+
+
+    selectedCoinflipSide =
+        null;
+
+
+    document
+        .querySelectorAll(
+            ".cf-side"
+        )
+        .forEach(button => {
+
+            button.classList.remove(
+                "selected"
+            );
+        });
+
+
+    updatePostButton();
+}
+
+
+function selectCoinflipSide(
+    side
+) {
+
+    if (!selectedCoinflipPet) {
+
+        showSiteMessage(
+            "Choose a pet first."
+        );
+
+        return;
+    }
+
+
+    selectedCoinflipSide =
+        side;
+
+
+    document
+        .querySelectorAll(
+            ".cf-side"
+        )
+        .forEach(button => {
+
+            button.classList.remove(
+                "selected"
+            );
+        });
+
+
+    const selected =
+        document.querySelector(
+            `.cf-side[data-side="${side}"]`
+        );
+
+
+    if (selected) {
+
+        selected.classList.add(
+            "selected"
+        );
+    }
+
+
+    updatePostButton();
+}
+
+
+function updatePostButton() {
+
+    const button =
+        document.getElementById(
+            "postCoinflipBtn"
+        );
+
+
+    if (!button) return;
+
+
+    if (!selectedCoinflipPet) {
+
+        button.disabled = true;
+        button.textContent =
+            "Choose a pet";
+
+        return;
+    }
+
+
+    if (!selectedCoinflipSide) {
+
+        button.disabled = true;
+        button.textContent =
+            "Choose a side";
+
+        return;
+    }
+
+
+    button.disabled = false;
+    button.textContent =
+        "Create Coinflip";
+}
+
+
+async function postCoinflip() {
+
+    if (!currentUser) {
+
+        showSiteMessage(
+            "Sign in first."
+        );
+
+        return;
+    }
+
+
+    if (!selectedCoinflipPet) {
+
+        showSiteMessage(
+            "Choose a pet."
+        );
+
+        return;
+    }
+
+
+    if (!selectedCoinflipSide) {
+
+        showSiteMessage(
+            "Choose Heads or Tails."
+        );
+
+        return;
+    }
+
+
+    const button =
+        document.getElementById(
+            "postCoinflipBtn"
+        );
+
+
+    button.disabled = true;
+    button.textContent =
+        "Creating...";
+
+
+    try {
+
+        const response =
+            await fetch(
+                `${BACKEND}/coinflips`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            robloxId:
+                                currentUser.id,
+
+                            username:
+                                currentUser.username,
+
+                            avatar:
+                                currentUser.avatar,
+
+                            petName:
+                                selectedCoinflipPet.name,
+
+                            petValue:
+                                selectedCoinflipPet.value,
+
+                            side:
+                                selectedCoinflipSide
+                        })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data.message ||
+                "Unable to create coinflip."
+            );
+        }
+
+
+        showSiteMessage(
+            "Coinflip created!"
+        );
+
+
+        const container =
+            document.getElementById(
+                "coinflipCreate"
+            );
+
+
+        container.innerHTML = "";
+        container.style.display =
+            "none";
+
+
+        loadCoinflips();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        showSiteMessage(
+            error.message ||
+            "Could not create coinflip."
+        );
+
+
+        button.disabled = false;
+        button.textContent =
+            "Create Coinflip";
+    }
+}
 
 
 /* =========================
@@ -849,380 +1686,311 @@ $("postFlip").onclick = async () => {
 
 async function loadCoinflips() {
 
-  try {
-
-    const data = await api("/coinflips");
-
-    if (!data.coinflips.length) {
-
-      $("coinflipList").innerHTML = `
-        <div class="empty-state">
-          <h3>No active coinflips yet.</h3>
-          <p>Create one and be the first trader.</p>
+    coinflipsList.innerHTML = `
+        <div class="loading">
+            Loading active coinflips...
         </div>
-      `;
-
-      return;
-    }
-
-    $("coinflipList").innerHTML =
-      data.coinflips.map(renderCoinflip).join("");
-
-    document.querySelectorAll(
-      ".cf-join"
-    ).forEach(button => {
-
-      if (button.dataset.action === "join") {
-
-        button.onclick = () =>
-          joinCoinflip(button.dataset.id);
-
-      }
-
-      if (button.dataset.action === "bot") {
-
-        button.onclick = () =>
-          callBot(button.dataset.id);
-      }
-    });
-
-    document.querySelectorAll(
-      ".cf-eye"
-    ).forEach(button => {
-
-      button.onclick = () =>
-        showCoinflipDetails(button.dataset.id);
-
-    });
-
-  } catch (error) {
-
-    $("coinflipList").innerHTML = `
-      <div class="empty-state">
-        ${escapeHTML(error.message)}
-      </div>
     `;
-  }
-}
 
-function renderCoinflip(cf) {
 
-  const left = cf.creatorPet;
-  const right = cf.joinerPet;
+    try {
 
-  const leftValue = Number(left?.value || 0);
-  const rightValue = Number(right?.value || 0);
+        const response =
+            await fetch(
+                `${BACKEND}/coinflips`
+            );
 
-  const total =
-    leftValue + rightValue;
 
-  const leftPercent =
-    total
-      ? ((leftValue / total) * 100).toFixed(2)
-      : "50.00";
+        const data =
+            await response.json();
 
-  const rightPercent =
-    total
-      ? ((rightValue / total) * 100).toFixed(2)
-      : "50.00";
 
-  const isOwner =
-    currentUser &&
-    String(cf.creatorRobloxId) ===
-      String(currentUser.id);
-
-  return `
-    <article class="coinflip-card">
-
-      <div class="cf-users">
-
-        <div class="cf-user">
-          <img
-            class="avatar"
-            src="${escapeHTML(
-              avatarImage(cf.creatorAvatar)
-            )}"
-            alt=""
-          >
-
-          <strong>
-            ${escapeHTML(cf.creatorUsername)}
-          </strong>
-        </div>
-
-        <div class="cf-vs">VS</div>
-
-        <div class="cf-user right">
-
-          ${
-            right
-              ? `
-                <strong>
-                  ${escapeHTML(
-                    cf.joinerUsername
-                  )}
-                </strong>
-
-                <img
-                  class="avatar"
-                  src="${escapeHTML(
-                    avatarImage(
-                      cf.joinerAvatar
-                    )
-                  )}"
-                  alt=""
-                >
-              `
-              : `
-                <strong>
-                  Waiting...
-                </strong>
-              `
-          }
-
-        </div>
-
-      </div>
-
-      <div class="cf-body">
-
-        <div class="cf-side">
-
-          <div class="cf-percent">
-            ${leftPercent}%
-          </div>
-
-          <div class="cf-total">
-            ${money(leftValue)}
-          </div>
-
-          ${renderCFPet(left)}
-
-        </div>
-
-        <div class="cf-vs">
-          ${escapeHTML(cf.creatorSide)}
-        </div>
-
-        <div class="cf-side right">
-
-          <div class="cf-percent">
-            ${rightPercent}%
-          </div>
-
-          <div class="cf-total">
-            ${money(rightValue)}
-          </div>
-
-          ${right
-            ? renderCFPet(right)
-            : `<span class="muted">Open slot</span>`
-          }
-
-        </div>
-
-      </div>
-
-      <div class="cf-join">
-
-        ${
-          isOwner
-            ? `
-              <button
-                class="cf-eye"
-                data-id="${cf._id}"
-              >
-                👁
-              </button>
-
-              <button
-                class="cf-join"
-                data-action="bot"
-                data-id="${cf._id}"
-                style="margin-left:8px"
-              >
-                Call Bot
-              </button>
-            `
-            : cf.status === "active"
-              ? `
-                <button
-                  class="primary cf-join"
-                  data-action="join"
-                  data-id="${cf._id}"
-                >
-                  Join
-                </button>
-              `
-              : ""
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+            throw new Error(
+                "Coinflip error"
+            );
         }
 
-      </div>
 
-    </article>
-  `;
+        renderCoinflips(
+            data.coinflips || []
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        coinflipsList.innerHTML = `
+            <div class="loading">
+                No active coinflips yet.
+            </div>
+        `;
+    }
 }
 
-function renderCFPet(pet) {
 
-  if (!pet) return "";
+function renderCoinflips(
+    coinflips
+) {
 
-  return `
-    <div class="cf-pet">
+    if (!coinflips.length) {
 
-      <img
-        src="${escapeHTML(
-          pet.image ||
-          petImage(pet.name)
-        )}"
-        alt="${escapeHTML(pet.name)}"
-        onerror="this.style.display='none'"
-      >
+        coinflipsList.innerHTML = `
+            <div class="loading">
+                No active coinflips yet.
+            </div>
+        `;
 
-      <div>
-
-        <div>
-          ${
-            pet.variants
-              ? pet.variants.map(
-                  x => `<span class="variant">${escapeHTML(x)}</span>`
-                ).join("")
-              : ""
-          }
-        </div>
-
-        <strong>
-          ${escapeHTML(pet.name)}
-        </strong>
-
-        <div class="cf-total">
-          ${money(pet.value)}
-        </div>
-
-      </div>
-
-    </div>
-  `;
-}
-
-async function joinCoinflip(id) {
-
-  if (!currentUser) {
-    toast("Sign in first.");
-    return;
-  }
-
-  try {
-
-    const data = await api(
-      `/coinflips/${id}/join`,
-      { method: "POST" }
-    );
-
-    await loadCoinflips();
-
-    if (data.result) {
-      showFlipResult(data.result);
+        return;
     }
 
-  } catch (error) {
 
-    toast(error.message);
-  }
+    coinflipsList.innerHTML =
+        coinflips.map(cf => {
+
+            const pet =
+                cf.petName ||
+                "Unknown Pet";
+
+
+            const value =
+                Number(
+                    cf.petValue || 0
+                );
+
+
+            const owner =
+                cf.username ||
+                "Unknown";
+
+
+            const side =
+                String(
+                    cf.side ||
+                    "heads"
+                ).toUpperCase();
+
+
+            return `
+
+                <article class="coinflip-card">
+
+                    <div class="coinflip-user">
+
+                        <img
+                            src="${escapeHtml(
+                                cf.avatar ||
+                                "roblox.png"
+                            )}"
+                            alt=""
+                        >
+
+                        <strong>
+                            ${escapeHtml(owner)}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="coinflip-pet">
+
+                        <div class="coinflip-pet-image">
+
+                            <img
+                                src="${petImage(pet)}"
+                                alt="${escapeHtml(pet)}"
+                                onerror="
+                                    this.style.display='none';
+                                    this.parentElement.classList.add('no-image');
+                                "
+                            >
+
+                            <span>
+                                ${escapeHtml(
+                                    pet
+                                        .slice(0, 2)
+                                        .toUpperCase()
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                ${escapeHtml(pet)}
+                            </strong>
+
+                            <small>
+                                ${value.toLocaleString()}
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="coinflip-side">
+
+                        <span>
+                            ${side === "HEADS"
+                                ? "H"
+                                : "T"}
+                        </span>
+
+                        ${side}
+
+                    </div>
+
+
+                    <div class="coinflip-action">
+
+                        ${
+                            String(
+                                cf.robloxId
+                            ) === String(
+                                currentUser?.id
+                            )
+                            ?
+                            `<button
+                                class="join-btn disabled"
+                                disabled
+                            >
+                                Your Flip
+                            </button>`
+                            :
+                            `<button
+                                class="join-btn"
+                                onclick="joinCoinflip('${escapeHtml(
+                                    cf._id ||
+                                    cf.id
+                                )}')"
+                            >
+                                Join
+                            </button>`
+                        }
+
+                    </div>
+
+                </article>
+            `;
+
+        }).join("");
 }
 
-async function callBot(id) {
 
-  try {
+async function joinCoinflip(
+    id
+) {
 
-    const data = await api(
-      `/coinflips/${id}/bot`,
-      { method: "POST" }
-    );
+    if (!currentUser) {
 
-    if (data.result) {
-      showFlipResult(data.result);
+        showSiteMessage(
+            "Sign in first."
+        );
+
+        modal.classList.add("show");
+
+        return;
     }
 
-    await loadCoinflips();
 
-  } catch (error) {
+    try {
 
-    toast(error.message);
-  }
+        const response =
+            await fetch(
+                `${BACKEND}/coinflips/${encodeURIComponent(id)}/join`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            robloxId:
+                                currentUser.id,
+
+                            username:
+                                currentUser.username,
+
+                            avatar:
+                                currentUser.avatar
+                        })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data.message ||
+                "Unable to join."
+            );
+        }
+
+
+        if (data.result) {
+
+            showCoinflipResult(
+                data.result
+            );
+
+        } else {
+
+            showSiteMessage(
+                "Joined coinflip."
+            );
+        }
+
+
+        loadCoinflips();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        showSiteMessage(
+            error.message ||
+            "Unable to join coinflip."
+        );
+    }
 }
 
-async function showCoinflipDetails(id) {
 
-  try {
+function showCoinflipResult(
+    result
+) {
 
-    const data =
-      await api(`/coinflips/${id}`);
+    const winner =
+        result.winnerUsername ||
+        "Winner";
 
-    toast(
-      data.coinflip.joinerUsername
-        ? `Joined by ${data.coinflip.joinerUsername}`
-        : "Waiting for another trader."
+
+    const side =
+        result.winningSide ||
+        "";
+
+
+    showSiteMessage(
+        `${winner} won on ${side}!`
     );
-
-  } catch (error) {
-
-    toast(error.message);
-  }
 }
-
-function showFlipResult(result) {
-
-  $("flipResultModal").classList.add("show");
-
-  $("flipResultTitle").textContent =
-    result.winnerUsername === currentUser?.username
-      ? "You Won!"
-      : "Coinflip Result";
-
-  $("flipResultText").innerHTML = `
-    <p>
-      Result:
-      <strong>${escapeHTML(result.result)}</strong>
-    </p>
-
-    <p>
-      Winner:
-      <strong>${escapeHTML(
-        result.winnerUsername
-      )}</strong>
-    </p>
-
-    <p>
-      Pet:
-      <strong>${escapeHTML(
-        result.petName
-      )}</strong>
-    </p>
-  `;
-
-  const coin = $("coinAnimation");
-
-  coin.classList.add("flipping");
-
-  setTimeout(() => {
-
-    coin.classList.remove("flipping");
-
-    coin.querySelector("span")
-      .textContent = result.result;
-
-  }, 1800);
-}
-
-$("closeFlipResult").onclick = () => {
-
-  $("flipResultModal")
-    .classList.remove("show");
-
-  loadInventory();
-  loadCoinflips();
-};
 
 
 /* =========================
@@ -1231,253 +1999,147 @@ $("closeFlipResult").onclick = () => {
 
 async function loadLeaderboard() {
 
-  try {
-
-    const data =
-      await api("/leaderboard");
-
-    $("leaderboardList").innerHTML =
-      data.players.map(
-        (player, index) => `
-
-          <div class="leader-row">
-
-            <div class="rank">
-              #${index + 1}
-            </div>
-
-            <div class="cf-user">
-
-              <img
-                class="avatar"
-                src="${escapeHTML(
-                  avatarImage(
-                    player.avatar
-                  )
-                )}"
-                alt=""
-              >
-
-              <strong>
-                ${escapeHTML(
-                  player.username
-                )}
-              </strong>
-
-            </div>
-
-            <div class="wager">
-              ${money(player.wagered)}
-            </div>
-
-          </div>
-
-        `
-      ).join("");
-
-  } catch (error) {
-
-    $("leaderboardList").innerHTML = `
-      <div class="empty-state">
-        ${escapeHTML(error.message)}
-      </div>
+    leaderboardList.innerHTML = `
+        <div class="loading">
+            Loading TOP FLIPPERS...
+        </div>
     `;
-  }
-}
 
 
-/* =========================
-   USER PROFILE / TIP
-========================= */
+    try {
 
-async function openUserProfile(robloxId) {
+        const response =
+            await fetch(
+                `${BACKEND}/leaderboard`
+            );
 
-  try {
 
-    const data =
-      await api(
-        `/users/${encodeURIComponent(robloxId)}`
-      );
+        const data =
+            await response.json();
 
-    const user = data.user;
 
-    $("userProfileModal").classList.add(
-      "show"
-    );
-
-    $("profileModalContent").innerHTML = `
-
-      <div style="text-align:center">
-
-        <img
-          class="avatar"
-          style="width:75px;height:75px"
-          src="${escapeHTML(
-            avatarImage(user.avatar)
-          )}"
-        >
-
-        <h2>
-          ${escapeHTML(user.username)}
-        </h2>
-
-        <p>
-          Wagered:
-          <strong>
-            ${money(user.wagered)}
-          </strong>
-        </p>
-
-        <p>
-          Profit:
-          <strong>
-            ${money(user.profit)}
-          </strong>
-        </p>
-
-        ${
-          currentUser &&
-          String(currentUser.id) !==
-            String(user.robloxId)
-            ? `
-              <button
-                id="profileTipBtn"
-                class="primary"
-              >
-                Tip
-              </button>
-            `
-            : ""
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+            throw new Error(
+                "Leaderboard error"
+            );
         }
 
-      </div>
-    `;
 
-    const tipBtn =
-      $("profileTipBtn");
+        const users =
+            (data.users || [])
+                .slice(0, 10);
 
-    if (tipBtn) {
 
-      tipBtn.onclick = () => {
+        renderLeaderboard(users);
 
-        $("userProfileModal")
-          .classList.remove("show");
 
-        openTipModal(user);
-      };
+    } catch (error) {
+
+        console.error(error);
+
+        leaderboardList.innerHTML = `
+            <div class="loading">
+                Unable to load leaderboard.
+            </div>
+        `;
     }
-
-  } catch (error) {
-
-    toast(error.message);
-  }
 }
 
-async function openTipModal(user) {
 
-  if (!currentUser) {
-    toast("Sign in first.");
-    return;
-  }
+function renderLeaderboard(
+    users
+) {
 
-  currentTipTarget = user;
+    if (!users.length) {
 
-  $("tipTarget").textContent =
-    `Choose a pet to tip ${user.username}.`;
-
-  $("tipModal").classList.add("show");
-
-  try {
-
-    const data =
-      await api("/inventory");
-
-    $("tipInventory").innerHTML =
-      data.inventory.length
-        ? data.inventory.map(
-            pet => petCard(pet, true)
-          ).join("")
-        : `
-          <div class="empty-state">
-            Your inventory is empty.
-          </div>
+        leaderboardList.innerHTML = `
+            <div class="loading">
+                No wager data yet.
+            </div>
         `;
 
-    document.querySelectorAll(
-      "#tipInventory .pet-card"
-    ).forEach(card => {
+        return;
+    }
 
-      card.onclick = async () => {
 
-        const item =
-          data.inventory.find(
-            x =>
-              x.itemId ===
-              card.dataset.item
-          );
+    leaderboardList.innerHTML =
+        users.map((user, index) => {
 
-        if (!item) return;
+            const place =
+                index + 1;
 
-        try {
 
-          await api("/tip", {
-            method: "POST",
-            body: JSON.stringify({
-              recipientRobloxId:
-                currentTipTarget.robloxId,
-              itemId: item.itemId
-            })
-          });
+            const wager =
+                Number(
+                    user.wagered || 0
+                );
 
-          $("tipModal")
-            .classList.remove("show");
 
-          toast("Pet tipped successfully.");
+            return `
 
-          loadInventory();
+                <div class="leaderboard-row">
 
-        } catch (error) {
+                    <div class="leaderboard-place">
+                        ${place}
+                    </div>
 
-          toast(error.message);
-        }
-      };
 
-    });
+                    <img
+                        src="${escapeHtml(
+                            user.avatar ||
+                            "roblox.png"
+                        )}"
+                        alt=""
+                    >
 
-  } catch (error) {
 
-    toast(error.message);
-  }
+                    <div class="leaderboard-user">
+
+                        <strong>
+                            ${escapeHtml(
+                                user.username ||
+                                "Unknown"
+                            )}
+                        </strong>
+
+                        <span>
+                            ${wager.toLocaleString()}
+                            wagered
+                        </span>
+
+                    </div>
+
+                </div>
+            `;
+
+        }).join("");
 }
-
-$("closeUserProfile").onclick = () => {
-  $("userProfileModal")
-    .classList.remove("show");
-};
-
-$("closeTip").onclick = () => {
-  $("tipModal")
-    .classList.remove("show");
-};
 
 
 /* =========================
-   START
+   MODAL CLOSE
 ========================= */
 
-loadLogin();
+modal.addEventListener(
+    "click",
+    event => {
 
-startOnlineCounter();
-
-const savedPage =
-  sessionStorage.getItem("admflipPage") ||
-  "coinflip";
-
-showPage(savedPage);
-
-loadChat();
-
-chatTimer = setInterval(
-  loadChat,
-  5000
+        if (
+            event.target === modal
+        ) {
+            modal.classList.remove(
+                "show"
+            );
+        }
+    }
 );
+
+
+/* =========================
+   STARTUP
+========================= */
+
+loadCoinflips();
