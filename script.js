@@ -216,69 +216,28 @@ function makeVerificationPhrase(){
 }
 
 async function robloxLookup(username){
-  const clean = username.trim();
+  const clean = String(username || "").trim();
   if(!clean) throw new Error("Enter your Roblox username.");
 
-  // Roblox documents this public GET search endpoint. Using it avoids
-  // the browser preflight problem that can cause "Failed to fetch"
-  // with the username POST endpoint.
-  const searchUrl =
-    `https://users.roblox.com/v1/users/search?keyword=${encodeURIComponent(clean)}&limit=10`;
-
-  let response;
   try{
-    response = await fetch(searchUrl, {
-      method:"GET",
-      credentials:"omit",
-      cache:"no-store",
-      headers:{"Accept":"application/json"}
-    });
+    const data = await api(`/user/${encodeURIComponent(clean)}`);
+    const user = data?.user;
+
+    if(!data?.success || !user?.id){
+      throw new Error(data?.message || `No Roblox user found for "${clean}".`);
+    }
+
+    return {
+      id: Number(user.id),
+      name: user.username || clean,
+      username: user.username || clean,
+      displayName: user.displayName || user.username || clean,
+      avatar: user.avatar || ""
+    };
   }catch(error){
-    throw new Error(
-      "Roblox could not be reached from this browser. Disable a blocking extension/VPN and try again."
-    );
+    console.error("ADMFLIP Roblox lookup:", error);
+    throw new Error(error?.message || "Could not find that Roblox user.");
   }
-
-  if(!response.ok){
-    throw new Error(`Roblox search failed (${response.status}).`);
-  }
-
-  const data = await response.json();
-  const users = Array.isArray(data?.data) ? data.data : [];
-
-  if(!users.length){
-    throw new Error(`No Roblox user found for "${clean}".`);
-  }
-
-  const exact = users.find(u =>
-    String(u.name || "").toLowerCase() === clean.toLowerCase()
-  );
-  const match = exact || users[0];
-
-  if(!match?.id){
-    throw new Error("Roblox returned an invalid user result.");
-  }
-
-  let userResponse;
-  try{
-    userResponse = await fetch(
-      `https://users.roblox.com/v1/users/${encodeURIComponent(match.id)}`,
-      {
-        method:"GET",
-        credentials:"omit",
-        cache:"no-store",
-        headers:{"Accept":"application/json"}
-      }
-    );
-  }catch(error){
-    throw new Error("Found the Roblox user, but could not load their profile.");
-  }
-
-  if(!userResponse.ok){
-    throw new Error(`Could not load the Roblox profile (${userResponse.status}).`);
-  }
-
-  return await userResponse.json();
 }
 
 async function startVerification(){
@@ -382,69 +341,44 @@ async function verifyRobloxBio(){
     button.disabled = true;
     button.textContent = "Checking...";
   }
+
   if(message) message.textContent = "Checking your Roblox profile bio...";
 
   try{
-    // Re-fetch the public profile so the verification uses the latest bio.
-    const userId = state.verification.robloxUser.id;
-    const response = await fetch(
-      `https://users.roblox.com/v1/users/${encodeURIComponent(userId)}`
-    );
+    const account = await api("/check", {
+      method:"POST",
+      body:JSON.stringify({
+        username: state.verification.username,
+        phrase: state.verification.phrase
+      })
+    });
 
-    if(!response.ok){
-      throw new Error("Could not check the Roblox profile.");
+    if(!account?.success){
+      throw new Error(account?.message || "Verification failed.");
     }
 
-    const latestUser = await response.json();
-    const description = String(latestUser?.description || "");
-    const phrase = state.verification.phrase;
-
-    if(!description.toLowerCase().includes(phrase.toLowerCase())){
-      throw new Error(
-        "Verification phrase was not found in your Roblox bio. Add it exactly, save your profile, then try again."
-      );
-    }
+    const userId = Number(account.id || state.verification.robloxUser.id);
+    const username = account.username || state.verification.username;
+    const avatar = account.avatar ||
+      (userId
+        ? `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(userId)}&width=150&height=150&format=png`
+        : "");
 
     state.user = {
-      username: latestUser.name || state.verification.username,
-      displayName: latestUser.displayName || latestUser.name || state.verification.username,
-      id: latestUser.id,
-      avatar: latestUser.id ? `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(latestUser.id)}&width=150&height=150&format=png` : "",
+      username,
+      displayName: username,
+      id: userId,
+      robloxId: userId,
+      avatar,
       verified: true
     };
-
-    // Keep your backend available for account/session creation if it supports it.
-    // This is deliberately best-effort and never sends a password or cookie.
-    try{
-      const account = await api("/check", {
-        method:"POST",
-        body:JSON.stringify({
-          username: state.user.username,
-          userId: state.user.id,
-          phrase
-        })
-      });
-
-      if(account?.user || account?.account || account?.data){
-        const backendUser = account.user || account.account || account.data;
-        state.user = {
-          ...state.user,
-          ...backendUser,
-          username: backendUser.username || state.user.username,
-          id: backendUser.id || backendUser.userId || state.user.id
-        };
-      }
-    }catch(backendError){
-      console.warn("ADMFLIP backend account sync skipped:", backendError);
-    }
 
     saveUser();
     updateAccountUI();
     closeModal("loginModal");
     toast(`Verified as ${state.user.username}`);
 
-    await Promise.allSettled([loadCoinflips(),loadChat()]);
-
+    await Promise.allSettled([loadCoinflips(), loadChat()]);
   }catch(error){
     console.error("ADMFLIP bio verification:", error);
     if(message) message.textContent = error.message || "Verification failed.";
