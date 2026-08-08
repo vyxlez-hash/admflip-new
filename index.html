@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,21 +14,23 @@
     content="ADMFLIP — Adopt Me pet coinflips, values, trading and leaderboards."
   >
 
-  <title>ADMFLIP</title>
+  <title>ADMFLIP — Adopt Me Trading</title>
 
   <link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
 
-  <!-- ================= HEADER ================= -->
+  <!-- =====================================================
+       HEADER
+  ====================================================== -->
 
   <header class="header">
 
     <div class="header-left">
 
       <a
-        href="#"
+        href="#coinflip"
         class="brand"
         data-page="coinflip"
       >
@@ -139,11 +142,15 @@
   </header>
 
 
-  <!-- ================= MAIN ================= -->
+  <!-- =====================================================
+       MAIN APP
+  ====================================================== -->
 
   <main id="app">
 
-    <!-- ================= COINFLIP ================= -->
+    <!-- ===================================================
+         COINFLIP PAGE
+    ==================================================== -->
 
     <section
       id="coinflipPage"
@@ -153,15 +160,19 @@
       <div class="page-head">
 
         <div>
+
           <div class="eyebrow">
             ADMFLIP
           </div>
 
-          <h1>Coinflip</h1>
+          <h1>
+            Coinflip
+          </h1>
 
           <p>
             Flip Adopt Me pets against other traders.
           </p>
+
         </div>
 
         <button
@@ -178,18 +189,33 @@
       <div class="stats-row">
 
         <div class="stat">
+
           <span>ACTIVE FLIPS</span>
-          <strong id="activeCount">0</strong>
+
+          <strong id="activeCount">
+            0
+          </strong>
+
         </div>
 
         <div class="stat">
+
           <span>ONLINE</span>
-          <strong id="coinflipOnline">--</strong>
+
+          <strong id="coinflipOnline">
+            --
+          </strong>
+
         </div>
 
         <div class="stat">
+
           <span>STATUS</span>
-          <strong class="online-text">ONLINE</strong>
+
+          <strong class="online-text">
+            ONLINE
+          </strong>
+
         </div>
 
       </div>
@@ -199,15 +225,19 @@
         id="coinflips"
         class="coinflips"
       >
+
         <div class="loading">
           Loading coinflips...
         </div>
+
       </div>
 
     </section>
 
 
-    <!-- ================= VALUES ================= -->
+    <!-- ===================================================
+         VALUES PAGE
+    ==================================================== -->
 
     <section
       id="valuesPage"
@@ -217,15 +247,19 @@
       <div class="page-head">
 
         <div>
+
           <div class="eyebrow">
             DATABASE
           </div>
 
-          <h1>Pet Values</h1>
+          <h1>
+            Pet Values
+          </h1>
 
           <p>
             Browse Adopt Me pets and their current values.
           </p>
+
         </div>
 
       </div>
@@ -234,7 +268,7 @@
       <input
         id="valueSearch"
         class="search"
-        type="text"
+        type="search"
         placeholder="Search for a pet..."
         autocomplete="off"
       >
@@ -244,15 +278,19 @@
         id="valuesGrid"
         class="pet-grid"
       >
+
         <div class="loading">
           Loading values...
         </div>
+
       </div>
 
     </section>
 
 
-    <!-- ================= LEADERBOARD ================= -->
+    <!-- ===================================================
+         LEADERBOARD PAGE
+    ==================================================== -->
 
     <section
       id="leaderboardPage"
@@ -262,15 +300,19 @@
       <div class="page-head">
 
         <div>
+
           <div class="eyebrow">
             RANKINGS
           </div>
 
-          <h1>Leaderboard</h1>
+          <h1>
+            Leaderboard
+          </h1>
 
           <p>
             The biggest ADMFLIP traders.
           </p>
+
         </div>
 
       </div>
@@ -279,15 +321,19 @@
       <div class="leaderboard">
 
         <div class="leaderboard-head">
+
           <span>#</span>
           <span>PLAYER</span>
           <span>WAGERED</span>
+
         </div>
 
         <div id="leaderboard">
+
           <div class="loading">
             Loading leaderboard...
           </div>
+
         </div>
 
       </div>
@@ -295,7 +341,9 @@
     </section>
 
 
-    <!-- ================= CHAT ================= -->
+    <!-- ===================================================
+         CHAT PAGE
+    ==================================================== -->
 
     <section
       id="chatPage"
@@ -305,33 +353,44 @@
       <div class="page-head">
 
         <div>
+
           <div class="eyebrow">
             COMMUNITY
           </div>
 
-          <h1>Chat</h1>
+          <h1>
+            Chat
+          </h1>
 
           <p>
             Talk with other ADMFLIP traders.
           </p>
+
         </div>
 
       </div>
 
 
-      <div class="chat-panel">
+      <div class="chat-page-card">
 
         <div class="chat-header">
 
           <div>
-            <strong>ADMFLIP CHAT</strong>
+
+            <strong>
+              ADMFLIP CHAT
+            </strong>
 
             <span>
               <i class="online-dot"></i>
 
-              <b id="onlineCount">--</b>
+              <b id="onlineCount">
+                --
+              </b>
+
               online
             </span>
+
           </div>
 
           <div class="chat-actions">
@@ -354,9 +413,11 @@
           id="chatMessages"
           class="chat-messages"
         >
+
           <div class="loading">
             Loading chat...
           </div>
+
         </div>
 
 
@@ -384,30 +445,25 @@
     </section>
 
 
-    <!-- ================= PROFILE ================= -->
+    <!-- ===================================================
+         PROFILE PAGE
+    ==================================================== -->
 
     <section
       id="profilePage"
       class="page hidden"
     >
+
       <div id="profileContent"></div>
+
     </section>
 
   </main>
 
 
-  <!-- ================= MOBILE CHAT ================= -->
-
-  <button
-    id="mobileChatButton"
-    class="mobile-chat-button"
-    type="button"
-  >
-    Chat
-  </button>
-
-
-  <!-- ================= CHAT SIDE PANEL ================= -->
+  <!-- =====================================================
+       DESKTOP CHAT PANEL
+  ====================================================== -->
 
   <aside
     id="chatPanel"
@@ -417,16 +473,33 @@
     <div class="chat-header">
 
       <div>
-        <strong>ADMFLIP CHAT</strong>
+
+        <strong>
+          ADMFLIP CHAT
+        </strong>
 
         <span>
           <i class="online-dot"></i>
-          <b id="panelOnlineCount">--</b>
+
+          <b id="panelOnlineCount">
+            --
+          </b>
+
           online
         </span>
+
       </div>
 
       <div class="chat-actions">
+
+        <button
+          id="rulesPanelBtn"
+          class="rules-icon"
+          type="button"
+          title="Chat rules"
+        >
+          ?
+        </button>
 
         <button
           id="chatClose"
@@ -446,9 +519,11 @@
       id="panelChatMessages"
       class="chat-messages"
     >
+
       <div class="loading">
         Loading chat...
       </div>
+
     </div>
 
 
@@ -474,7 +549,22 @@
   </aside>
 
 
-  <!-- ================= LOGIN MODAL ================= -->
+  <!-- =====================================================
+       MOBILE CHAT BUTTON
+  ====================================================== -->
+
+  <button
+    id="mobileChatButton"
+    class="mobile-chat-button"
+    type="button"
+  >
+    Chat
+  </button>
+
+
+  <!-- =====================================================
+       LOGIN MODAL
+  ====================================================== -->
 
   <div
     id="loginModal"
@@ -493,10 +583,12 @@
 
 
       <div class="login-logo">
+
         <img
           src="/logo.png"
           alt="ADMFLIP"
         >
+
       </div>
 
 
@@ -504,19 +596,45 @@
         ACCOUNT
       </div>
 
-      <h2>Roblox Sign In</h2>
+
+      <h2>
+        Roblox Sign In
+      </h2>
+
 
       <p class="muted">
-        Sign in securely with Roblox.
+        Verify your Roblox account using your profile bio.
       </p>
 
 
+      <input
+        id="username"
+        class="input"
+        type="text"
+        placeholder="Roblox username"
+        autocomplete="off"
+      >
+
+
+      <div
+        id="loginProfile"
+        class="login-profile hidden"
+      ></div>
+
+
+      <div
+        id="phrase"
+        class="phrase hidden"
+      ></div>
+
+
       <button
-        id="robloxLogin"
+        id="verify"
         class="primary full"
         type="button"
+        style="display:none"
       >
-        Continue with Roblox
+        Verify
       </button>
 
 
@@ -530,7 +648,9 @@
   </div>
 
 
-  <!-- ================= INVENTORY MODAL ================= -->
+  <!-- =====================================================
+       INVENTORY MODAL
+  ====================================================== -->
 
   <div
     id="inventoryModal"
@@ -547,23 +667,31 @@
         ×
       </button>
 
+
       <div class="eyebrow">
         YOUR ITEMS
       </div>
 
-      <h2>Inventory</h2>
+
+      <h2>
+        Inventory
+      </h2>
+
 
       <p class="muted">
         Pets available for coinflips.
       </p>
 
+
       <div
         id="inventoryGrid"
         class="pet-grid"
       >
+
         <div class="loading">
           Loading...
         </div>
+
       </div>
 
     </div>
@@ -571,7 +699,9 @@
   </div>
 
 
-  <!-- ================= CREATE COINFLIP MODAL ================= -->
+  <!-- =====================================================
+       CREATE COINFLIP MODAL
+  ====================================================== -->
 
   <div
     id="createModal"
@@ -588,11 +718,16 @@
         ×
       </button>
 
+
       <div class="eyebrow">
         NEW FLIP
       </div>
 
-      <h2>Create Coinflip</h2>
+
+      <h2>
+        Create Coinflip
+      </h2>
+
 
       <p class="muted">
         Select a pet and choose your side.
@@ -603,9 +738,11 @@
         id="createInventory"
         class="pet-grid"
       >
+
         <div class="loading">
           Loading...
         </div>
+
       </div>
 
 
@@ -614,7 +751,10 @@
         class="side-area hidden"
       >
 
-        <h3>Choose your side</h3>
+        <h3>
+          Choose your side
+        </h3>
+
 
         <div class="side-buttons">
 
@@ -623,17 +763,24 @@
             data-side="heads"
             type="button"
           >
+
             <span>H</span>
+
             HEADS
+
           </button>
+
 
           <button
             class="side-btn"
             data-side="tails"
             type="button"
           >
+
             <span>T</span>
+
             TAILS
+
           </button>
 
         </div>
@@ -654,7 +801,9 @@
   </div>
 
 
-  <!-- ================= RULES MODAL ================= -->
+  <!-- =====================================================
+       RULES MODAL
+  ====================================================== -->
 
   <div
     id="rulesModal"
@@ -671,11 +820,16 @@
         ×
       </button>
 
+
       <div class="eyebrow">
         COMMUNITY
       </div>
 
-      <h2>Chat Rules</h2>
+
+      <h2>
+        Chat Rules
+      </h2>
+
 
       <p class="muted">
         Keep ADMFLIP welcoming and useful.
@@ -684,41 +838,52 @@
 
       <div class="rule">
         <b>01 · Respect everyone</b>
+
         <span>
           Harassment, hate speech and targeted abuse are not allowed.
         </span>
       </div>
 
+
       <div class="rule">
         <b>02 · No spam</b>
+
         <span>
           Avoid repeated messages, flooding and excessive caps.
         </span>
       </div>
 
+
       <div class="rule">
         <b>03 · No begging</b>
+
         <span>
           Do not repeatedly ask users for pets or benefits.
         </span>
       </div>
 
+
       <div class="rule">
         <b>04 · No advertising</b>
+
         <span>
           Unrelated websites and communities are not allowed.
         </span>
       </div>
 
+
       <div class="rule">
         <b>05 · No scams</b>
+
         <span>
           Do not impersonate staff or intentionally mislead users.
         </span>
       </div>
 
+
       <div class="rule">
         <b>06 · Keep it appropriate</b>
+
         <span>
           Sexual or adult content is not allowed.
         </span>
@@ -729,7 +894,9 @@
   </div>
 
 
-  <!-- ================= TOAST ================= -->
+  <!-- =====================================================
+       TOAST
+  ====================================================== -->
 
   <div
     id="toast"
@@ -737,7 +904,12 @@
   ></div>
 
 
-  <script src="/app.js"></script>
+  <!-- =====================================================
+       JAVASCRIPT
+  ====================================================== -->
+
+  <script src="/script.js"></script>
 
 </body>
 </html>
+```
