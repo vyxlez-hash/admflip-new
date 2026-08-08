@@ -3,24 +3,24 @@
 
 <head>
 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<title>ADMFLIP</title>
+    <title>ADMFLIP</title>
 
-<link
-    rel="icon"
-    href="logo.png"
->
+    <link
+        rel="icon"
+        href="logo.png"
+    >
 
-<link
-    rel="stylesheet"
-    href="style.css"
->
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
 
 </head>
 
@@ -29,24 +29,71 @@
 
 
 <!-- =========================
+     MOBILE CHAT BUTTON
+========================= -->
+
+<button
+    id="mobileChatButton"
+    class="mobile-chat-button"
+    type="button"
+>
+
+    <span>💬</span>
+
+    <span>Chat</span>
+
+</button>
+
+
+
+<!-- =========================
      CHAT
 ========================= -->
 
-<aside class="chat-panel">
+<aside
+    id="chatPanel"
+    class="chat-panel"
+>
+
 
     <div class="chat-header">
 
-        <div>
 
-            <strong>Chat</strong>
+        <div class="chat-title">
 
-            <span id="chatStatus">
+
+            <div class="chat-title-main">
+
+                Chat
+
+            </div>
+
+
+            <div class="chat-online">
+
+                <span class="online-dot"></span>
+
                 Online
-            </span>
+
+            </div>
+
 
         </div>
 
+
+        <button
+            id="mobileChatClose"
+            class="mobile-chat-close"
+            type="button"
+        >
+
+            ×
+
+        </button>
+
+
     </div>
+
 
 
     <div
@@ -55,11 +102,26 @@
     ></div>
 
 
-    <div class="chat-login-message" id="chatLoginMessage">
 
-        Sign in with Roblox to chat.
+    <div
+        id="chatLoginMessage"
+        class="chat-login-message"
+    >
+
+        <div class="chat-login-icon">
+            🔒
+        </div>
+
+        <strong>
+            Sign in to chat
+        </strong>
+
+        <span>
+            You need to verify your Roblox account first.
+        </span>
 
     </div>
+
 
 
     <form
@@ -73,11 +135,16 @@
             type="text"
             maxlength="500"
             autocomplete="off"
-            placeholder="Type a message..."
+            placeholder="Message..."
         >
 
-        <button type="submit">
-            Send
+        <button
+            type="submit"
+            title="Send"
+        >
+
+            ➤
+
         </button>
 
     </form>
@@ -86,6 +153,154 @@
 </aside>
 
 
+
+<!-- =========================
+     MAIN SITE
+========================= -->
+
+<div id="site">
+
+
+    <!-- HEADER -->
+
+    <header class="header">
+
+
+        <div class="brand">
+
+            <img
+                src="logo.png"
+                alt="ADMFLIP"
+            >
+
+        </div>
+
+
+
+        <nav class="menu">
+
+            <a href="#">
+                Coinflip
+            </a>
+
+            <a href="#">
+                Leaderboard
+            </a>
+
+            <a href="#">
+                Chat
+            </a>
+
+        </nav>
+
+
+
+        <div class="account-buttons">
+
+
+            <button
+                class="login"
+                id="loginBtn"
+                type="button"
+            >
+
+                <img
+                    src="roblox.png"
+                    alt=""
+                >
+
+                <span>
+                    Sign In
+                </span>
+
+            </button>
+
+
+
+            <button
+                class="logout"
+                id="logoutBtn"
+                type="button"
+                style="display:none;"
+            >
+
+                Log Out
+
+            </button>
+
+
+        </div>
+
+
+    </header>
+
+
+
+    <!-- =========================
+         ANNOUNCEMENT
+    ========================= -->
+
+    <div
+        id="announcement"
+        class="announcement hidden"
+    ></div>
+
+
+
+    <!-- =========================
+         YOUR SITE CONTENT
+    ========================= -->
+
+    <main class="main-content">
+
+
+        <section class="hero">
+
+
+            <div class="hero-content">
+
+
+                <div class="hero-badge">
+                    ADMFLIP
+                </div>
+
+
+                <h1>
+                    Trade. Flip. Win.
+                </h1>
+
+
+                <p>
+                    Your Adopt Me trading community.
+                </p>
+
+
+                <div class="hero-buttons">
+
+
+                    <button class="primary-button">
+                        Start Flipping
+                    </button>
+
+
+                    <button class="secondary-button">
+                        View Values
+                    </button>
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+</div>
 
 
 
@@ -98,106 +313,28 @@
     class="maintenance hidden"
 >
 
-    <h1>ADMFLIP</h1>
+    <div class="maintenance-box">
 
-    <h2>
-        ⚠️ Site Under Maintenance
-    </h2>
+        <div class="maintenance-icon">
+            ⚙️
+        </div>
 
-    <p>
-        Please come back later.
-    </p>
+        <h1>
+            ADMFLIP
+        </h1>
+
+        <h2>
+            Site Under Maintenance
+        </h2>
+
+        <p>
+            We're working on something.
+            Please come back soon.
+        </p>
+
+    </div>
 
 </div>
-
-
-
-
-
-<!-- =========================
-     ANNOUNCEMENT
-========================= -->
-
-<div
-    id="announcement"
-    class="announcement hidden"
-></div>
-
-
-
-
-
-<!-- =========================
-     MAIN SITE
-========================= -->
-
-<div id="site">
-
-
-<header class="header">
-
-
-    <div class="brand">
-
-        <img src="logo.png">
-
-    </div>
-
-
-
-    <nav class="menu">
-
-        <a href="#">
-            Coinflip
-        </a>
-
-        <a href="#">
-            Leaderboard
-        </a>
-
-        <a href="#">
-            Chat
-        </a>
-
-    </nav>
-
-
-
-    <div class="account-buttons">
-
-
-        <button
-            class="login"
-            id="loginBtn"
-        >
-
-            <img src="roblox.png">
-
-            <span>
-                Sign In
-            </span>
-
-        </button>
-
-
-
-        <button
-            class="logout"
-            id="logoutBtn"
-            style="display:none;"
-        >
-
-            Log Out
-
-        </button>
-
-
-    </div>
-
-
-</header>
-
-
 
 
 
@@ -210,7 +347,19 @@
     id="modal"
 >
 
+
     <div class="box">
+
+
+        <button
+            id="modalClose"
+            class="modal-close"
+            type="button"
+        >
+
+            ×
+
+        </button>
 
 
         <h2>
@@ -218,11 +367,17 @@
         </h2>
 
 
+        <p class="modal-description">
+            Enter your Roblox username to verify your account.
+        </p>
+
+
 
         <input
             id="username"
             placeholder="Roblox username"
             autocomplete="off"
+            maxlength="30"
         >
 
 
@@ -243,6 +398,7 @@
 
         <button
             id="verify"
+            type="button"
             style="display:none;"
         >
 
@@ -253,10 +409,9 @@
 
     </div>
 
-</div>
-
 
 </div>
+
 
 
 <script src="script.js"></script>
