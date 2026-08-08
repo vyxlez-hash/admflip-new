@@ -1,48 +1,23 @@
+// =====================================================
+// ADMFLIP FRONTEND SCRIPT
+// =====================================================
 
 const BACKEND = "https://admflip-new.onrender.com";
 
 const state = {
   user: null,
   pets: [],
+  inventory: [],
   selectedPet: null,
   selectedSide: null,
-  currentPage: "coinflip",
-  phrase: null
+  currentPage: "coinflip"
 };
 
-const $ = id => document.getElementById(id);
+// =====================================================
+// HELPERS
+// =====================================================
 
-/* =====================================================
-   API
-===================================================== */
-
-async function api(path, options = {}) {
-  const response = await fetch(BACKEND + path, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {})
-    }
-  });
-
-  let data = null;
-
-  try {
-    data = await response.json();
-  } catch {
-    throw new Error("Invalid server response");
-  }
-
-  if (!response.ok) {
-    throw new Error(data?.message || `Server error (${response.status})`);
-  }
-
-  return data;
-}
-
-/* =====================================================
-   TOAST
-===================================================== */
+const $ = (id) => document.getElementById(id);
 
 function toast(message) {
   const el = $("toast");
@@ -59,9 +34,18 @@ function toast(message) {
   }, 3000);
 }
 
-/* =====================================================
-   HELPERS
-===================================================== */
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value);
+}
 
 function formatValue(value) {
   const number = Number(value || 0);
@@ -71,42 +55,53 @@ function formatValue(value) {
   });
 }
 
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function escapeAttr(value) {
-  return escapeHtml(value);
-}
-
-function petImage(pet) {
-  if (!pet) return "";
-
-  if (pet.image) {
-    return pet.image;
-  }
-
-  const name = String(pet.name || "")
-    .trim()
-    .replace(/\s+/g, " ");
-
+function petImage(name) {
   if (!name) return "";
 
   return (
     "https://amvgg.com/items/" +
-    encodeURIComponent(name) +
+    encodeURIComponent(String(name).trim()) +
     ".webp"
   );
 }
 
-/* =====================================================
-   USER STORAGE
-===================================================== */
+// =====================================================
+// API
+// =====================================================
+
+async function api(path, options = {}) {
+  const response = await fetch(
+    BACKEND + path,
+    {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+      }
+    }
+  );
+
+  let data = {};
+
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error("Server returned invalid JSON.");
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      data.message ||
+      `Server error (${response.status})`
+    );
+  }
+
+  return data;
+}
+
+// =====================================================
+// LOGIN / ACCOUNT
+// =====================================================
 
 function saveUser() {
   if (!state.user) return;
@@ -117,11 +112,7 @@ function saveUser() {
   );
 }
 
-function clearSavedUser() {
-  localStorage.removeItem("admflipUser");
-}
-
-async function restoreUser() {
+function restoreUser() {
   const saved = localStorage.getItem("admflipUser");
 
   if (!saved) return;
@@ -129,57 +120,24 @@ async function restoreUser() {
   try {
     state.user = JSON.parse(saved);
 
-    if (!state.user?.id) {
-      clearSavedUser();
-      return;
+    if (
+      state.user &&
+      state.user.id
+    ) {
+      showLoggedIn();
+
+      loadAccount();
     }
-
-    await refreshAccount();
-    showLoggedIn();
-
-  } catch (error) {
-    console.error("Restore user:", error);
-
-    clearSavedUser();
-    state.user = null;
+  } catch {
+    localStorage.removeItem("admflipUser");
   }
 }
-
-async function refreshAccount() {
-  if (!state.user?.id) return;
-
-  try {
-    const data = await api(
-      "/account/" +
-      encodeURIComponent(state.user.id)
-    );
-
-    if (data.success && data.user) {
-      state.user = {
-        ...state.user,
-        ...data.user
-      };
-
-      saveUser();
-    }
-
-  } catch (error) {
-    console.warn("Account refresh failed:", error.message);
-  }
-}
-
-/* =====================================================
-   LOGIN UI
-===================================================== */
 
 function showLoggedIn() {
   if (!state.user) return;
 
   const loginBtn = $("loginBtn");
   const accountBox = $("accountBox");
-  const accountUsername = $("accountUsername");
-  const accountAvatar = $("accountAvatar");
-  const chatInput = $("chatInput");
 
   if (loginBtn) {
     loginBtn.classList.add("hidden");
@@ -189,66 +147,150 @@ function showLoggedIn() {
     accountBox.classList.remove("hidden");
   }
 
-  if (accountUsername) {
-    accountUsername.textContent =
+  if ($("accountUsername")) {
+    $("accountUsername").textContent =
       state.user.username || "User";
   }
 
-  if (accountAvatar) {
-    accountAvatar.src =
+  if ($("accountAvatar")) {
+    $("accountAvatar").src =
       state.user.avatar || "/logo.png";
   }
 
-  if (chatInput) {
-    chatInput.placeholder = "Message chat...";
+  if ($("chatInput")) {
+    $("chatInput").placeholder =
+      "Message chat...";
   }
 }
 
 function logout() {
   state.user = null;
+  state.inventory = [];
   state.selectedPet = null;
   state.selectedSide = null;
 
-  clearSavedUser();
+  localStorage.removeItem("admflipUser");
 
   $("loginBtn")?.classList.remove("hidden");
   $("accountBox")?.classList.add("hidden");
 
   if ($("chatInput")) {
-    $("chatInput").placeholder = "Sign in to chat...";
+    $("chatInput").placeholder =
+      "Sign in to chat...";
   }
 
-  toast("Signed out");
+  toast("Signed out.");
 }
 
-/* =====================================================
-   LOGIN MODAL
-===================================================== */
+async function loadAccount() {
+  if (!state.user?.id) return;
 
-$("loginBtn")?.addEventListener("click", () => {
-  $("loginModal")?.classList.remove("hidden");
+  try {
+    const data = await api(
+      "/account/" +
+      encodeURIComponent(state.user.id)
+    );
+
+    if (!data.success || !data.user) {
+      return;
+    }
+
+    state.user = {
+      ...state.user,
+      ...data.user
+    };
+
+    state.inventory =
+      Array.isArray(data.user.inventory)
+        ? data.user.inventory
+        : [];
+
+    saveUser();
+
+    showLoggedIn();
+
+  } catch (error) {
+    console.error(
+      "Account error:",
+      error
+    );
+  }
+}
+
+// =====================================================
+// LOGIN BUTTONS
+// =====================================================
+
+if ($("loginBtn")) {
+  $("loginBtn").onclick = () => {
+    $("loginModal")?.classList.remove("hidden");
+  };
+}
+
+if ($("closeLogin")) {
+  $("closeLogin").onclick = () => {
+    $("loginModal")?.classList.add("hidden");
+  };
+}
+
+if ($("logoutBtn")) {
+  $("logoutBtn").onclick = logout;
+}
+
+// Close modal when clicking background
+document.querySelectorAll(".modal").forEach((modal) => {
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) {
+      modal.classList.add("hidden");
+    }
+  });
 });
 
-$("closeLogin")?.addEventListener("click", () => {
-  $("loginModal")?.classList.add("hidden");
-});
+// =====================================================
+// ROBLOX USER LOOKUP
+// =====================================================
 
-$("logoutBtn")?.addEventListener("click", logout);
+if ($("username")) {
+  let usernameTimer;
 
-/* =====================================================
-   ROBLOX USER LOOKUP
-===================================================== */
+  $("username").addEventListener("input", () => {
+    clearTimeout(usernameTimer);
 
-$("username")?.addEventListener("change", async () => {
-  const username = $("username").value.trim();
+    const username =
+      $("username").value.trim();
+
+    if (!username) {
+      $("loginProfile")?.classList.add("hidden");
+      $("phrase")?.classList.add("hidden");
+
+      if ($("verify")) {
+        $("verify").style.display = "none";
+      }
+
+      if ($("loginMessage")) {
+        $("loginMessage").textContent = "";
+      }
+
+      return;
+    }
+
+    usernameTimer = setTimeout(
+      lookupRobloxUser,
+      500
+    );
+  });
+}
+
+async function lookupRobloxUser() {
+  const username =
+    $("username").value.trim();
 
   if (!username) return;
 
-  $("loginMessage").textContent =
-    "Checking Roblox username...";
-
-  $("verify").style.display = "none";
-  $("phrase").classList.add("hidden");
+  if ($("loginMessage")) {
+    $("loginMessage").textContent =
+      "Checking Roblox username...";
+  }
 
   try {
     const data = await api(
@@ -256,140 +298,191 @@ $("username")?.addEventListener("change", async () => {
       encodeURIComponent(username)
     );
 
-    if (!data.success || !data.user) {
-      $("loginMessage").textContent =
-        data.message || "Roblox username not found.";
-
-      return;
+    if (!data.success) {
+      throw new Error(
+        data.message ||
+        "Roblox username not found."
+      );
     }
 
-    state.user = data.user;
+    state.loginRobloxUser =
+      data.user;
 
-    $("loginProfile").classList.remove("hidden");
+    if ($("loginProfile")) {
+      $("loginProfile").classList.remove("hidden");
 
-    $("loginProfile").innerHTML = `
-      <img
-        src="${escapeAttr(state.user.avatar || "/logo.png")}"
-        alt=""
-        onerror="this.src='/logo.png'"
-      >
+      $("loginProfile").innerHTML = `
+        <img
+          src="${escapeAttr(
+            data.user.avatar || "/logo.png"
+          )}"
+          alt=""
+        >
 
-      <div>
-        <b>${escapeHtml(state.user.username)}</b>
-      </div>
-    `;
+        <div>
+          <strong>
+            ${escapeHtml(data.user.username)}
+          </strong>
 
-    $("loginMessage").textContent =
-      "Creating verification phrase...";
+          <small>
+            Roblox ID: ${escapeHtml(data.user.id)}
+          </small>
+        </div>
+      `;
+    }
+
+    if ($("loginMessage")) {
+      $("loginMessage").textContent =
+        "Creating verification phrase...";
+    }
 
     const phraseData =
       await api("/create");
 
-    state.phrase = phraseData.phrase;
+    state.phrase =
+      phraseData.phrase;
 
-    $("phrase").classList.remove("hidden");
+    if ($("phrase")) {
+      $("phrase").classList.remove("hidden");
 
-    $("phrase").innerHTML = `
-      <div class="phrase-title">
-        Put this phrase in your Roblox bio:
-      </div>
+      $("phrase").innerHTML = `
+        <span>Add this phrase to your Roblox profile bio:</span>
 
-      <br>
+        <strong>
+          ${escapeHtml(state.phrase)}
+        </strong>
+      `;
+    }
 
-      <b>${escapeHtml(state.phrase)}</b>
-    `;
+    if ($("verify")) {
+      $("verify").style.display =
+        "block";
 
-    $("verify").style.display = "block";
+      $("verify").disabled = false;
+      $("verify").textContent =
+        "Verify";
+    }
 
-    $("loginMessage").textContent =
-      "After adding it to your Roblox profile, click Verify.";
+    if ($("loginMessage")) {
+      $("loginMessage").textContent =
+        "Add the phrase to your Roblox bio, then click Verify.";
+    }
 
   } catch (error) {
     console.error(error);
 
-    $("loginMessage").textContent =
-      error.message || "Server error.";
+    if ($("loginMessage")) {
+      $("loginMessage").textContent =
+        error.message ||
+        "Could not find Roblox user.";
+    }
   }
-});
+}
 
-/* =====================================================
-   VERIFY ROBLOX BIO
-===================================================== */
+// =====================================================
+// VERIFY
+// =====================================================
 
-$("verify")?.addEventListener("click", async () => {
-  if (!state.user || !state.phrase) {
-    toast("Enter your Roblox username first.");
+if ($("verify")) {
+  $("verify").onclick =
+    verifyRoblox;
+}
+
+async function verifyRoblox() {
+  if (
+    !state.loginRobloxUser ||
+    !state.phrase
+  ) {
+    toast(
+      "Enter your Roblox username first."
+    );
+
     return;
   }
 
   $("verify").disabled = true;
-  $("verify").textContent = "Checking...";
+  $("verify").textContent =
+    "Checking...";
 
   try {
-    const data = await api("/check", {
-      method: "POST",
+    const data = await api(
+      "/check",
+      {
+        method: "POST",
 
-      body: JSON.stringify({
-        username: state.user.username,
-        phrase: state.phrase
-      })
-    });
+        body: JSON.stringify({
+          username:
+            state.loginRobloxUser.username,
+
+          phrase:
+            state.phrase
+        })
+      }
+    );
 
     if (!data.success) {
-      toast(
+      throw new Error(
         data.message ||
-        "Verification phrase was not found."
+        "Verification failed."
       );
-
-      $("verify").disabled = false;
-      $("verify").textContent = "Verify";
-
-      return;
     }
 
     state.user = {
       id: data.id,
+      robloxId: data.id,
       username: data.username,
-      avatar: data.avatar || state.user.avatar || "",
-      inventory: []
+      avatar:
+        data.avatar ||
+        state.loginRobloxUser.avatar ||
+        "/logo.png"
     };
-
-    await refreshAccount();
 
     saveUser();
 
-    $("loginModal").classList.add("hidden");
+    $("loginModal")?.classList.add("hidden");
 
-    $("username").value = "";
+    if ($("username")) {
+      $("username").value = "";
+    }
 
-    $("loginProfile").classList.add("hidden");
-    $("phrase").classList.add("hidden");
+    $("loginProfile")?.classList.add("hidden");
+    $("phrase")?.classList.add("hidden");
 
-    $("verify").style.display = "none";
-    $("verify").disabled = false;
-    $("verify").textContent = "Verify";
+    if ($("verify")) {
+      $("verify").style.display =
+        "none";
+    }
 
-    $("loginMessage").textContent = "";
+    if ($("loginMessage")) {
+      $("loginMessage").textContent = "";
+    }
 
     showLoggedIn();
 
-    toast("Verified successfully");
-
+    await loadAccount();
     await loadChat();
+
+    toast(
+      "Roblox account verified."
+    );
 
   } catch (error) {
     console.error(error);
 
-    toast(error.message);
+    toast(
+      error.message ||
+      "Verification failed."
+    );
 
     $("verify").disabled = false;
-    $("verify").textContent = "Verify";
+    $("verify").textContent =
+      "Verify";
   }
-});
+}
 
-/* =====================================================
-   PAGES
-===================================================== */
+// =====================================================
+// PAGES
+// =====================================================
 
 function showPage(page) {
   const validPages = [
@@ -407,11 +500,12 @@ function showPage(page) {
 
   document
     .querySelectorAll(".page")
-    .forEach(el => {
-      el.classList.add("hidden");
+    .forEach((element) => {
+      element.classList.add("hidden");
     });
 
-  const target = $(page + "Page");
+  const target =
+    $(page + "Page");
 
   if (target) {
     target.classList.remove("hidden");
@@ -441,26 +535,32 @@ function showPage(page) {
 
 document
   .querySelectorAll("[data-page]")
-  .forEach(link => {
-    link.addEventListener("click", event => {
-      event.preventDefault();
+  .forEach((link) => {
 
-      const page =
-        link.dataset.page;
+    link.addEventListener(
+      "click",
+      (event) => {
 
-      if (page === "chat") {
-        openChat();
-        return;
+        event.preventDefault();
+
+        const page =
+          link.dataset.page;
+
+        if (page === "chat") {
+          openChat();
+          return;
+        }
+
+        showPage(page);
+
+        history.replaceState(
+          null,
+          "",
+          "#" + page
+        );
       }
+    );
 
-      showPage(page);
-
-      history.replaceState(
-        null,
-        "",
-        "#" + page
-      );
-    });
   });
 
 function restorePage() {
@@ -468,29 +568,32 @@ function restorePage() {
     location.hash.replace("#", "");
 
   const saved =
-    localStorage.getItem("admflipPage");
+    localStorage.getItem(
+      "admflipPage"
+    );
 
-  const page =
+  showPage(
     hash ||
     saved ||
-    "coinflip";
-
-  if (page === "chat") {
-    showPage("coinflip");
-    openChat();
-    return;
-  }
-
-  showPage(page);
+    "coinflip"
+  );
 }
 
-/* =====================================================
-   VALUES
-===================================================== */
+// =====================================================
+// VALUES
+// =====================================================
 
 async function loadValues() {
+  const grid =
+    $("valuesGrid");
+
+  if (!grid) return;
+
   if (state.pets.length) {
-    renderValues(state.pets);
+    renderValues(
+      state.pets
+    );
+
     return;
   }
 
@@ -503,22 +606,29 @@ async function loadValues() {
         ? data.pets
         : [];
 
-    renderValues(state.pets);
+    renderValues(
+      state.pets
+    );
 
   } catch (error) {
-    console.error("Values:", error);
+    console.error(error);
 
-    $("valuesGrid").innerHTML = `
+    grid.innerHTML = `
       <div class="loading">
-        Unable to load pet values.
+        Unable to load values.
         <br><br>
-        ${escapeHtml(error.message)}
+        ${escapeHtml(
+          error.message
+        )}
       </div>
     `;
   }
 }
 
-function makePetCard(pet, selectable = false) {
+function makePetCard(
+  pet,
+  selectable = false
+) {
   const card =
     document.createElement("div");
 
@@ -526,7 +636,8 @@ function makePetCard(pet, selectable = false) {
     "pet-card";
 
   const image =
-    petImage(pet);
+    pet.image ||
+    petImage(pet.name);
 
   card.innerHTML = `
     ${
@@ -535,113 +646,154 @@ function makePetCard(pet, selectable = false) {
           <img
             class="pet-image"
             src="${escapeAttr(image)}"
-            alt="${escapeAttr(pet.name)}"
+            alt="${escapeAttr(
+              pet.name
+            )}"
             loading="lazy"
-            onerror="this.classList.add('missing')"
+            onerror="
+              this.style.display='none'
+            "
           >
         `
         : `
-          <div class="pet-image missing"></div>
+          <div class="pet-image missing-image">
+            ?
+          </div>
         `
     }
 
     <div class="pet-name">
-      ${escapeHtml(pet.name)}
+      ${escapeHtml(
+        pet.name
+      )}
     </div>
 
     <div class="pet-meta">
 
       <span>
-        ${escapeHtml(pet.variant || pet.rarity || "")}
+        ${escapeHtml(
+          pet.rarity || ""
+        )}
       </span>
 
       <span class="pet-value">
-        ${formatValue(pet.value)}
+        ${formatValue(
+          pet.value
+        )}
       </span>
 
     </div>
+
+    ${
+      pet.variant
+        ? `
+          <div class="pet-meta">
+            ${escapeHtml(
+              pet.variant
+            )}
+          </div>
+        `
+        : ""
+    }
   `;
 
   if (selectable) {
-    card.addEventListener("click", () => {
+    card.addEventListener(
+      "click",
+      () => {
 
-      document
-        .querySelectorAll(
-          "#createInventory .pet-card"
-        )
-        .forEach(x => {
-          x.classList.remove("selected");
-        });
+        document
+          .querySelectorAll(
+            "#createInventory .pet-card"
+          )
+          .forEach((item) => {
+            item.classList.remove(
+              "selected"
+            );
+          });
 
-      card.classList.add("selected");
+        card.classList.add(
+          "selected"
+        );
 
-      state.selectedPet = pet;
+        state.selectedPet =
+          pet;
 
-      $("sideArea")?.classList.remove("hidden");
-    });
+        $("sideArea")
+          ?.classList.remove(
+            "hidden"
+          );
+      }
+    );
   }
 
   return card;
 }
 
 function renderValues(pets) {
-  const grid = $("valuesGrid");
+  const grid =
+    $("valuesGrid");
 
   if (!grid) return;
 
   grid.innerHTML = "";
 
   if (!pets.length) {
-    grid.innerHTML =
-      `<div class="loading">No values found.</div>`;
+    grid.innerHTML = `
+      <div class="loading">
+        No pet values found.
+      </div>
+    `;
 
     return;
   }
 
-  pets.forEach(pet => {
+  pets.forEach((pet) => {
     grid.appendChild(
       makePetCard(pet)
     );
   });
 }
 
-$("valueSearch")?.addEventListener(
-  "input",
-  () => {
-    const query =
-      $("valueSearch")
-        .value
-        .toLowerCase()
-        .trim();
+if ($("valueSearch")) {
+  $("valueSearch").addEventListener(
+    "input",
+    () => {
 
-    const filtered =
-      state.pets.filter(pet =>
-        String(pet.name)
+      const query =
+        $("valueSearch")
+          .value
           .toLowerCase()
-          .includes(query)
+          .trim();
+
+      const filtered =
+        state.pets.filter(
+          (pet) =>
+            String(
+              pet.name || ""
+            )
+              .toLowerCase()
+              .includes(query)
+        );
+
+      renderValues(
+        filtered
       );
+    }
+  );
+}
 
-    renderValues(filtered);
-  }
-);
-
-/* =====================================================
-   INVENTORY
-===================================================== */
+// =====================================================
+// INVENTORY
+// =====================================================
 
 async function loadInventory() {
-  if (!state.user?.id) return [];
+  if (!state.user?.id) {
+    state.inventory = [];
+    return;
+  }
 
   try {
-    /*
-      IMPORTANT:
-      Your current backend does NOT have
-      /inventory/:id.
-
-      It exposes:
-      /account/:robloxId
-    */
-
     const data =
       await api(
         "/account/" +
@@ -650,62 +802,63 @@ async function loadInventory() {
         )
       );
 
-    state.user.inventory =
-      data.user?.inventory || [];
+    state.inventory =
+      Array.isArray(
+        data.user?.inventory
+      )
+        ? data.user.inventory
+        : [];
 
-    state.user.balance =
-      data.user?.balance || 0;
-
-    state.user.wagered =
-      data.user?.wagered || 0;
-
-    state.user.profit =
-      data.user?.profit || 0;
+    state.user = {
+      ...state.user,
+      ...data.user
+    };
 
     saveUser();
 
-    return state.user.inventory;
-
   } catch (error) {
     console.error(
-      "Inventory:",
-      error.message
+      "Inventory error:",
+      error
     );
 
-    state.user.inventory =
-      state.user.inventory || [];
-
-    return state.user.inventory;
+    state.inventory = [];
   }
 }
 
-$("inventoryBtn")?.addEventListener(
-  "click",
-  async () => {
+if ($("inventoryBtn")) {
+  $("inventoryBtn").onclick =
+    async () => {
 
-    if (!state.user) {
-      $("loginModal")
-        ?.classList.remove("hidden");
+      if (!state.user) {
+        $("loginModal")
+          ?.classList.remove(
+            "hidden"
+          );
 
-      return;
-    }
+        return;
+      }
 
-    $("inventoryModal")
-      ?.classList.remove("hidden");
+      $("inventoryModal")
+        ?.classList.remove(
+          "hidden"
+        );
 
-    await loadInventory();
+      await loadInventory();
 
-    renderInventory();
-  }
-);
+      renderInventory();
+    };
+}
 
-$("closeInventory")?.addEventListener(
-  "click",
-  () => {
-    $("inventoryModal")
-      ?.classList.add("hidden");
-  }
-);
+if ($("closeInventory")) {
+  $("closeInventory").onclick =
+    () => {
+      $("inventoryModal")
+        ?.classList.add(
+          "hidden"
+        );
+    };
+}
 
 function renderInventory() {
   const grid =
@@ -715,10 +868,7 @@ function renderInventory() {
 
   grid.innerHTML = "";
 
-  const inventory =
-    state.user?.inventory || [];
-
-  if (!inventory.length) {
+  if (!state.inventory.length) {
     grid.innerHTML = `
       <div class="loading">
         Your inventory is empty.
@@ -728,234 +878,362 @@ function renderInventory() {
     return;
   }
 
-  inventory.forEach(item => {
-    grid.appendChild(
-      makePetCard({
+  state.inventory.forEach(
+    (item) => {
+
+      const pet = {
         ...item,
-        id: item.itemId
-      })
-    );
-  });
-}
 
-/* =====================================================
-   CREATE COINFLIP
-===================================================== */
+        id:
+          item.itemId ||
+          item._id,
 
-$("createCoinflipBtn")?.addEventListener(
-  "click",
-  async () => {
+        name:
+          item.name,
 
-    if (!state.user) {
-      $("loginModal")
-        ?.classList.remove("hidden");
+        value:
+          item.value,
 
-      toast("Sign in first.");
+        variant:
+          item.variant || "",
 
-      return;
-    }
-
-    $("createModal")
-      ?.classList.remove("hidden");
-
-    $("sideArea")
-      ?.classList.add("hidden");
-
-    state.selectedPet = null;
-    state.selectedSide = null;
-
-    document
-      .querySelectorAll(".side-btn")
-      .forEach(button => {
-        button.classList.remove("selected");
-      });
-
-    await loadInventory();
-
-    const grid =
-      $("createInventory");
-
-    if (!grid) return;
-
-    grid.innerHTML = "";
-
-    const inventory =
-      state.user.inventory || [];
-
-    if (!inventory.length) {
-      grid.innerHTML = `
-        <div class="loading">
-          No pets in your inventory.
-          <br><br>
-          Your backend currently has no
-          public deposit endpoint.
-        </div>
-      `;
-
-      return;
-    }
-
-    inventory.forEach(item => {
+        image:
+          item.image ||
+          petImage(
+            item.name
+          )
+      };
 
       grid.appendChild(
         makePetCard(
-          {
-            ...item,
-            id: item.itemId
-          },
-          true
+          pet,
+          false
         )
       );
+    }
+  );
+}
 
-    });
+// =====================================================
+// CREATE COINFLIP
+// =====================================================
+
+if ($("createCoinflipBtn")) {
+  $("createCoinflipBtn").onclick =
+    async () => {
+
+      if (!state.user) {
+        $("loginModal")
+          ?.classList.remove(
+            "hidden"
+          );
+
+        toast(
+          "Sign in first."
+        );
+
+        return;
+      }
+
+      $("createModal")
+        ?.classList.remove(
+          "hidden"
+        );
+
+      state.selectedPet = null;
+      state.selectedSide = null;
+
+      document
+        .querySelectorAll(
+          ".side-btn"
+        )
+        .forEach((button) => {
+          button.classList.remove(
+            "selected"
+          );
+        });
+
+      $("sideArea")
+        ?.classList.add(
+          "hidden"
+        );
+
+      await loadInventory();
+
+      renderCreateInventory();
+    };
+}
+
+if ($("closeCreate")) {
+  $("closeCreate").onclick =
+    () => {
+      $("createModal")
+        ?.classList.add(
+          "hidden"
+        );
+    };
+}
+
+function renderCreateInventory() {
+  const grid =
+    $("createInventory");
+
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  if (!state.inventory.length) {
+    grid.innerHTML = `
+      <div class="loading">
+        You don't have any pets
+        available to coinflip.
+        <br><br>
+        <small>
+          Your backend currently has no
+          deposit endpoint, so inventory
+          must be added server-side.
+        </small>
+      </div>
+    `;
+
+    return;
   }
-);
 
-$("closeCreate")?.addEventListener(
-  "click",
-  () => {
-    $("createModal")
-      ?.classList.add("hidden");
-  }
-);
+  state.inventory.forEach(
+    (item) => {
 
-/* =====================================================
-   SIDES
-===================================================== */
+      const pet = {
+        ...item,
+
+        id:
+          item.itemId ||
+          item._id,
+
+        name:
+          item.name,
+
+        value:
+          item.value,
+
+        variant:
+          item.variant || "",
+
+        image:
+          item.image ||
+          petImage(
+            item.name
+          )
+      };
+
+      grid.appendChild(
+        makeSelectableInventoryCard(
+          pet
+        )
+      );
+    }
+  );
+}
+
+function makeSelectableInventoryCard(
+  pet
+) {
+  const card =
+    makePetCard(
+      pet,
+      true
+    );
+
+  return card;
+}
+
+// =====================================================
+// SIDE BUTTONS
+// =====================================================
 
 document
   .querySelectorAll(".side-btn")
-  .forEach(button => {
+  .forEach((button) => {
 
     button.addEventListener(
       "click",
       () => {
 
         document
-          .querySelectorAll(".side-btn")
-          .forEach(x => {
-            x.classList.remove("selected");
+          .querySelectorAll(
+            ".side-btn"
+          )
+          .forEach((item) => {
+            item.classList.remove(
+              "selected"
+            );
           });
 
-        button.classList.add("selected");
-
-        /*
-          HTML uses H/T.
-
-          Backend expects:
-          heads / tails
-        */
+        button.classList.add(
+          "selected"
+        );
 
         state.selectedSide =
-          button.dataset.side === "H"
-            ? "heads"
-            : "tails";
+          button.dataset.side;
       }
     );
+
   });
 
-/* =====================================================
-   POST COINFLIP
-===================================================== */
+// =====================================================
+// POST COINFLIP
+// =====================================================
 
-$("postCoinflip")?.addEventListener(
-  "click",
-  async () => {
+if ($("postCoinflip")) {
+  $("postCoinflip").onclick =
+    async () => {
 
-    if (
-      !state.user ||
-      !state.selectedPet ||
-      !state.selectedSide
-    ) {
-      toast(
-        "Choose a pet and side first."
-      );
+      if (!state.user) {
+        toast(
+          "Sign in first."
+        );
 
-      return;
-    }
+        return;
+      }
 
-    const itemId =
-      state.selectedPet.itemId ||
-      state.selectedPet.id;
+      if (!state.selectedPet) {
+        toast(
+          "Choose a pet first."
+        );
 
-    if (!itemId) {
-      toast(
-        "This inventory item has no ID."
-      );
+        return;
+      }
 
-      return;
-    }
+      if (!state.selectedSide) {
+        toast(
+          "Choose heads or tails."
+        );
 
-    try {
+        return;
+      }
 
-      await api(
-        "/coinflips",
-        {
-          method: "POST",
+      const itemId =
+        state.selectedPet.id ||
+        state.selectedPet.itemId ||
+        state.selectedPet._id;
 
-          body: JSON.stringify({
-            robloxId:
-              Number(state.user.id),
+      if (!itemId) {
+        toast(
+          "This inventory item has no ID."
+        );
 
-            itemId,
+        return;
+      }
 
-            side:
-              state.selectedSide
-          })
-        }
-      );
+      // Backend expects lowercase.
+      const side =
+        String(
+          state.selectedSide
+        ).toLowerCase();
 
-      toast(
-        "Coinflip posted."
-      );
+      if (
+        side !== "heads" &&
+        side !== "tails"
+      ) {
+        toast(
+          "Invalid side."
+        );
 
-      $("createModal")
-        ?.classList.add("hidden");
+        return;
+      }
 
-      state.selectedPet = null;
-      state.selectedSide = null;
+      const button =
+        $("postCoinflip");
 
-      await loadInventory();
-      await loadCoinflips();
+      button.disabled = true;
+      button.textContent =
+        "Posting...";
 
-    } catch (error) {
+      try {
 
-      console.error(
-        "Create coinflip:",
-        error
-      );
+        await api(
+          "/coinflips",
+          {
+            method: "POST",
 
-      toast(error.message);
-    }
-  }
-);
+            body: JSON.stringify({
+              robloxId:
+                state.user.id,
 
-/* =====================================================
-   COINFLIPS
-===================================================== */
+              itemId,
+
+              side
+            })
+          }
+        );
+
+        toast(
+          "Coinflip posted."
+        );
+
+        $("createModal")
+          ?.classList.add(
+            "hidden"
+          );
+
+        state.selectedPet = null;
+        state.selectedSide = null;
+
+        await loadAccount();
+        await loadCoinflips();
+
+      } catch (error) {
+
+        console.error(error);
+
+        toast(
+          error.message ||
+          "Could not create coinflip."
+        );
+
+      } finally {
+
+        button.disabled = false;
+        button.textContent =
+          "Post Coinflip";
+      }
+    };
+}
+
+// =====================================================
+// COINFLIPS
+// =====================================================
 
 async function loadCoinflips() {
-  try {
+  const container =
+    $("coinflips");
 
+  if (!container) return;
+
+  try {
     const data =
-      await api("/coinflips");
+      await api(
+        "/coinflips"
+      );
 
     renderCoinflips(
-      data.coinflips || []
+      Array.isArray(
+        data.coinflips
+      )
+        ? data.coinflips
+        : []
     );
 
   } catch (error) {
 
-    console.error(
-      "Coinflips:",
-      error
-    );
+    console.error(error);
 
-    $("coinflips").innerHTML = `
+    container.innerHTML = `
       <div class="loading">
-        Unable to load coinflips.
+        Could not load coinflips.
         <br><br>
-        ${escapeHtml(error.message)}
+        ${escapeHtml(
+          error.message
+        )}
       </div>
     `;
   }
@@ -979,30 +1257,39 @@ function renderCoinflips(list) {
     return;
   }
 
-  list.forEach(cf => {
+  list.forEach((flip) => {
 
     const element =
-      document.createElement("div");
+      document.createElement(
+        "div"
+      );
 
     element.className =
       "coinflip";
 
+    const side =
+      String(
+        flip.side || ""
+      ).toUpperCase();
+
     const image =
-      petImage(cf);
+      flip.image ||
+      petImage(
+        flip.petName
+      );
 
     element.innerHTML = `
       <div class="cf-users">
 
         <span>
           ${escapeHtml(
-            cf.username || "Trader"
+            flip.username ||
+            "Trader"
           )}
         </span>
 
         <span class="cf-side-label">
-          ${escapeHtml(
-            String(cf.side || "").toUpperCase()
-          )}
+          ${escapeHtml(side)}
         </span>
 
       </div>
@@ -1017,10 +1304,13 @@ function renderCoinflips(list) {
               image
                 ? `
                   <img
-                    src="${escapeAttr(image)}"
-                    alt="${escapeAttr(cf.petName)}"
-                    loading="lazy"
-                    onerror="this.classList.add('missing')"
+                    src="${escapeAttr(
+                      image
+                    )}"
+                    alt=""
+                    onerror="
+                      this.style.display='none'
+                    "
                   >
                 `
                 : ""
@@ -1030,24 +1320,25 @@ function renderCoinflips(list) {
 
               <b>
                 ${escapeHtml(
-                  cf.petName || "Pet"
+                  flip.petName ||
+                  "Unknown Pet"
                 )}
               </b>
 
               <div class="muted">
                 ${formatValue(
-                  cf.petValue
+                  flip.petValue
                 )}
               </div>
 
               ${
-                cf.variant
+                flip.variant
                   ? `
-                    <div class="muted">
+                    <small>
                       ${escapeHtml(
-                        cf.variant
+                        flip.variant
                       )}
-                    </div>
+                    </small>
                   `
                   : ""
               }
@@ -1061,11 +1352,7 @@ function renderCoinflips(list) {
         <div class="cf-center">
 
           <div class="coin">
-            ${escapeHtml(
-              String(
-                cf.side || "?"
-              ).toUpperCase()
-            )}
+            ${escapeHtml(side)}
           </div>
 
           <small class="muted">
@@ -1076,13 +1363,13 @@ function renderCoinflips(list) {
 
         <div class="cf-side">
 
-          <div class="cf-pet waiting-pet">
+          <div class="cf-pet waiting">
             <div class="waiting-icon">
               ?
             </div>
 
             <span>
-              Waiting for trader...
+              Waiting...
             </span>
           </div>
 
@@ -1091,33 +1378,38 @@ function renderCoinflips(list) {
       </div>
     `;
 
-    container.appendChild(element);
+    container.appendChild(
+      element
+    );
   });
 }
 
-/* =====================================================
-   LEADERBOARD
-===================================================== */
+// =====================================================
+// LEADERBOARD
+// =====================================================
 
 async function loadLeaderboard() {
+  const container =
+    $("leaderboard");
+
+  if (!container) return;
+
   try {
-
     const data =
-      await api("/leaderboard");
+      await api(
+        "/leaderboard"
+      );
 
-    const container =
-      $("leaderboard");
-
-    if (!container) return;
-
-    container.innerHTML = "";
-
-    const users =
-      Array.isArray(data.users)
+    const players =
+      Array.isArray(
+        data.users
+      )
         ? data.users
         : [];
 
-    if (!users.length) {
+    container.innerHTML = "";
+
+    if (!players.length) {
       container.innerHTML = `
         <div class="loading">
           No leaderboard data yet.
@@ -1127,36 +1419,53 @@ async function loadLeaderboard() {
       return;
     }
 
-    users
-      .slice(0, 10)
-      .forEach((player, index) => {
+    players.forEach(
+      (player, index) => {
 
         const row =
-          document.createElement("div");
+          document.createElement(
+            "div"
+          );
 
         row.className =
           "rank-row";
 
         row.innerHTML = `
           <div class="rank">
-            #${index + 1}
+            #${escapeHtml(
+              player.place ||
+              index + 1
+            )}
           </div>
 
           <div class="rank-player">
 
             <img
               src="${escapeAttr(
-                player.avatar || "/logo.png"
+                player.avatar ||
+                "/logo.png"
               )}"
               alt=""
-              onerror="this.src='/logo.png'"
+              onerror="
+                this.src='/logo.png'
+              "
             >
 
-            <span>
-              ${escapeHtml(
-                player.username || "Unknown"
-              )}
-            </span>
+            <div>
+              <strong>
+                ${escapeHtml(
+                  player.username ||
+                  "Unknown"
+                )}
+              </strong>
+
+              <small>
+                Profit:
+                ${formatValue(
+                  player.profit
+                )}
+              </small>
+            </div>
 
           </div>
 
@@ -1167,33 +1476,33 @@ async function loadLeaderboard() {
           </div>
         `;
 
-        container.appendChild(row);
-      });
+        container.appendChild(
+          row
+        );
+      }
+    );
 
   } catch (error) {
 
-    console.error(
-      "Leaderboard:",
-      error
-    );
+    console.error(error);
 
-    $("leaderboard").innerHTML = `
+    container.innerHTML = `
       <div class="loading">
-        Unable to load leaderboard.
-        <br><br>
-        ${escapeHtml(error.message)}
+        Could not load leaderboard.
       </div>
     `;
   }
 }
 
-/* =====================================================
-   CHAT
-===================================================== */
+// =====================================================
+// CHAT
+// =====================================================
 
 function openChat() {
   $("chatPanel")
-    ?.classList.add("mobile-open");
+    ?.classList.add(
+      "mobile-open"
+    );
 
   if ($("chatInput")) {
     $("chatInput").placeholder =
@@ -1207,55 +1516,74 @@ function openChat() {
 
 function closeChat() {
   $("chatPanel")
-    ?.classList.remove("mobile-open");
+    ?.classList.remove(
+      "mobile-open"
+    );
 }
 
-$("chatClose")?.addEventListener(
-  "click",
-  closeChat
-);
+if ($("chatClose")) {
+  $("chatClose").onclick =
+    closeChat;
+}
 
-$("mobileChatButton")?.addEventListener(
-  "click",
-  () => {
+if ($("mobileChatButton")) {
+  $("mobileChatButton").onclick =
+    () => {
 
-    $("chatPanel")
-      ?.classList.toggle("mobile-open");
+      $("chatPanel")
+        ?.classList.toggle(
+          "mobile-open"
+        );
 
-    loadChat();
+      loadChat();
+    };
+}
+
+async function loadOnlineCount() {
+  try {
+    const data =
+      await api(
+        "/chat/online"
+      );
+
+    if ($("onlineCount")) {
+      $("onlineCount").textContent =
+        data.online ?? 37;
+    }
+
+  } catch {
+    if ($("onlineCount")) {
+      $("onlineCount").textContent =
+        "37";
+    }
   }
-);
+}
 
 async function loadChat() {
   try {
 
-    /*
-      Backend uses:
-      GET /chat/messages
-      GET /chat/online
-    */
-
     const [
-      messagesData,
-      onlineData
+      chatData
     ] = await Promise.all([
-      api("/chat/messages"),
-      api("/chat/online")
+      api(
+        "/chat/messages"
+      ),
+
+      loadOnlineCount()
     ]);
 
-    if ($("onlineCount")) {
-      $("onlineCount").textContent =
-        onlineData.online ?? 37;
-    }
-
     renderChat(
-      messagesData.messages || []
+      Array.isArray(
+        chatData.messages
+      )
+        ? chatData.messages
+        : []
     );
 
   } catch (error) {
 
     console.error(
-      "Chat:",
+      "Chat error:",
       error
     );
   }
@@ -1279,154 +1607,187 @@ function renderChat(messages) {
     return;
   }
 
-  messages.forEach(message => {
+  messages.forEach(
+    (message) => {
 
-    const element =
-      document.createElement("div");
+      const element =
+        document.createElement(
+          "div"
+        );
 
-    element.className =
-      "chat-message";
+      element.className =
+        "chat-message";
 
-    element.innerHTML = `
-      <img
-        class="chat-avatar"
-        src="${escapeAttr(
-          message.avatar || "/logo.png"
-        )}"
-        alt=""
-        onerror="this.src='/logo.png'"
-      >
+      element.innerHTML = `
+        <img
+          class="chat-avatar"
+          src="${escapeAttr(
+            message.avatar ||
+            "/logo.png"
+          )}"
+          alt=""
+          onerror="
+            this.src='/logo.png'
+          "
+        >
 
-      <div class="chat-content">
+        <div class="chat-content">
 
-        <div class="chat-username">
-          ${escapeHtml(
-            message.username || "User"
-          )}
+          <div class="chat-username">
+            ${escapeHtml(
+              message.username ||
+              "User"
+            )}
+          </div>
+
+          <div class="chat-text">
+            ${escapeHtml(
+              message.message
+            )}
+          </div>
+
         </div>
+      `;
 
-        <div class="chat-text">
-          ${escapeHtml(
-            message.message
-          )}
-        </div>
-
-      </div>
-    `;
-
-    container.appendChild(element);
-  });
+      container.appendChild(
+        element
+      );
+    }
+  );
 
   container.scrollTop =
     container.scrollHeight;
 }
 
-$("chatForm")?.addEventListener(
-  "submit",
-  async event => {
+if ($("chatForm")) {
+  $("chatForm").onsubmit =
+    async (event) => {
 
-    event.preventDefault();
+      event.preventDefault();
 
-    if (!state.user) {
-      toast("Sign in to chat.");
+      if (!state.user) {
+        toast(
+          "Sign in to chat."
+        );
 
-      $("loginModal")
-        ?.classList.remove("hidden");
+        $("loginModal")
+          ?.classList.remove(
+            "hidden"
+          );
 
-      return;
-    }
+        return;
+      }
 
-    const input =
-      $("chatInput");
+      const input =
+        $("chatInput");
 
-    const message =
-      input.value.trim();
+      const message =
+        input.value.trim();
 
-    if (!message) return;
+      if (!message) return;
 
-    if (message.length > 300) {
-      toast("Message is too long.");
-      return;
-    }
+      try {
 
-    try {
+        await api(
+          "/chat/messages",
+          {
+            method: "POST",
 
-      await api(
-        "/chat/messages",
-        {
-          method: "POST",
+            body: JSON.stringify({
+              robloxId:
+                state.user.id,
 
-          body: JSON.stringify({
-            robloxId:
-              Number(state.user.id),
+              username:
+                state.user.username,
 
-            username:
-              state.user.username,
+              avatar:
+                state.user.avatar,
 
-            avatar:
-              state.user.avatar || "",
+              message
+            })
+          }
+        );
 
-            message
-          })
-        }
+        input.value = "";
+
+        await loadChat();
+
+      } catch (error) {
+
+        toast(
+          error.message ||
+          "Could not send message."
+        );
+      }
+    };
+}
+
+// =====================================================
+// RULES
+// =====================================================
+
+if ($("rulesBtn")) {
+  $("rulesBtn").onclick =
+    () => {
+
+      $("rulesModal")
+        ?.classList.remove(
+          "hidden"
+        );
+    };
+}
+
+if ($("closeRules")) {
+  $("closeRules").onclick =
+    () => {
+
+      $("rulesModal")
+        ?.classList.add(
+          "hidden"
+        );
+    };
+}
+
+// =====================================================
+// PROFILE
+// =====================================================
+
+if ($("profileBtn")) {
+  $("profileBtn").onclick =
+    () => {
+
+      if (!state.user) {
+        $("loginModal")
+          ?.classList.remove(
+            "hidden"
+          );
+
+        return;
+      }
+
+      showPage(
+        "profile"
       );
-
-      input.value = "";
-
-      await loadChat();
-
-    } catch (error) {
-
-      toast(error.message);
-    }
-  }
-);
-
-/* =====================================================
-   RULES
-===================================================== */
-
-$("rulesBtn")?.addEventListener(
-  "click",
-  () => {
-    $("rulesModal")
-      ?.classList.remove("hidden");
-  }
-);
-
-$("closeRules")?.addEventListener(
-  "click",
-  () => {
-    $("rulesModal")
-      ?.classList.add("hidden");
-  }
-);
-
-/* =====================================================
-   PROFILE
-===================================================== */
-
-$("profileBtn")?.addEventListener(
-  "click",
-  async () => {
-
-    if (!state.user) {
-      $("loginModal")
-        ?.classList.remove("hidden");
-
-      return;
-    }
-
-    await refreshAccount();
-
-    showPage("profile");
-  }
-);
+    };
+}
 
 function renderProfile() {
-  if (!state.user) return;
+  const container =
+    $("profileContent");
 
-  $("profileContent").innerHTML = `
+  if (!container) return;
+
+  if (!state.user) {
+    container.innerHTML = `
+      <div class="loading">
+        Sign in to view your profile.
+      </div>
+    `;
+
+    return;
+  }
+
+  container.innerHTML = `
     <div class="page-head">
 
       <div>
@@ -1451,64 +1812,71 @@ function renderProfile() {
 
     <div class="profile-grid">
 
-      <div class="pet-card profile-card">
+      <div class="profile-card">
 
         <img
           class="profile-avatar"
           src="${escapeAttr(
-            state.user.avatar || "/logo.png"
+            state.user.avatar ||
+            "/logo.png"
           )}"
           alt=""
-          onerror="this.src='/logo.png'"
         >
 
-        <div class="pet-name">
+        <h2>
           ${escapeHtml(
             state.user.username
           )}
-        </div>
+        </h2>
+
+        <span class="muted">
+          Roblox ID:
+          ${escapeHtml(
+            state.user.id
+          )}
+        </span>
 
       </div>
 
-      <div class="pet-card">
+      <div class="profile-stat">
 
-        <div class="eyebrow">
-          BALANCE
-        </div>
+        <span>
+          Balance
+        </span>
 
-        <div class="profile-stat">
+        <strong>
           ${formatValue(
             state.user.balance
           )}
-        </div>
+        </strong>
 
       </div>
 
-      <div class="pet-card">
+      <div class="profile-stat">
 
-        <div class="eyebrow">
-          WAGERED
-        </div>
+        <span>
+          Wagered
+        </span>
 
-        <div class="profile-stat">
+        <strong>
           ${formatValue(
             state.user.wagered
           )}
-        </div>
+        </strong>
 
       </div>
 
-      <div class="pet-card">
+      <div class="profile-stat">
 
-        <div class="eyebrow">
-          PROFIT
-        </div>
+        <span>
+          Profit
+        </span>
 
-        <div class="profile-stat">
+        <strong>
           ${formatValue(
             state.user.profit
           )}
-        </div>
+        </strong>
 
       </div>
 
@@ -1516,73 +1884,22 @@ function renderProfile() {
   `;
 }
 
-/* =====================================================
-   CLOSE MODALS WHEN CLICKING BACKDROP
-===================================================== */
+// =====================================================
+// INITIALIZE
+// =====================================================
 
-document
-  .querySelectorAll(".modal")
-  .forEach(modal => {
-
-    modal.addEventListener(
-      "click",
-      event => {
-
-        if (
-          event.target === modal
-        ) {
-          modal.classList.add("hidden");
-        }
-      }
-    );
-
-  });
-
-/* =====================================================
-   ESC KEY
-===================================================== */
-
-document.addEventListener(
-  "keydown",
-  event => {
-
-    if (event.key !== "Escape") return;
-
-    document
-      .querySelectorAll(".modal")
-      .forEach(modal => {
-        modal.classList.add("hidden");
-      });
-
-    closeChat();
-  }
-);
-
-/* =====================================================
-   INITIALIZE
-===================================================== */
-
-(async function init() {
-
-  try {
-    await restoreUser();
-  } catch (error) {
-    console.error(
-      "User initialization:",
-      error
-    );
-  }
+async function initialize() {
+  restoreUser();
 
   restorePage();
 
-  loadValues();
-  loadCoinflips();
-  loadChat();
+  await Promise.allSettled([
+    loadValues(),
+    loadCoinflips(),
+    loadChat()
+  ]);
 
-  /*
-    Refresh live data.
-  */
-
+  // Refresh chat without hammering Render.
   setInterval(
     loadChat,
     10000
@@ -1592,5 +1909,6 @@ document.addEventListener(
     loadCoinflips,
     10000
   );
+}
 
-})();
+initialize();
