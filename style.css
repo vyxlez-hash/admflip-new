@@ -1,197 +1,4 @@
-/* =========================================================
-   ADMFLIP HTML COMPATIBILITY FIX
-   Matches the current HTML class names
-========================================================= */
 
-/* Header */
-.header-left {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-}
-
-.header-right {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.navigation {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: 20px;
-}
-
-/* Make navigation buttons behave like the CSS .menu */
-.navigation .nav-item {
-  height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 9px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.navigation .nav-item:hover {
-  color: var(--text);
-  background: rgba(255,255,255,.055);
-}
-
-.navigation .nav-item.active {
-  color: var(--text);
-  background: rgba(255,255,255,.09);
-}
-
-/* Brand */
-.brand-text {
-  display: flex;
-  flex-direction: column;
-  margin-left: 8px;
-  line-height: 1.05;
-}
-
-.brand-text strong {
-  font-size: 14px;
-  font-weight: 900;
-}
-
-.brand-text span {
-  margin-top: 3px;
-  color: var(--muted-2);
-  font-size: 7px;
-  font-weight: 900;
-  letter-spacing: .08em;
-}
-
-/* Header logo */
-.brand-logo {
-  width: 42px !important;
-  height: 42px !important;
-  object-fit: contain;
-}
-
-/* Page head */
-.page-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 25px;
-}
-
-/* Coinflips */
-.coinflips {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* Modal compatibility */
-.modal-card {
-  position: relative;
-
-  width: min(100%, 470px);
-  max-height: calc(100vh - 40px);
-
-  overflow-y: auto;
-
-  padding: 30px;
-
-  border: 1px solid var(--border-hover);
-  border-radius: 18px;
-
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255,255,255,.03),
-      transparent
-    ),
-    var(--panel);
-
-  box-shadow:
-    0 30px 100px rgba(0,0,0,.6);
-}
-
-.modal-card.large {
-  width: min(100%, 850px);
-}
-
-/* Chat compatibility */
-.chat-header {
-  min-height: 65px;
-
-  display: flex;
-  align-items: center;
-
-  padding: 0 15px;
-
-  border-bottom: 1px solid var(--border);
-
-  flex-shrink: 0;
-}
-
-.chat-header > div:first-child {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-right: auto;
-}
-
-.chat-header strong {
-  font-size: 11px;
-  letter-spacing: .05em;
-}
-
-.chat-header span {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--muted);
-  font-size: 10px;
-}
-
-.chat-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-/* Header responsive */
-@media (max-width: 760px) {
-
-  .brand-text {
-    display: none;
-  }
-
-  .navigation {
-    margin-left: 8px;
-    gap: 1px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .navigation::-webkit-scrollbar {
-    display: none;
-  }
-
-  .navigation .nav-item {
-    height: 34px;
-    padding: 0 8px;
-    font-size: 10px;
-    white-space: nowrap;
-  }
-
-  .header-right {
-    margin-left: 6px;
-  }
-}
 /* =========================================================
    ADMFLIP — STYLE.CSS
 ========================================================= */
@@ -2133,4 +1940,199 @@ h3 {
 }
 body {
   background: red !important;
+}
+
+/* =========================================================
+   ADMFLIP HTML COMPATIBILITY FIX
+   Matches the current HTML class names
+========================================================= */
+
+/* Header */
+.header-left {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 20px;
+}
+
+/* Make navigation buttons behave like the CSS .menu */
+.navigation .nav-item {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.navigation .nav-item:hover {
+  color: var(--text);
+  background: rgba(255,255,255,.055);
+}
+
+.navigation .nav-item.active {
+  color: var(--text);
+  background: rgba(255,255,255,.09);
+}
+
+/* Brand */
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  margin-left: 8px;
+  line-height: 1.05;
+}
+
+.brand-text strong {
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.brand-text span {
+  margin-top: 3px;
+  color: var(--muted-2);
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+/* Header logo */
+.brand-logo {
+  width: 42px !important;
+  height: 42px !important;
+  object-fit: contain;
+}
+
+/* Page head */
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+/* Coinflips */
+.coinflips {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Modal compatibility */
+.modal-card {
+  position: relative;
+
+  width: min(100%, 470px);
+  max-height: calc(100vh - 40px);
+
+  overflow-y: auto;
+
+  padding: 30px;
+
+  border: 1px solid var(--border-hover);
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.03),
+      transparent
+    ),
+    var(--panel);
+
+  box-shadow:
+    0 30px 100px rgba(0,0,0,.6);
+}
+
+.modal-card.large {
+  width: min(100%, 850px);
+}
+
+/* Chat compatibility */
+.chat-header {
+  min-height: 65px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 15px;
+
+  border-bottom: 1px solid var(--border);
+
+  flex-shrink: 0;
+}
+
+.chat-header > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-right: auto;
+}
+
+.chat-header strong {
+  font-size: 11px;
+  letter-spacing: .05em;
+}
+
+.chat-header span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.chat-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Header responsive */
+@media (max-width: 760px) {
+
+  .brand-text {
+    display: none;
+  }
+
+  .navigation {
+    margin-left: 8px;
+    gap: 1px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .navigation::-webkit-scrollbar {
+    display: none;
+  }
+
+  .navigation .nav-item {
+    height: 34px;
+    padding: 0 8px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .header-right {
+    margin-left: 6px;
+  }
 }
