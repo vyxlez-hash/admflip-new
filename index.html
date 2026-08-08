@@ -5,13 +5,22 @@
 
 <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
 <title>ADMFLIP</title>
 
-<link rel="icon" href="logo.png">
+<link
+    rel="icon"
+    href="logo.png"
+>
 
-<link rel="stylesheet" href="style.css">
+<link
+    rel="stylesheet"
+    href="style.css"
+>
 
 </head>
 
@@ -19,13 +28,81 @@
 <body>
 
 
-<!-- MAINTENANCE SCREEN -->
+<!-- =========================
+     CHAT
+========================= -->
 
-<div id="maintenance" class="maintenance hidden">
+<aside class="chat-panel">
+
+    <div class="chat-header">
+
+        <div>
+
+            <strong>Chat</strong>
+
+            <span id="chatStatus">
+                Online
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div
+        id="chatMessages"
+        class="chat-messages"
+    ></div>
+
+
+    <div class="chat-login-message" id="chatLoginMessage">
+
+        Sign in with Roblox to chat.
+
+    </div>
+
+
+    <form
+        id="chatForm"
+        class="chat-form"
+        style="display:none;"
+    >
+
+        <input
+            id="chatInput"
+            type="text"
+            maxlength="500"
+            autocomplete="off"
+            placeholder="Type a message..."
+        >
+
+        <button type="submit">
+            Send
+        </button>
+
+    </form>
+
+
+</aside>
+
+
+
+
+
+<!-- =========================
+     MAINTENANCE
+========================= -->
+
+<div
+    id="maintenance"
+    class="maintenance hidden"
+>
 
     <h1>ADMFLIP</h1>
 
-    <h2>⚠️ Site Under Maintenance</h2>
+    <h2>
+        ⚠️ Site Under Maintenance
+    </h2>
 
     <p>
         Please come back later.
@@ -37,17 +114,22 @@
 
 
 
-<!-- ANNOUNCEMENT -->
+<!-- =========================
+     ANNOUNCEMENT
+========================= -->
 
-<div id="announcement" class="announcement hidden">
-
-</div>
-
-
-
+<div
+    id="announcement"
+    class="announcement hidden"
+></div>
 
 
-<!-- MAIN SITE -->
+
+
+
+<!-- =========================
+     MAIN SITE
+========================= -->
 
 <div id="site">
 
@@ -55,56 +137,62 @@
 <header class="header">
 
 
-<div class="brand">
+    <div class="brand">
 
-<img src="logo.png">
+        <img src="logo.png">
 
-</div>
-
-
-
-<nav class="menu">
-
-<a href="#">
-Coinflip
-</a>
-
-<a href="#">
-Leaderboard
-</a>
-
-<a href="#">
-Chat
-</a>
-
-</nav>
+    </div>
 
 
 
+    <nav class="menu">
 
-<div class="account-buttons">
+        <a href="#">
+            Coinflip
+        </a>
 
+        <a href="#">
+            Leaderboard
+        </a>
 
-<button class="login" id="loginBtn">
+        <a href="#">
+            Chat
+        </a>
 
-<img src="roblox.png">
-
-<span>
-Sign In
-</span>
-
-</button>
-
-
-
-<button class="logout" id="logoutBtn" style="display:none;">
-
-Log Out
-
-</button>
+    </nav>
 
 
-</div>
+
+    <div class="account-buttons">
+
+
+        <button
+            class="login"
+            id="loginBtn"
+        >
+
+            <img src="roblox.png">
+
+            <span>
+                Sign In
+            </span>
+
+        </button>
+
+
+
+        <button
+            class="logout"
+            id="logoutBtn"
+            style="display:none;"
+        >
+
+            Log Out
+
+        </button>
+
+
+    </div>
 
 
 </header>
@@ -113,59 +201,65 @@ Log Out
 
 
 
+<!-- =========================
+     LOGIN MODAL
+========================= -->
 
-<div class="modal" id="modal">
+<div
+    class="modal"
+    id="modal"
+>
+
+    <div class="box">
 
 
-<div class="box">
-
-
-<h2>
-Roblox Sign In
-</h2>
-
-
-
-<input 
-id="username"
-placeholder="Roblox username"
-autocomplete="off"
-/>
+        <h2>
+            Roblox Sign In
+        </h2>
 
 
 
-
-<div id="profile" class="hidden"></div>
-
-
-
-<div id="phrase" class="hidden"></div>
-
+        <input
+            id="username"
+            placeholder="Roblox username"
+            autocomplete="off"
+        >
 
 
 
-
-<button id="verify" style="display:none;">
-
-Verify
-
-</button>
+        <div
+            id="profile"
+            class="hidden"
+        ></div>
 
 
+
+        <div
+            id="phrase"
+            class="hidden"
+        ></div>
+
+
+
+        <button
+            id="verify"
+            style="display:none;"
+        >
+
+            Verify
+
+        </button>
+
+
+    </div>
 
 </div>
 
 
 </div>
-
-
-</div>
-
-
 
 
 <script src="script.js"></script>
-
 
 </body>
 
