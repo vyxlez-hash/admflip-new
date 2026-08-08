@@ -1,4 +1,4 @@
-const BACKEND = "https://admflip-new-production.up.railway.app";
+const BACKEND = "https://admflip-new.onrender.com";
 
 const state = {
   user: null,
