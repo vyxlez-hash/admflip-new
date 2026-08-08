@@ -2,10 +2,6 @@ const BACKEND =
     "https://admflip-new.onrender.com";
 
 
-// ======================
-// ELEMENTS
-// ======================
-
 const loginBtn =
     document.getElementById("loginBtn");
 
@@ -40,7 +36,9 @@ const chatInput =
     document.getElementById("chatInput");
 
 const chatLoginMessage =
-    document.getElementById("chatLoginMessage");
+    document.getElementById(
+        "chatLoginMessage"
+    );
 
 const petList =
     document.getElementById("petList");
@@ -65,10 +63,6 @@ const mobileMenu =
     );
 
 
-// ======================
-// STATE
-// ======================
-
 let currentUser = null;
 
 let phrase = "";
@@ -77,10 +71,6 @@ let pets = [];
 
 let lastChatSignature = "";
 
-
-// ======================
-// PAGES
-// ======================
 
 const pages = {
 
@@ -113,11 +103,11 @@ const homePage =
     );
 
 
-// ======================
+// ======================================================
 // NAVIGATION
-// ======================
+// ======================================================
 
-function openPage(page){
+function openPage(page) {
 
     homePage.classList.remove(
         "active-page"
@@ -135,39 +125,16 @@ function openPage(page){
     );
 
 
-    if(page === "coinflip"){
+    if (
+        pages[page]
+    ) {
 
-        pages.coinflip.classList.add(
+        pages[page].classList.add(
             "active-page"
         );
 
     }
-    else if(page === "leaderboard"){
-
-        pages.leaderboard.classList.add(
-            "active-page"
-        );
-
-    }
-    else if(page === "chat"){
-
-        pages.chat.classList.add(
-            "active-page"
-        );
-
-        loadChat();
-
-    }
-    else if(page === "values"){
-
-        pages.values.classList.add(
-            "active-page"
-        );
-
-        loadPets();
-
-    }
-    else{
+    else {
 
         homePage.classList.add(
             "active-page"
@@ -181,12 +148,34 @@ function openPage(page){
     );
 
 
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
+    if (
+        page === "chat"
+    ) {
+
+        loadChat();
+
+    }
+
+
+    if (
+        page === "values"
+    ) {
+
+        loadPets();
+
+    }
+
+
+    window.scrollTo(
+        0,
+        0
+    );
 
 }
+
+
+window.openPage =
+    openPage;
 
 
 document.querySelectorAll(
@@ -211,56 +200,33 @@ document.querySelectorAll(
 );
 
 
-// ======================
-// CLOSE BUTTONS
-// ======================
-
 document.getElementById(
     "closeChat"
-).onclick = () => {
-
-    openPage("coinflip");
-
-};
+).onclick =
+    () => openPage("coinflip");
 
 
 document.getElementById(
     "closeValues"
-).onclick = () => {
+).onclick =
+    () => openPage("coinflip");
 
-    openPage("coinflip");
-
-};
-
-
-document.getElementById(
-    "viewValuesButton"
-).onclick = () => {
-
-    openPage("values");
-
-};
-
-
-// ======================
-// MOBILE MENU
-// ======================
 
 mobileMenuButton.onclick =
-() => {
+    () => {
 
-    mobileMenu.classList.toggle(
-        "show"
-    );
+        mobileMenu.classList.toggle(
+            "show"
+        );
 
-};
+    };
 
 
-// ======================
+// ======================================================
 // LOGIN
-// ======================
+// ======================================================
 
-function loadSavedUser(){
+function loadSavedUser() {
 
     const saved =
         localStorage.getItem(
@@ -268,15 +234,15 @@ function loadSavedUser(){
         );
 
 
-    if(saved){
+    if (saved) {
 
-        try{
+        try {
 
             currentUser =
                 JSON.parse(saved);
 
         }
-        catch{
+        catch {
 
             localStorage.removeItem(
                 "admflipUser"
@@ -294,9 +260,9 @@ function loadSavedUser(){
 }
 
 
-function updateLoginUI(){
+function updateLoginUI() {
 
-    if(currentUser){
+    if (currentUser) {
 
         loginBtn.innerHTML = `
 
@@ -305,7 +271,6 @@ function updateLoginUI(){
                     currentUser.avatar ||
                     "roblox.png"
                 )}"
-                alt=""
             >
 
             <span>
@@ -321,13 +286,12 @@ function updateLoginUI(){
             "block";
 
     }
-    else{
+    else {
 
         loginBtn.innerHTML = `
 
             <img
                 src="roblox.png"
-                alt=""
             >
 
             <span>
@@ -345,267 +309,285 @@ function updateLoginUI(){
 }
 
 
-loginBtn.onclick = () => {
+loginBtn.onclick =
+    () => {
 
-    if(!currentUser){
+        if (!currentUser) {
 
-        modal.classList.add(
-            "show"
-        );
+            modal.classList.add(
+                "show"
+            );
 
-    }
+        }
 
-};
-
-
-modalClose.onclick = () => {
-
-    modal.classList.remove(
-        "show"
-    );
-
-};
+    };
 
 
-modal.onclick = event => {
-
-    if(
-        event.target === modal
-    ){
+modalClose.onclick =
+    () => {
 
         modal.classList.remove(
             "show"
         );
 
-    }
+    };
 
-};
 
+modal.onclick =
+    event => {
 
-// ======================
-// ROBLOX LOOKUP
-// ======================
-
-usernameInput.onchange =
-async () => {
-
-    const username =
-        usernameInput.value.trim();
-
-
-    if(!username){
-
-        return;
-
-    }
-
-
-    try{
-
-        const response =
-            await fetch(
-                BACKEND +
-                "/user/" +
-                encodeURIComponent(
-                    username
-                )
-            );
-
-
-        const data =
-            await response.json();
-
-
-        if(!data.success){
-
-            alert(
-                "Roblox username not found."
-            );
-
-            return;
-
-        }
-
-
-        currentUser =
-            data.user;
-
-
-        profile.classList.remove(
-            "hidden"
-        );
-
-
-        profile.innerHTML = `
-
-            <div class="profile-card">
-
-                <img
-                    src="${escapeAttribute(
-                        currentUser.avatar
-                    )}"
-                    alt=""
-                >
-
-                <div>
-
-                    <strong>
-                        ${escapeHtml(
-                            currentUser.username
-                        )}
-                    </strong>
-
-                    <span>
-                        Roblox account found
-                    </span>
-
-                </div>
-
-            </div>
-
-        `;
-
-
-        const phraseResponse =
-            await fetch(
-                BACKEND +
-                "/create"
-            );
-
-
-        const phraseData =
-            await phraseResponse.json();
-
-
-        phrase =
-            phraseData.phrase;
-
-
-        phraseText.classList.remove(
-            "hidden"
-        );
-
-
-        phraseText.innerHTML = `
-
-            <div class="phrase-box">
-
-                <span>
-                    Put this phrase in your Roblox bio:
-                </span>
-
-                <strong>
-                    ${escapeHtml(
-                        phrase
-                    )}
-                </strong>
-
-            </div>
-
-        `;
-
-
-        verifyBtn.style.display =
-            "block";
-
-    }
-    catch(error){
-
-        console.log(error);
-
-        alert(
-            "Server error."
-        );
-
-    }
-
-};
-
-
-// ======================
-// VERIFY
-// ======================
-
-verifyBtn.onclick =
-async () => {
-
-    verifyBtn.disabled =
-        true;
-
-    verifyBtn.innerText =
-        "Checking...";
-
-
-    try{
-
-        const response =
-            await fetch(
-                BACKEND + "/check",
-                {
-
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:
-                        JSON.stringify({
-
-                            username:
-                                currentUser.username,
-
-                            phrase:
-                                phrase
-
-                        })
-
-                }
-            );
-
-
-        const data =
-            await response.json();
-
-
-        if(data.success){
-
-            currentUser.id =
-                data.id;
-
-            currentUser.username =
-                data.username;
-
-
-            localStorage.setItem(
-                "admflipUser",
-                JSON.stringify(
-                    currentUser
-                )
-            );
-
-
-            updateLoginUI();
-
-            updateChatUI();
-
+        if (
+            event.target === modal
+        ) {
 
             modal.classList.remove(
                 "show"
             );
 
+        }
+
+    };
+
+
+// ======================================================
+// ROBLOX LOOKUP
+// ======================================================
+
+usernameInput.onchange =
+    async () => {
+
+        const username =
+            usernameInput.value.trim();
+
+
+        if (!username) {
+            return;
+        }
+
+
+        try {
+
+            const response =
+                await fetch(
+                    BACKEND +
+                    "/user/" +
+                    encodeURIComponent(
+                        username
+                    )
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!data.success) {
+
+                alert(
+                    "Roblox username not found."
+                );
+
+                return;
+
+            }
+
+
+            currentUser =
+                data.user;
+
+
+            profile.classList.remove(
+                "hidden"
+            );
+
+
+            profile.innerHTML = `
+
+                <div class="profile-card">
+
+                    <img
+                        src="${escapeAttribute(
+                            currentUser.avatar
+                        )}"
+                    >
+
+                    <div>
+
+                        <strong>
+                            ${escapeHtml(
+                                currentUser.username
+                            )}
+                        </strong>
+
+                        <span>
+                            Roblox account found
+                        </span>
+
+                    </div>
+
+                </div>
+
+            `;
+
+
+            const phraseResponse =
+                await fetch(
+                    BACKEND +
+                    "/create"
+                );
+
+
+            const phraseData =
+                await phraseResponse.json();
+
+
+            phrase =
+                phraseData.phrase;
+
+
+            phraseText.classList.remove(
+                "hidden"
+            );
+
+
+            phraseText.innerHTML = `
+
+                <div class="phrase-box">
+
+                    <span>
+                        Put this phrase in your Roblox bio:
+                    </span>
+
+                    <strong>
+                        ${escapeHtml(
+                            phrase
+                        )}
+                    </strong>
+
+                </div>
+
+            `;
+
+
+            verifyBtn.style.display =
+                "block";
+
+        }
+        catch (error) {
+
+            console.log(error);
 
             alert(
-                "Verified successfully!"
+                "Server error."
             );
 
         }
-        else{
+
+    };
+
+
+// ======================================================
+// VERIFY
+// ======================================================
+
+verifyBtn.onclick =
+    async () => {
+
+        verifyBtn.disabled =
+            true;
+
+        verifyBtn.innerText =
+            "Checking...";
+
+
+        try {
+
+            const response =
+                await fetch(
+                    BACKEND + "/check",
+                    {
+
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify({
+
+                                username:
+                                    currentUser.username,
+
+                                phrase:
+                                    phrase
+
+                            })
+
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (data.success) {
+
+                currentUser.id =
+                    data.id;
+
+                currentUser.username =
+                    data.username;
+
+
+                localStorage.setItem(
+                    "admflipUser",
+                    JSON.stringify(
+                        currentUser
+                    )
+                );
+
+
+                updateLoginUI();
+
+                updateChatUI();
+
+
+                modal.classList.remove(
+                    "show"
+                );
+
+
+                alert(
+                    "Verified successfully!"
+                );
+
+            }
+            else {
+
+                alert(
+                    data.message ||
+                    "Verification failed."
+                );
+
+
+                verifyBtn.disabled =
+                    false;
+
+                verifyBtn.innerText =
+                    "Verify";
+
+            }
+
+        }
+        catch (error) {
+
+            console.log(error);
 
             alert(
-                data.message ||
-                "Verification phrase not found."
+                "Verification failed."
             );
 
 
@@ -617,57 +599,38 @@ async () => {
 
         }
 
-    }
-    catch(error){
+    };
 
-        console.log(error);
 
-        alert(
-            "Verification failed."
+// ======================================================
+// LOGOUT
+// ======================================================
+
+logoutBtn.onclick =
+    () => {
+
+        localStorage.removeItem(
+            "admflipUser"
         );
 
+        currentUser = null;
 
-        verifyBtn.disabled =
-            false;
+        phrase = "";
 
-        verifyBtn.innerText =
-            "Verify";
+        updateLoginUI();
 
-    }
+        updateChatUI();
 
-};
-
-
-// ======================
-// LOGOUT
-// ======================
-
-logoutBtn.onclick = () => {
-
-    localStorage.removeItem(
-        "admflipUser"
-    );
+    };
 
 
-    currentUser = null;
+// ======================================================
+// CHAT
+// ======================================================
 
-    phrase = "";
+function updateChatUI() {
 
-
-    updateLoginUI();
-
-    updateChatUI();
-
-};
-
-
-// ======================
-// CHAT LOGIN
-// ======================
-
-function updateChatUI(){
-
-    if(currentUser){
+    if (currentUser) {
 
         chatForm.style.display =
             "flex";
@@ -676,7 +639,7 @@ function updateChatUI(){
             "none";
 
     }
-    else{
+    else {
 
         chatForm.style.display =
             "none";
@@ -689,13 +652,9 @@ function updateChatUI(){
 }
 
 
-// ======================
-// LOAD CHAT
-// ======================
+async function loadChat() {
 
-async function loadChat(){
-
-    try{
+    try {
 
         const response =
             await fetch(
@@ -703,10 +662,8 @@ async function loadChat(){
             );
 
 
-        if(!response.ok){
-
+        if (!response.ok) {
             return;
-
         }
 
 
@@ -714,10 +671,8 @@ async function loadChat(){
             await response.json();
 
 
-        if(!data.success){
-
+        if (!data.success) {
             return;
-
         }
 
 
@@ -726,16 +681,18 @@ async function loadChat(){
 
 
         const signature =
-            messages.map(
-                message =>
-                    message._id
-            ).join(",");
+            messages
+                .map(
+                    message =>
+                        message._id
+                )
+                .join(",");
 
 
-        if(
+        if (
             signature ===
             lastChatSignature
-        ){
+        ) {
 
             return;
 
@@ -763,10 +720,10 @@ async function loadChat(){
                     "chat-message";
 
 
-                if(
+                if (
                     message.type ===
                     "announcement"
-                ){
+                ) {
 
                     row.classList.add(
                         "announcement-message"
@@ -783,7 +740,6 @@ async function loadChat(){
 
                 avatar.className =
                     "chat-avatar";
-
 
                 avatar.src =
                     message.avatar ||
@@ -834,27 +790,17 @@ async function loadChat(){
                     message.message;
 
 
-                body.appendChild(
-                    name
-                );
+                body.appendChild(name);
 
-                body.appendChild(
-                    text
-                );
+                body.appendChild(text);
 
 
-                row.appendChild(
-                    avatar
-                );
+                row.appendChild(avatar);
 
-                row.appendChild(
-                    body
-                );
+                row.appendChild(body);
 
 
-                chatMessages.appendChild(
-                    row
-                );
+                chatMessages.appendChild(row);
 
             }
         );
@@ -864,7 +810,7 @@ async function loadChat(){
             chatMessages.scrollHeight;
 
     }
-    catch(error){
+    catch (error) {
 
         console.log(
             "Chat error:",
@@ -876,21 +822,17 @@ async function loadChat(){
 }
 
 
-// ======================
+// ======================================================
 // LINK FILTER
-// ======================
+// ======================================================
 
-function containsLink(text){
+function containsLink(text) {
 
-    return /(?:https?:\/\/|http:\/\/|www\.|ftp:\/\/|discord\.gg\/|discord\.com\/invite\/|t\.me\/|telegram\.me\/|bit\.ly\/|tinyurl\.com\/|youtu\.be\/|youtube\.com\/)/i
+    return /(?:https?:\/\/|www\.|discord\.gg|discord\.com\/invite|t\.me\/|telegram\.me\/|bit\.ly\/|tinyurl\.com|youtu\.be|youtube\.com|\.[a-z]{2,}(?:\/|$))/i
         .test(text);
 
 }
 
-
-// ======================
-// SEND CHAT
-// ======================
 
 chatForm.addEventListener(
     "submit",
@@ -899,10 +841,8 @@ chatForm.addEventListener(
         event.preventDefault();
 
 
-        if(!currentUser){
-
+        if (!currentUser) {
             return;
-
         }
 
 
@@ -910,14 +850,14 @@ chatForm.addEventListener(
             chatInput.value.trim();
 
 
-        if(!message){
-
+        if (!message) {
             return;
-
         }
 
 
-        if(containsLink(message)){
+        if (
+            containsLink(message)
+        ) {
 
             alert(
                 "Links are not allowed in chat."
@@ -928,7 +868,7 @@ chatForm.addEventListener(
         }
 
 
-        try{
+        try {
 
             const response =
                 await fetch(
@@ -938,10 +878,8 @@ chatForm.addEventListener(
                         method: "POST",
 
                         headers: {
-
                             "Content-Type":
                                 "application/json"
-
                         },
 
                         body:
@@ -953,8 +891,7 @@ chatForm.addEventListener(
                                 avatar:
                                     currentUser.avatar,
 
-                                message:
-                                    message
+                                message
 
                             })
 
@@ -966,7 +903,7 @@ chatForm.addEventListener(
                 await response.json();
 
 
-            if(!data.success){
+            if (!data.success) {
 
                 alert(
                     data.message ||
@@ -984,11 +921,10 @@ chatForm.addEventListener(
             lastChatSignature =
                 "";
 
-
             await loadChat();
 
         }
-        catch(error){
+        catch (error) {
 
             console.log(error);
 
@@ -1002,22 +938,22 @@ chatForm.addEventListener(
 );
 
 
-// ======================
+// ======================================================
 // PET VALUES
-// ======================
+// ======================================================
 
-async function loadPets(){
+async function loadPets() {
 
     petList.innerHTML = `
 
         <div class="loading">
-            Loading pet values...
+            Loading AMVGG values...
         </div>
 
     `;
 
 
-    try{
+    try {
 
         const response =
             await fetch(
@@ -1029,12 +965,10 @@ async function loadPets(){
             await response.json();
 
 
-        if(
-            !data.success
-        ){
+        if (!data.success) {
 
             throw new Error(
-                "Could not load pets"
+                "Pet request failed"
             );
 
         }
@@ -1044,19 +978,17 @@ async function loadPets(){
             data.pets || [];
 
 
-        renderPets(
-            pets
-        );
+        renderPets(pets);
 
     }
-    catch(error){
+    catch (error) {
 
         console.log(error);
 
         petList.innerHTML = `
 
             <div class="loading">
-                Could not load pet values.
+                Couldn't load pet values.
             </div>
 
         `;
@@ -1066,17 +998,17 @@ async function loadPets(){
 }
 
 
-// ======================
-// RENDER PETS
-// ======================
+// ======================================================
+// PET RENDER
+// ======================================================
 
-function renderPets(list){
+function renderPets(list) {
 
     petList.innerHTML =
         "";
 
 
-    if(!list.length){
+    if (!list.length) {
 
         petList.innerHTML = `
 
@@ -1104,6 +1036,16 @@ function renderPets(list){
                 "pet-item";
 
 
+            const imageBox =
+                document.createElement(
+                    "div"
+                );
+
+
+            imageBox.className =
+                "pet-image-box";
+
+
             const image =
                 document.createElement(
                     "img"
@@ -1116,17 +1058,29 @@ function renderPets(list){
 
             image.src =
                 pet.image ||
-                pet.imageUrl ||
-                "pet-placeholder.png";
+                "logo.png";
+
+
+            image.alt =
+                pet.name;
+
+
+            image.loading =
+                "lazy";
 
 
             image.onerror =
                 () => {
 
                     image.src =
-                        "pet-placeholder.png";
+                        "logo.png";
 
                 };
+
+
+            imageBox.appendChild(
+                image
+            );
 
 
             const info =
@@ -1149,10 +1103,47 @@ function renderPets(list){
                 pet.name;
 
 
+            const badges =
+                document.createElement(
+                    "div"
+                );
+
+
+            badges.className =
+                "pet-badges";
+
+
+            (
+                pet.badges || []
+            ).forEach(
+                badge => {
+
+                    const badgeElement =
+                        document.createElement(
+                            "span"
+                        );
+
+
+                    badgeElement.textContent =
+                        badge;
+
+
+                    badges.appendChild(
+                        badgeElement
+                    );
+
+                }
+            );
+
+
             const value =
                 document.createElement(
                     "span"
                 );
+
+
+            value.className =
+                "pet-value";
 
 
             value.textContent =
@@ -1165,13 +1156,26 @@ function renderPets(list){
                 name
             );
 
+
+            if (
+                pet.badges &&
+                pet.badges.length
+            ) {
+
+                info.appendChild(
+                    badges
+                );
+
+            }
+
+
             info.appendChild(
                 value
             );
 
 
             item.appendChild(
-                image
+                imageBox
             );
 
             item.appendChild(
@@ -1189,9 +1193,9 @@ function renderPets(list){
 }
 
 
-// ======================
-// SEARCH VALUES
-// ======================
+// ======================================================
+// SEARCH
+// ======================================================
 
 valueSearch.addEventListener(
     "input",
@@ -1205,10 +1209,23 @@ valueSearch.addEventListener(
 
         const filtered =
             pets.filter(
-                pet =>
-                    pet.name
-                        .toLowerCase()
-                        .includes(search)
+                pet => {
+
+                    return (
+
+                        pet.name
+                            .toLowerCase()
+                            .includes(search)
+
+                        ||
+
+                        pet.displayName
+                            ?.toLowerCase()
+                            .includes(search)
+
+                    );
+
+                }
             );
 
 
@@ -1220,19 +1237,19 @@ valueSearch.addEventListener(
 );
 
 
-// ======================
-// VALUE FORMAT
-// ======================
+// ======================================================
+// FORMAT
+// ======================================================
 
-function formatValue(value){
+function formatValue(value) {
 
     const number =
         Number(value);
 
 
-    if(
+    if (
         Number.isNaN(number)
-    ){
+    ) {
 
         return String(value);
 
@@ -1244,13 +1261,13 @@ function formatValue(value){
 }
 
 
-// ======================
-// SITE STATUS
-// ======================
+// ======================================================
+// STATUS
+// ======================================================
 
-async function checkSiteStatus(){
+async function checkSiteStatus() {
 
-    try{
+    try {
 
         const response =
             await fetch(
@@ -1262,16 +1279,16 @@ async function checkSiteStatus(){
             await response.json();
 
 
-        if(
+        if (
             data.online === false
-        ){
+        ) {
 
             maintenance.classList.remove(
                 "hidden"
             );
 
         }
-        else{
+        else {
 
             maintenance.classList.add(
                 "hidden"
@@ -1280,21 +1297,20 @@ async function checkSiteStatus(){
         }
 
 
-        if(
+        if (
             data.announcement
-        ){
+        ) {
 
             announcement.classList.remove(
                 "hidden"
             );
-
 
             announcement.textContent =
                 "📢 " +
                 data.announcement;
 
         }
-        else{
+        else {
 
             announcement.classList.add(
                 "hidden"
@@ -1303,7 +1319,7 @@ async function checkSiteStatus(){
         }
 
     }
-    catch(error){
+    catch (error) {
 
         console.log(error);
 
@@ -1312,11 +1328,11 @@ async function checkSiteStatus(){
 }
 
 
-// ======================
-// SECURITY
-// ======================
+// ======================================================
+// ESCAPE
+// ======================================================
 
-function escapeHtml(value){
+function escapeHtml(value) {
 
     return String(value)
         .replaceAll(
@@ -1343,7 +1359,7 @@ function escapeHtml(value){
 }
 
 
-function escapeAttribute(value){
+function escapeAttribute(value) {
 
     return String(value)
         .replaceAll(
@@ -1366,25 +1382,23 @@ function escapeAttribute(value){
 }
 
 
-// ======================
+// ======================================================
 // START
-// ======================
+// ======================================================
 
 loadSavedUser();
 
 checkSiteStatus();
 
 
-// Chat refresh
-
 setInterval(
     () => {
 
-        if(
+        if (
             pages.chat.classList.contains(
                 "active-page"
             )
-        ){
+        ) {
 
             loadChat();
 
@@ -1394,8 +1408,6 @@ setInterval(
     3000
 );
 
-
-// Status refresh
 
 setInterval(
     checkSiteStatus,
