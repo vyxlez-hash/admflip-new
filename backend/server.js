@@ -3,1877 +3,1757 @@ const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const mongoose = require("mongoose");
 const fs = require("fs");
+const crypto = require("crypto");
 
 const app = express();
 
 app.set("trust proxy", 1);
 
 app.use(cors({
-    origin: true,
-    credentials: false
+  origin: true,
+  credentials: true
 }));
 
-app.use(express.json({
-    limit: "100kb"
+app.use(express.json({ limit: "100kb" }));
+
+app.use(rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false
 }));
 
+// ======================================================
+// MONGODB
+// ======================================================
 
-/* =========================
-   RATE LIMIT
-========================= */
+if (!process.env.MONGO_URL) {
+  console.error("MONGO_URL environment variable is missing.");
+}
 
-const limiter = rateLimit({
-    windowMs: 60 * 1000,
-    max: 100,
-    standardHeaders: true,
-    legacyHeaders: false
+mongoose.connect(process.env.MONGO_URL)
+  .then(() => {
+    console.log("MongoDB connected");
+  })
+  .catch((err) => {
+    console.error("MongoDB error:", err.message);
+  });
+
+
+// ======================================================
+// USER MODEL
+// ======================================================
+
+const inventoryItemSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true
+  },
+
+  value: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+
+  variant: {
+    type: String,
+    default: ""
+  },
+
+  addedAt: {
+    type: Date,
+    default: Date.now
+  }
+}, {
+  _id: true
 });
 
-app.use(limiter);
 
+const User = mongoose.model(
+  "User",
+  new mongoose.Schema({
+    robloxId: {
+      type: Number,
+      unique: true,
+      index: true
+    },
 
-/* =========================
-   MONGODB
-========================= */
+    username: {
+      type: String,
+      index: true
+    },
 
-const mongoUrl =
-    process.env.MONGO_URL;
+    avatar: String,
 
-console.log(
-    "Mongo URL exists:",
-    Boolean(mongoUrl)
+    balance: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+
+    wagered: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+
+    profit: {
+      type: Number,
+      default: 0
+    },
+
+    inventory: {
+      type: [inventoryItemSchema],
+      default: []
+    },
+
+    deposited: {
+      type: [inventoryItemSchema],
+      default: []
+    }
+  }, {
+    timestamps: true
+  })
 );
 
 
-if (!mongoUrl) {
+// ======================================================
+// SETTINGS
+// ======================================================
 
-    console.error(
-        "MONGO_URL environment variable is missing."
-    );
+const Settings = mongoose.model(
+  "Settings",
+  new mongoose.Schema({
+    siteOnline: {
+      type: Boolean,
+      default: true
+    },
 
-} else {
-
-    mongoose.connect(mongoUrl)
-        .then(() => {
-            console.log("MongoDB connected");
-        })
-        .catch(error => {
-            console.error(
-                "MongoDB error:",
-                error.message
-            );
-        });
-}
-
-
-/* =========================
-   USER MODEL
-========================= */
-
-const UserSchema =
-    new mongoose.Schema({
-
-        robloxId: {
-            type: Number,
-            required: true,
-            unique: true,
-            index: true
-        },
-
-        username: {
-            type: String,
-            required: true
-        },
-
-        avatar: {
-            type: String,
-            default: ""
-        },
-
-        inventory: [{
-            name: String,
-            value: Number
-        }],
-
-        deposited: [{
-            name: String,
-            value: Number
-        }],
-
-        wagered: {
-            type: Number,
-            default: 0
-        },
-
-        profit: {
-            type: Number,
-            default: 0
-        }
-
-    }, {
-        timestamps: true
-    });
+    announcement: {
+      type: String,
+      default: ""
+    }
+  })
+);
 
 
-const User =
-    mongoose.models.User ||
-    mongoose.model(
-        "User",
-        UserSchema
-    );
+// ======================================================
+// CHAT
+// ======================================================
+
+const ChatMessage = mongoose.model(
+  "ChatMessage",
+  new mongoose.Schema({
+    username: String,
+    robloxId: Number,
+    avatar: String,
+
+    message: {
+      type: String,
+      required: true,
+      maxlength: 300
+    },
+
+    type: {
+      type: String,
+      enum: ["message", "announcement"],
+      default: "message"
+    },
+
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  })
+);
 
 
-/* =========================
-   CHAT MODEL
-========================= */
+// ======================================================
+// COINFLIP
+// ======================================================
 
-const ChatSchema =
-    new mongoose.Schema({
+const Coinflip = mongoose.model(
+  "Coinflip",
+  new mongoose.Schema({
+    creatorId: {
+      type: Number,
+      required: true,
+      index: true
+    },
 
-        robloxId: Number,
+    creatorUsername: String,
+    creatorAvatar: String,
 
-        username: String,
+    itemId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true
+    },
 
-        avatar: String,
+    petName: String,
+    petValue: Number,
+    petVariant: String,
 
-        message: String
+    side: {
+      type: String,
+      enum: ["heads", "tails"],
+      required: true
+    },
 
-    }, {
-        timestamps: true
-    });
+    status: {
+      type: String,
+      enum: [
+        "active",
+        "joined",
+        "completed",
+        "cancelled"
+      ],
+      default: "active",
+      index: true
+    },
 
+    joinerId: Number,
+    joinerUsername: String,
+    joinerAvatar: String,
 
-const Chat =
-    mongoose.models.Chat ||
-    mongoose.model(
-        "Chat",
-        ChatSchema
-    );
+    winnerId: Number,
 
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
 
-/* =========================
-   COINFLIP MODEL
-========================= */
-
-const CoinflipSchema =
-    new mongoose.Schema({
-
-        ownerId: {
-            type: Number,
-            required: true,
-            index: true
-        },
-
-        username: String,
-
-        avatar: String,
-
-        petName: {
-            type: String,
-            required: true
-        },
-
-        petValue: {
-            type: Number,
-            required: true
-        },
-
-        side: {
-            type: String,
-            enum: [
-                "heads",
-                "tails"
-            ],
-            required: true
-        },
-
-        status: {
-            type: String,
-            enum: [
-                "active",
-                "playing",
-                "completed",
-                "cancelled"
-            ],
-            default: "active",
-            index: true
-        },
-
-        joinedBy: {
-            robloxId: Number
-        },
-
-        joinedUsername: String,
-
-        joinedAvatar: String,
-
-        winnerId: Number,
-
-        winnerUsername: String,
-
-        winningSide: String
-
-    }, {
-        timestamps: true
-    });
+    completedAt: Date
+  })
+);
 
 
-const Coinflip =
-    mongoose.models.Coinflip ||
-    mongoose.model(
-        "Coinflip",
-        CoinflipSchema
-    );
-
-
-/* =========================
-   SETTINGS
-========================= */
-
-const SettingsSchema =
-    new mongoose.Schema({
-
-        siteOnline: {
-            type: Boolean,
-            default: true
-        },
-
-        announcement: {
-            type: String,
-            default: ""
-        }
-
-    });
-
-
-const Settings =
-    mongoose.models.Settings ||
-    mongoose.model(
-        "Settings",
-        SettingsSchema
-    );
-
-
-/* =========================
-   PET VALUES
-========================= */
+// ======================================================
+// PET VALUES
+// ======================================================
 
 function loadPets() {
+  try {
+    const text = fs.readFileSync("./values.txt", "utf8");
 
-    try {
+    const lines = text
+      .split(/\r?\n/)
+      .map(x => x.trim())
+      .filter(Boolean);
 
-        const text =
-            fs.readFileSync(
-                "./values.txt",
-                "utf8"
-            );
+    const result = [];
 
+    for (let i = 0; i < lines.length; i += 2) {
+      const name = lines[i];
+      const rawValue = lines[i + 1];
 
-        const lines =
-            text
-                .split(/\r?\n/)
-                .map(x => x.trim())
-                .filter(Boolean);
+      if (!name || !rawValue) continue;
 
+      // IMPORTANT:
+      // The old code used /./g which removed EVERYTHING.
+      const cleanValue = rawValue
+        .replace(/[^\d.-]/g, "");
 
-        const pets = [];
+      const value = Number(cleanValue);
 
+      if (!Number.isFinite(value)) continue;
 
-        for (
-            let i = 0;
-            i < lines.length;
-            i += 2
-        ) {
-
-            const name =
-                lines[i];
-
-            let value =
-                lines[i + 1];
-
-
-            if (!name || !value) {
-                continue;
-            }
-
-
-            /*
-              Keep the numeric value.
-
-              The old code used replace(/./g, "")
-              which removes EVERY character.
-            */
-
-            value =
-                value
-                    .replace(/[$,]/g, "")
-                    .trim();
-
-
-            const numericValue =
-                Number(value);
-
-
-            if (
-                !Number.isFinite(
-                    numericValue
-                )
-            ) {
-                continue;
-            }
-
-
-            pets.push({
-                name,
-                value: numericValue
-            });
-        }
-
-
-        console.log(
-            "Loaded pets:",
-            pets.length
-        );
-
-
-        return pets;
-
-    } catch (error) {
-
-        console.error(
-            "Pet loading error:",
-            error.message
-        );
-
-        return [];
+      result.push({
+        name,
+        value
+      });
     }
-}
 
+    console.log("Loaded pets:", result.length);
 
-const pets =
-    loadPets();
+    return result;
 
-
-function findPet(
-    name
-) {
-
-    return pets.find(
-        pet =>
-            pet.name.toLowerCase() ===
-            String(name)
-                .trim()
-                .toLowerCase()
+  } catch (error) {
+    console.error(
+      "Pet loading error:",
+      error.message
     );
+
+    return [];
+  }
+}
+
+const pets = loadPets();
+
+
+// ======================================================
+// PET IMAGE
+// ======================================================
+
+function petImage(name) {
+  if (!name) return null;
+
+  return (
+    "https://amvgg.com/items/" +
+    encodeURIComponent(name) +
+    ".webp"
+  );
 }
 
 
-/* =========================
-   PET IMAGE
-========================= */
-
-function getPetImage(
-    name
-) {
-
-    return (
-        "https://amvgg.com/items/" +
-        encodeURIComponent(name) +
-        ".webp"
-    );
-}
-
-
-/* =========================
-   HOME
-========================= */
+// ======================================================
+// HOME
+// ======================================================
 
 app.get("/", (req, res) => {
-
-    res.send(
-        "ADMFLIP backend is online"
-    );
+  res.json({
+    success: true,
+    message: "ADMFLIP backend is online"
+  });
 });
 
 
-/* =========================
-   STATUS
-========================= */
+// ======================================================
+// STATUS
+// ======================================================
 
-app.get(
-    "/status",
-    async (req, res) => {
+app.get("/status", async (req, res) => {
+  try {
+    let settings = await Settings.findOne();
 
-        try {
+    if (!settings) {
+      settings = await Settings.create({});
+    }
 
-            let settings =
-                await Settings.findOne();
+    res.json({
+      success: true,
+      online: settings.siteOnline,
+      announcement: settings.announcement
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      online: true,
+      announcement: ""
+    });
+  }
+});
 
 
-            if (!settings) {
+// ======================================================
+// PET VALUES
+// ======================================================
 
-                settings =
-                    await Settings.create({});
-            }
+app.get("/pets", (req, res) => {
+  res.json({
+    success: true,
+
+    pets: pets.map(pet => ({
+      id: pet.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-"),
+
+      name: pet.name,
+      value: pet.value,
+
+      image: petImage(pet.name)
+    }))
+  });
+});
 
 
-            res.json({
+// ======================================================
+// ROBLOX USER LOOKUP
+// ======================================================
 
-                online:
-                    settings.siteOnline,
+app.get("/user/:username", async (req, res) => {
+  try {
+    const username = req.params.username.trim();
 
-                announcement:
-                    settings.announcement
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        message: "Username required"
+      });
+    }
 
-            });
+    const response = await fetch(
+      "https://users.roblox.com/v1/usernames/users",
+      {
+        method: "POST",
 
-        } catch {
+        headers: {
+          "Content-Type": "application/json"
+        },
 
-            res.json({
-                online: true,
-                announcement: ""
-            });
+        body: JSON.stringify({
+          usernames: [username],
+          excludeBannedUsers: true
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (
+      !data.data ||
+      !data.data.length
+    ) {
+      return res.json({
+        success: false,
+        message: "Roblox username not found"
+      });
+    }
+
+    const user = data.data[0];
+
+    const avatarResponse = await fetch(
+      `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${user.id}&size=150x150&format=Png`
+    );
+
+    const avatarData =
+      await avatarResponse.json();
+
+    const avatar =
+      avatarData.data &&
+      avatarData.data[0]
+        ? avatarData.data[0].imageUrl
+        : "";
+
+    // Create/update site account.
+    await User.findOneAndUpdate(
+      { robloxId: user.id },
+
+      {
+        $set: {
+          username: user.name,
+          avatar
+        },
+
+        $setOnInsert: {
+          robloxId: user.id
         }
-    }
-);
+      },
+
+      {
+        upsert: true,
+        new: true
+      }
+    );
+
+    res.json({
+      success: true,
+
+      user: {
+        id: user.id,
+        username: user.name,
+        avatar
+      }
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+});
 
 
-/* =========================
-   PETS
-========================= */
-
-app.get(
-    "/pets",
-    (req, res) => {
-
-        res.json({
-
-            success: true,
-
-            pets:
-                pets.map(pet => ({
-                    id:
-                        pet.name
-                            .toLowerCase()
-                            .replace(
-                                /[^a-z0-9]+/g,
-                                "-"
-                            ),
-
-                    name:
-                        pet.name,
-
-                    value:
-                        pet.value,
-
-                    image:
-                        getPetImage(
-                            pet.name
-                        )
-                }))
-        });
-    }
-);
-
-
-/* =========================
-   ROBLOX USER
-========================= */
-
-app.get(
-    "/user/:username",
-    async (req, res) => {
-
-        try {
-
-            const username =
-                req.params.username;
-
-
-            const response =
-                await fetch(
-                    "https://users.roblox.com/v1/usernames/users",
-                    {
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type":
-                                "application/json"
-                        },
-
-                        body:
-                            JSON.stringify({
-                                usernames: [
-                                    username
-                                ],
-
-                                excludeBannedUsers:
-                                    true
-                            })
-                    }
-                );
-
-
-            const data =
-                await response.json();
-
-
-            if (
-                !data.data ||
-                !data.data.length
-            ) {
-
-                return res.json({
-                    success: false,
-                    message:
-                        "Roblox username not found"
-                });
-            }
-
-
-            const user =
-                data.data[0];
-
-
-            const avatarResponse =
-                await fetch(
-                    `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${user.id}&size=150x150&format=Png`
-                );
-
-
-            const avatarData =
-                await avatarResponse.json();
-
-
-            const avatar =
-                avatarData.data?.[0]?.imageUrl ||
-                "";
-
-
-            res.json({
-
-                success: true,
-
-                user: {
-
-                    id: user.id,
-
-                    username:
-                        user.name,
-
-                    avatar
-
-                }
-
-            });
-
-        } catch (error) {
-
-            console.error(error);
-
-            res.status(500).json({
-
-                success: false,
-
-                message:
-                    "Server error"
-            });
-        }
-    }
-);
-
-
-/* =========================
-   CREATE PHRASE
-========================= */
+// ======================================================
+// VERIFICATION PHRASE
+// ======================================================
 
 function generatePhrase() {
+  const words = [
+    "BlueTiger",
+    "FastCloud",
+    "LuckyWave",
+    "SilverMoon",
+    "GoldenLeaf",
+    "PurpleFox",
+    "NightWolf",
+    "CrystalStar"
+  ];
 
-    const words = [
-        "BlueTiger",
-        "FastCloud",
-        "LuckyWave",
-        "SilverMoon",
-        "GoldenLeaf"
-    ];
-
-
-    return (
-        words[
-            Math.floor(
-                Math.random() *
-                words.length
-            )
-        ] +
-        "-" +
-        Math.floor(
-            1000 +
-            Math.random() * 9000
-        )
-    );
+  return (
+    words[
+      Math.floor(
+        Math.random() * words.length
+      )
+    ] +
+    "-" +
+    Math.floor(
+      1000 + Math.random() * 9000
+    )
+  );
 }
 
 
-app.get(
-    "/create",
-    (req, res) => {
+app.get("/create", (req, res) => {
+  res.json({
+    success: true,
+    phrase: generatePhrase()
+  });
+});
 
-        res.json({
-            phrase:
-                generatePhrase()
-        });
+
+// ======================================================
+// ROBLOX BIO VERIFICATION
+// ======================================================
+
+app.post("/check", async (req, res) => {
+  try {
+    const {
+      username,
+      phrase
+    } = req.body;
+
+    if (!username || !phrase) {
+      return res.status(400).json({
+        success: false,
+        message: "Username and phrase required"
+      });
     }
-);
 
+    const response = await fetch(
+      "https://users.roblox.com/v1/usernames/users",
+      {
+        method: "POST",
 
-/* =========================
-   VERIFY BIO
-========================= */
+        headers: {
+          "Content-Type": "application/json"
+        },
 
-app.post(
-    "/check",
-    async (req, res) => {
+        body: JSON.stringify({
+          usernames: [username],
+          excludeBannedUsers: true
+        })
+      }
+    );
 
-        try {
+    const data = await response.json();
 
-            const {
-                username,
-                phrase
-            } = req.body;
+    if (
+      !data.data ||
+      !data.data.length
+    ) {
+      return res.json({
+        success: false,
+        message: "Roblox username not found"
+      });
+    }
 
+    const id = data.data[0].id;
 
-            if (
-                typeof username !==
-                    "string" ||
-                typeof phrase !==
-                    "string"
-            ) {
+    const profileResponse =
+      await fetch(
+        `https://users.roblox.com/v1/users/${id}`
+      );
 
-                return res.status(400)
-                    .json({
-                        success: false,
-                        message:
-                            "Invalid request"
-                    });
-            }
+    const profile =
+      await profileResponse.json();
 
+    if (
+      profile.description &&
+      profile.description.includes(phrase)
+    ) {
 
-            const response =
-                await fetch(
-                    "https://users.roblox.com/v1/usernames/users",
-                    {
-                        method: "POST",
+      let avatar = "";
 
-                        headers: {
-                            "Content-Type":
-                                "application/json"
-                        },
+      try {
+        const avatarResponse =
+          await fetch(
+            `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${id}&size=150x150&format=Png`
+          );
 
-                        body:
-                            JSON.stringify({
-                                usernames: [
-                                    username
-                                ],
+        const avatarData =
+          await avatarResponse.json();
 
-                                excludeBannedUsers:
-                                    true
-                            })
-                    }
-                );
+        avatar =
+          avatarData.data &&
+          avatarData.data[0]
+            ? avatarData.data[0].imageUrl
+            : "";
 
+      } catch (_) {}
 
-            const data =
-                await response.json();
+      await User.findOneAndUpdate(
+        { robloxId: id },
 
+        {
+          $set: {
+            username: profile.name,
+            avatar
+          }
+        },
 
-            if (
-                !data.data ||
-                !data.data.length
-            ) {
-
-                return res.json({
-                    success: false,
-                    message:
-                        "Roblox username not found"
-                });
-            }
-
-
-            const id =
-                data.data[0].id;
-
-
-            const profileResponse =
-                await fetch(
-                    `https://users.roblox.com/v1/users/${id}`
-                );
-
-
-            const profile =
-                await profileResponse.json();
-
-
-            if (
-                profile.description &&
-                profile.description.includes(
-                    phrase
-                )
-            ) {
-
-                const user =
-                    await User.findOneAndUpdate(
-                        {
-                            robloxId: id
-                        },
-
-                        {
-                            $set: {
-                                robloxId: id,
-                                username:
-                                    profile.name,
-                                avatar:
-                                    ""
-                            },
-
-                            $setOnInsert: {
-                                inventory: [],
-                                deposited: [],
-                                wagered: 0,
-                                profit: 0
-                            }
-                        },
-
-                        {
-                            upsert: true,
-                            new: true
-                        }
-                    );
-
-
-                return res.json({
-
-                    success: true,
-
-                    username:
-                        profile.name,
-
-                    id:
-                        profile.id,
-
-                    inventory:
-                        user.inventory || []
-
-                });
-            }
-
-
-            res.json({
-
-                success: false,
-
-                message:
-                    "Verification phrase not found"
-            });
-
-        } catch (error) {
-
-            console.error(error);
-
-            res.status(500).json({
-
-                success: false,
-
-                message:
-                    "Verification failed"
-            });
+        {
+          upsert: true,
+          new: true
         }
+      );
+
+      return res.json({
+        success: true,
+        username: profile.name,
+        id: profile.id,
+        avatar
+      });
     }
-);
+
+    res.json({
+      success: false,
+      message: "Verification phrase not found"
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Verification failed"
+    });
+  }
+});
 
 
-/* =========================
-   INVENTORY
-========================= */
+// ======================================================
+// GET USER ACCOUNT / INVENTORY
+// ======================================================
 
-app.get(
-    "/inventory/:robloxId",
-    async (req, res) => {
+app.get("/account/:robloxId", async (req, res) => {
+  try {
+    const robloxId =
+      Number(req.params.robloxId);
 
-        try {
+    if (!Number.isSafeInteger(robloxId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user"
+      });
+    }
 
-            const robloxId =
-                Number(
-                    req.params.robloxId
-                );
+    const user =
+      await User.findOne({ robloxId })
+        .lean();
+
+    if (!user) {
+      return res.json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    res.json({
+      success: true,
+
+      user: {
+        id: user.robloxId,
+        username: user.username,
+        avatar: user.avatar,
+
+        balance: user.balance || 0,
+        wagered: user.wagered || 0,
+        profit: user.profit || 0,
+
+        inventory:
+          (user.inventory || []).map(item => ({
+            itemId: item._id,
+            name: item.name,
+            value: item.value,
+            variant: item.variant || "",
+            image: petImage(item.name)
+          }))
+      }
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Could not load account"
+    });
+  }
+});
 
 
-            if (
-                !Number.isSafeInteger(
-                    robloxId
-                )
-            ) {
+// ======================================================
+// ADD PET
+// ======================================================
+// This endpoint should be protected by your admin/bot
+// authentication before exposing it publicly.
 
-                return res.status(400)
-                    .json({
-                        success: false,
-                        message:
-                            "Invalid user"
-                    });
+app.post("/admin/add-pet", async (req, res) => {
+  try {
+    const {
+      robloxId,
+      name,
+      value,
+      variant
+    } = req.body;
+
+    const id = Number(robloxId);
+    const petValue = Number(value);
+
+    if (
+      !Number.isSafeInteger(id) ||
+      !name ||
+      !Number.isFinite(petValue)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid pet data"
+      });
+    }
+
+    const user =
+      await User.findOneAndUpdate(
+        { robloxId: id },
+
+        {
+          $push: {
+            inventory: {
+              name: String(name),
+              value: petValue,
+              variant: variant || ""
             }
+          }
+        },
 
-
-            const user =
-                await User.findOne({
-                    robloxId
-                });
-
-
-            if (!user) {
-
-                return res.json({
-                    success: true,
-                    inventory: []
-                });
-            }
-
-
-            res.json({
-
-                success: true,
-
-                inventory:
-                    user.inventory || []
-
-            });
-
-        } catch (error) {
-
-            console.error(error);
-
-            res.status(500).json({
-                success: false,
-                message:
-                    "Inventory error"
-            });
+        {
+          new: true
         }
+      );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
     }
-);
+
+    res.json({
+      success: true,
+      message: "Pet added",
+
+      inventory:
+        user.inventory
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Could not add pet"
+    });
+  }
+});
 
 
-/* =========================
-   CHAT GET
-========================= */
+// ======================================================
+// REMOVE EXACT PET
+// ======================================================
 
-app.get(
-    "/chat",
-    async (req, res) => {
+app.post("/admin/remove-pet", async (req, res) => {
+  try {
+    const {
+      robloxId,
+      itemId
+    } = req.body;
 
-        try {
+    const id = Number(robloxId);
 
-            const messages =
-                await Chat.find()
-                    .sort({
-                        createdAt: -1
-                    })
-                    .limit(100)
-                    .lean();
+    if (
+      !Number.isSafeInteger(id) ||
+      !mongoose.isValidObjectId(itemId)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid request"
+      });
+    }
 
+    const user =
+      await User.findOneAndUpdate(
 
-            messages.reverse();
+        {
+          robloxId: id,
 
+          "inventory._id":
+            itemId
+        },
 
-            res.json({
+        {
+          $pull: {
+            inventory: {
+              _id: itemId
+            }
+          }
+        },
 
-                success: true,
-
-                messages
-
-            });
-
-        } catch (error) {
-
-            console.error(error);
-
-            res.status(500).json({
-
-                success: false,
-
-                messages: []
-            });
+        {
+          new: true
         }
+      );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Pet not found"
+      });
     }
-);
+
+    res.json({
+      success: true,
+      message: "Pet removed",
+
+      inventory:
+        user.inventory
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Could not remove pet"
+    });
+  }
+});
 
 
-/* =========================
-   CHAT POST
-========================= */
+// ======================================================
+// TRANSFER EXACT PET
+// ======================================================
 
-app.post(
-    "/chat",
-    async (req, res) => {
+app.post("/admin/transfer-pet", async (req, res) => {
+  const session =
+    await mongoose.startSession();
 
-        try {
+  try {
+    const {
+      fromUserId,
+      toUserId,
+      itemId
+    } = req.body;
 
-            const {
-                robloxId,
-                username,
-                avatar,
-                message
-            } = req.body;
+    const fromId =
+      Number(fromUserId);
 
+    const toId =
+      Number(toUserId);
 
-            if (
-                !Number.isSafeInteger(
-                    Number(robloxId)
-                )
-            ) {
+    if (
+      !Number.isSafeInteger(fromId) ||
+      !Number.isSafeInteger(toId) ||
+      !mongoose.isValidObjectId(itemId) ||
+      fromId === toId
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid transfer"
+      });
+    }
 
-                return res.status(400)
-                    .json({
-                        success: false,
-                        message:
-                            "Sign in required"
-                    });
+    session.startTransaction();
+
+    // Atomically remove EXACTLY this item.
+    const sender =
+      await User.findOneAndUpdate(
+
+        {
+          robloxId: fromId,
+
+          "inventory._id":
+            itemId
+        },
+
+        {
+          $pull: {
+            inventory: {
+              _id: itemId
             }
+          }
+        },
 
-
-            const clean =
-                String(message || "")
-                    .trim();
-
-
-            if (!clean) {
-
-                return res.status(400)
-                    .json({
-                        success: false,
-                        message:
-                            "Message is empty"
-                    });
-            }
-
-
-            if (clean.length > 250) {
-
-                return res.status(400)
-                    .json({
-                        success: false,
-                        message:
-                            "Message too long"
-                    });
-            }
-
-
-            const linkPattern =
-                /(?:https?:\/\/|www\.|discord\.gg\/|t\.me\/|[a-z0-9-]+\.(?:com|net|org|gg|io|xyz|me|co|dev|app)(?:\/|$))/i;
-
-
-            if (
-                linkPattern.test(clean)
-            ) {
-
-                return res.status(400)
-                    .json({
-                        success: false,
-                        message:
-                            "Links are not allowed"
-                    });
-            }
-
-
-            const recent =
-                await Chat.findOne({
-                    robloxId:
-                        Number(robloxId),
-
-                    createdAt: {
-                        $gt:
-                            new Date(
-                                Date.now() -
-                                2500
-                            )
-                    }
-                });
-
-
-            if (recent) {
-
-                return res.status(429)
-                    .json({
-                        success: false,
-                        message:
-                            "Slow down"
-                    });
-            }
-
-
-            await Chat.create({
-
-                robloxId:
-                    Number(robloxId),
-
-                username:
-                    String(username)
-                        .slice(0, 32),
-
-                avatar:
-                    String(avatar || "")
-                        .slice(0, 500),
-
-                message:
-                    clean
-
-            });
-
-
-            const messages =
-                await Chat.find()
-                    .sort({
-                        createdAt: -1
-                    })
-                    .limit(100)
-                    .lean();
-
-
-            messages.reverse();
-
-
-            res.json({
-
-                success: true,
-
-                messages
-
-            });
-
-        } catch (error) {
-
-            console.error(error);
-
-            res.status(500).json({
-
-                success: false,
-
-                message:
-                    "Chat failed"
-            });
+        {
+          new: true,
+          session
         }
+      );
+
+    if (!sender) {
+      throw new Error(
+        "Pet does not exist in sender inventory"
+      );
     }
-);
 
+    // Get the item that was removed.
+    // We need its real value/name, not browser data.
+    const removedItem =
+      sender.inventory;
 
-/* =========================
-   COINFLIPS GET
-========================= */
+    // Because the item has already been pulled,
+    // retrieve the original item from a snapshot
+    // before removal using a separate lookup is not possible.
+    //
+    // Therefore this route uses an atomic conditional
+    // update below with a transaction-safe read.
+    //
+    // Roll back this transaction and use the safer
+    // implementation below.
+    await session.abortTransaction();
 
-app.get(
-    "/coinflips",
-    async (req, res) => {
+    // Safer transaction implementation.
+    session.startTransaction();
 
-        try {
-
-            const coinflips =
-                await Coinflip.find({
-                    status: "active"
-                })
-                .sort({
-                    createdAt: -1
-                })
-                .limit(100)
-                .lean();
-
-
-            res.json({
-
-                success: true,
-
-                coinflips
-
-            });
-
-        } catch (error) {
-
-            console.error(error);
-
-            res.status(500).json({
-
-                success: false,
-
-                coinflips: []
-            });
+    const originalSender =
+      await User.findOne(
+        {
+          robloxId: fromId,
+          "inventory._id": itemId
         }
+      ).session(session);
+
+    if (!originalSender) {
+      throw new Error(
+        "Pet not found"
+      );
     }
-);
 
+    const item =
+      originalSender.inventory.id(itemId);
 
-/* =========================
-   CREATE COINFLIP
-========================= */
+    if (!item) {
+      throw new Error(
+        "Pet not found"
+      );
+    }
 
-app.post(
-    "/coinflips",
-    async (req, res) => {
+    const transferredPet = {
+      name: item.name,
+      value: item.value,
+      variant: item.variant || ""
+    };
 
-        const session =
-            await mongoose.startSession();
+    const removed =
+      await User.findOneAndUpdate(
 
+        {
+          robloxId: fromId,
+          "inventory._id": itemId
+        },
 
-        try {
-
-            const {
-                robloxId,
-                username,
-                avatar,
-                petName,
-                side
-            } = req.body;
-
-
-            const userId =
-                Number(robloxId);
-
-
-            if (
-                !Number.isSafeInteger(
-                    userId
-                )
-            ) {
-
-                return res.status(401)
-                    .json({
-                        success: false,
-                        message:
-                            "Sign in required"
-                    });
+        {
+          $pull: {
+            inventory: {
+              _id: itemId
             }
+          }
+        },
 
-
-            const normalizedSide =
-                String(side)
-                    .toLowerCase();
-
-
-            if (
-                normalizedSide !==
-                    "heads" &&
-                normalizedSide !==
-                    "tails"
-            ) {
-
-                return res.status(400)
-                    .json({
-                        success: false,
-                        message:
-                            "Invalid side"
-                    });
-            }
-
-
-            const officialPet =
-                findPet(petName);
-
-
-            if (!officialPet) {
-
-                return res.status(400)
-                    .json({
-                        success: false,
-                        message:
-                            "Pet is not in the value database"
-                    });
-            }
-
-
-            let created;
-
-
-            await session.withTransaction(
-                async () => {
-
-                    const user =
-                        await User.findOne({
-                            robloxId: userId
-                        })
-                        .session(session);
-
-
-                    if (!user) {
-                        throw new Error(
-                            "USER_NOT_FOUND"
-                        );
-                    }
-
-
-                    /*
-                      Find the actual inventory item.
-                      The browser's value is ignored.
-                    */
-
-                    const index =
-                        user.inventory.findIndex(
-                            pet =>
-                                String(
-                                    pet.name
-                                ).toLowerCase() ===
-                                String(
-                                    officialPet.name
-                                ).toLowerCase() &&
-                                Number(
-                                    pet.value
-                                ) ===
-                                Number(
-                                    officialPet.value
-                                )
-                        );
-
-
-                    if (index === -1) {
-
-                        throw new Error(
-                            "PET_NOT_OWNED"
-                        );
-                    }
-
-
-                    /*
-                      Remove it atomically from
-                      the user's inventory.
-                    */
-
-                    user.inventory.splice(
-                        index,
-                        1
-                    );
-
-
-                    await user.save({
-                        session
-                    });
-
-
-                    const result =
-                        await Coinflip.create(
-                            [{
-                                ownerId: userId,
-
-                                username:
-                                    user.username,
-
-                                avatar:
-                                    user.avatar ||
-                                    avatar ||
-                                    "",
-
-                                petName:
-                                    officialPet.name,
-
-                                petValue:
-                                    officialPet.value,
-
-                                side:
-                                    normalizedSide,
-
-                                status:
-                                    "active"
-                            }],
-                            {
-                                session
-                            }
-                        );
-
-
-                    created =
-                        result[0];
-                }
-            );
-
-
-            res.json({
-
-                success: true,
-
-                coinflip: created
-
-            });
-
-        } catch (error) {
-
-            console.error(
-                "Create coinflip:",
-                error
-            );
-
-
-            if (
-                error.message ===
-                "USER_NOT_FOUND"
-            ) {
-
-                return res.status(401)
-                    .json({
-                        success: false,
-                        message:
-                            "Sign in required"
-                    });
-            }
-
-
-            if (
-                error.message ===
-                "PET_NOT_OWNED"
-            ) {
-
-                return res.status(400)
-                    .json({
-                        success: false,
-                        message:
-                            "That pet is not in your inventory."
-                    });
-            }
-
-
-            res.status(500).json({
-
-                success: false,
-
-                message:
-                    "Could not create coinflip"
-            });
-
-        } finally {
-
-            await session.endSession();
+        {
+          new: true,
+          session
         }
+      );
+
+    if (!removed) {
+      throw new Error(
+        "Pet could not be removed"
+      );
     }
-);
 
-
-/* =========================
-   JOIN COINFLIP
-========================= */
-
-app.post(
-    "/coinflips/:id/join",
-    async (req, res) => {
-
-        const session =
-            await mongoose.startSession();
-
-
-        try {
-
-            const {
-                robloxId
-            } = req.body;
-
-
-            const userId =
-                Number(robloxId);
-
-
-            if (
-                !Number.isSafeInteger(
-                    userId
-                )
-            ) {
-
-                return res.status(401)
-                    .json({
-                        success: false,
-                        message:
-                            "Sign in required"
-                    });
-            }
-
-
-            let result;
-
-
-            await session.withTransaction(
-                async () => {
-
-                    const flip =
-                        await Coinflip.findOne({
-                            _id:
-                                req.params.id,
-
-                            status:
-                                "active"
-                        })
-                        .session(session);
-
-
-                    if (!flip) {
-
-                        throw new Error(
-                            "FLIP_NOT_FOUND"
-                        );
-                    }
-
-
-                    if (
-                        flip.ownerId ===
-                        userId
-                    ) {
-
-                        throw new Error(
-                            "OWN_FLIP"
-                        );
-                    }
-
-
-                    const joiningUser =
-                        await User.findOne({
-                            robloxId: userId
-                        })
-                        .session(session);
-
-
-                    if (!joiningUser) {
-
-                        throw new Error(
-                            "USER_NOT_FOUND"
-                        );
-                    }
-
-
-                    /*
-                      The joiner must also put up
-                      a pet of equal value.
-
-                      Find an official-valued pet
-                      in their inventory.
-                    */
-
-                    const joinIndex =
-                        joiningUser.inventory.findIndex(
-                            pet =>
-                                Number(
-                                    pet.value
-                                ) ===
-                                Number(
-                                    flip.petValue
-                                ) &&
-                                findPet(
-                                    pet.name
-                                )
-                        );
-
-
-                    if (joinIndex === -1) {
-
-                        throw new Error(
-                            "NO_MATCHING_PET"
-                        );
-                    }
-
-
-                    const joinedPet =
-                        joiningUser.inventory[
-                            joinIndex
-                        ];
-
-
-                    const officialJoinedPet =
-                        findPet(
-                            joinedPet.name
-                        );
-
-
-                    joiningUser.inventory.splice(
-                        joinIndex,
-                        1
-                    );
-
-
-                    await joiningUser.save({
-                        session
-                    });
-
-
-                    /*
-                      Reserve the flip before
-                      resolving it. This prevents
-                      two people joining the same
-                      active flip simultaneously.
-                    */
-
-                    flip.status =
-                        "playing";
-
-                    flip.joinedBy =
-                        userId;
-
-                    flip.joinedUsername =
-                        joiningUser.username;
-
-                    flip.joinedAvatar =
-                        joiningUser.avatar || "";
-
-
-                    await flip.save({
-                        session
-                    });
-
-
-                    /*
-                      Server-side random result.
-                      Never use a result supplied
-                      by the browser.
-                    */
-
-                    const winningSide =
-                        Math.random() < 0.5
-                            ? "heads"
-                            : "tails";
-
-
-                    const ownerWins =
-                        winningSide ===
-                        flip.side;
-
-
-                    const winnerId =
-                        ownerWins
-                            ? flip.ownerId
-                            : userId;
-
-
-                    const winnerUsername =
-                        ownerWins
-                            ? flip.username
-                            : joiningUser.username;
-
-
-                    const owner =
-                        await User.findOne({
-                            robloxId:
-                                flip.ownerId
-                        })
-                        .session(session);
-
-
-                    if (!owner) {
-
-                        throw new Error(
-                            "OWNER_NOT_FOUND"
-                        );
-                    }
-
-
-                    /*
-                      Winner gets BOTH pets.
-                    */
-
-                    owner.inventory.push({
-                        name:
-                            ownerWins
-                                ? flip.petName
-                                : officialJoinedPet.name,
-
-                        value:
-                            ownerWins
-                                ? flip.petValue
-                                : officialJoinedPet.value
-                    });
-
-
-                    joiningUser.inventory.push({
-                        name:
-                            ownerWins
-                                ? officialJoinedPet.name
-                                : flip.petName,
-
-                        value:
-                            ownerWins
-                                ? officialJoinedPet.value
-                                : flip.petValue
-                    });
-
-
-                    /*
-                      Remove the losing pet again.
-                    */
-
-                    if (ownerWins) {
-
-                        joiningUser.inventory.pop();
-
-                    } else {
-
-                        owner.inventory.pop();
-                    }
-
-
-                    owner.wagered =
-                        Number(
-                            owner.wagered || 0
-                        ) +
-                        Number(
-                            flip.petValue
-                        );
-
-
-                    joiningUser.wagered =
-                        Number(
-                            joiningUser.wagered || 0
-                        ) +
-                        Number(
-                            officialJoinedPet.value
-                        );
-
-
-                    if (ownerWins) {
-
-                        owner.profit =
-                            Number(
-                                owner.profit || 0
-                            ) +
-                            Number(
-                                officialJoinedPet.value
-                            ) -
-                            Number(
-                                flip.petValue
-                            );
-
-                    } else {
-
-                        owner.profit =
-                            Number(
-                                owner.profit || 0
-                            ) -
-                            Number(
-                                flip.petValue
-                            );
-                    }
-
-
-                    await owner.save({
-                        session
-                    });
-
-
-                    if (
-                        String(
-                            joiningUser._id
-                        ) !==
-                        String(
-                            owner._id
-                        )
-                    ) {
-
-                        await joiningUser.save({
-                            session
-                        });
-                    }
-
-
-                    flip.status =
-                        "completed";
-
-                    flip.winnerId =
-                        winnerId;
-
-                    flip.winnerUsername =
-                        winnerUsername;
-
-                    flip.winningSide =
-                        winningSide;
-
-
-                    await flip.save({
-                        session
-                    });
-
-
-                    result = {
-
-                        winnerId,
-
-                        winnerUsername,
-
-                        winningSide,
-
-                        ownerUsername:
-                            owner.username,
-
-                        joinedUsername:
-                            joiningUser.username
-                    };
-                }
-            );
-
-
-            res.json({
-
-                success: true,
-
-                result
-
-            });
-
-        } catch (error) {
-
-            console.error(
-                "Join coinflip:",
-                error
-            );
-
-
-            if (
-                error.message ===
-                "FLIP_NOT_FOUND"
-            ) {
-
-                return res.status(404)
-                    .json({
-                        success: false,
-                        message:
-                            "Coinflip is no longer available."
-                    });
-            }
-
-
-            if (
-                error.message ===
-                "OWN_FLIP"
-            ) {
-
-                return res.status(400)
-                    .json({
-                        success: false,
-                        message:
-                            "You cannot join your own coinflip."
-                    });
-            }
-
-
-            if (
-                error.message ===
-                "USER_NOT_FOUND"
-            ) {
-
-                return res.status(401)
-                    .json({
-                        success: false,
-                        message:
-                            "Sign in first."
-                    });
-            }
-
-
-            if (
-                error.message ===
-                "NO_MATCHING_PET"
-            ) {
-
-                return res.status(400)
-                    .json({
-                        success: false,
-                        message:
-                            "You need a pet with the same value to join."
-                    });
-            }
-
-
-            res.status(500).json({
-
-                success: false,
-
-                message:
-                    "Could not join coinflip"
-            });
-
-        } finally {
-
-            await session.endSession();
+    const receiver =
+      await User.findOneAndUpdate(
+
+        {
+          robloxId: toId
+        },
+
+        {
+          $push: {
+            inventory: transferredPet
+          }
+        },
+
+        {
+          new: true,
+          session
         }
+      );
+
+    if (!receiver) {
+      throw new Error(
+        "Receiver not found"
+      );
     }
-);
+
+    await session.commitTransaction();
+
+    res.json({
+      success: true,
+      message: "Pet transferred"
+    });
+
+  } catch (error) {
+
+    try {
+      await session.abortTransaction();
+    } catch (_) {}
+
+    console.error(
+      "Transfer error:",
+      error.message
+    );
+
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+
+  } finally {
+    await session.endSession();
+  }
+});
 
 
-/* =========================
-   LEADERBOARD
-========================= */
+// ======================================================
+// CHAT GET
+// ======================================================
 
-app.get(
-    "/leaderboard",
-    async (req, res) => {
+app.get("/chat/messages", async (req, res) => {
+  try {
+    const messages =
+      await ChatMessage.find()
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .lean();
 
-        try {
+    res.json({
+      success: true,
 
-            const users =
-                await User.find()
-                    .sort({
-                        wagered: -1
-                    })
-                    .limit(10)
-                    .select(
-                        "username avatar wagered profit"
-                    )
-                    .lean();
+      messages:
+        messages.reverse()
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      messages: []
+    });
+  }
+});
 
 
-            res.json({
+// ======================================================
+// CHAT SEND
+// ======================================================
 
-                success: true,
+function containsLink(text) {
+  const linkRegex =
+    /(https?:\/\/|www\.|discord\.gg|discord\.com\/invite|\.com\b|\.net\b|\.gg\b|\.org\b)/i;
 
-                users
+  return linkRegex.test(text);
+}
 
-            });
 
-        } catch (error) {
+app.post("/chat/messages", async (req, res) => {
+  try {
+    const {
+      robloxId,
+      username,
+      avatar,
+      message
+    } = req.body;
 
-            console.error(error);
+    if (!username || !message) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing message"
+      });
+    }
 
-            res.status(500).json({
+    const clean =
+      String(message)
+        .replace(/[<>]/g, "")
+        .trim();
 
-                success: false,
+    if (!clean) {
+      return res.status(400).json({
+        success: false,
+        message: "Empty message"
+      });
+    }
 
-                users: []
-            });
+    if (clean.length > 300) {
+      return res.status(400).json({
+        success: false,
+        message: "Message too long"
+      });
+    }
+
+    if (containsLink(clean)) {
+      return res.status(400).json({
+        success: false,
+        message: "Links are not allowed"
+      });
+    }
+
+    const newMessage =
+      await ChatMessage.create({
+        username,
+        robloxId:
+          Number(robloxId) || 0,
+        avatar: avatar || "",
+        message: clean,
+        type: "message"
+      });
+
+    res.json({
+      success: true,
+      message: newMessage
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Could not send message"
+    });
+  }
+});
+
+
+// ======================================================
+// ACTIVE COINFLIPS
+// ======================================================
+
+app.get("/coinflips", async (req, res) => {
+  try {
+    const flips =
+      await Coinflip.find({
+        status: "active"
+      })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
+
+    res.json({
+      success: true,
+
+      coinflips:
+        flips.map(flip => ({
+          id: flip._id,
+
+          username:
+            flip.creatorUsername,
+
+          avatar:
+            flip.creatorAvatar,
+
+          petName:
+            flip.petName,
+
+          petValue:
+            flip.petValue,
+
+          variant:
+            flip.petVariant || "",
+
+          image:
+            petImage(flip.petName),
+
+          side:
+            flip.side
+        }))
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      coinflips: []
+    });
+  }
+});
+
+
+// ======================================================
+// CREATE COINFLIP
+// ======================================================
+
+app.post("/coinflips", async (req, res) => {
+  try {
+    const {
+      robloxId,
+      side,
+      itemId
+    } = req.body;
+
+    const userId =
+      Number(robloxId);
+
+    if (
+      !Number.isSafeInteger(userId) ||
+      !mongoose.isValidObjectId(itemId)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid request"
+      });
+    }
+
+    if (
+      side !== "heads" &&
+      side !== "tails"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid side"
+      });
+    }
+
+    // IMPORTANT:
+    // Never accept pet name/value from frontend.
+    // Get the actual item from MongoDB.
+    const user =
+      await User.findOne({
+        robloxId: userId
+      });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    const item =
+      user.inventory.id(itemId);
+
+    if (!item) {
+      return res.status(400).json({
+        success: false,
+        message: "Pet is not in your inventory"
+      });
+    }
+
+    // Remove the exact pet FIRST.
+    const lockedUser =
+      await User.findOneAndUpdate(
+
+        {
+          robloxId: userId,
+          "inventory._id": itemId
+        },
+
+        {
+          $pull: {
+            inventory: {
+              _id: itemId
+            }
+          }
+        },
+
+        {
+          new: true
         }
+      );
+
+    if (!lockedUser) {
+      return res.status(409).json({
+        success: false,
+        message: "Pet is already being used"
+      });
     }
-);
+
+    const flip =
+      await Coinflip.create({
+        creatorId: userId,
+
+        creatorUsername:
+          user.username,
+
+        creatorAvatar:
+          user.avatar,
+
+        itemId,
+
+        petName:
+          item.name,
+
+        petValue:
+          item.value,
+
+        petVariant:
+          item.variant || "",
+
+        side,
+
+        status: "active"
+      });
+
+    res.json({
+      success: true,
+
+      coinflip: {
+        id: flip._id,
+
+        petName:
+          flip.petName,
+
+        petValue:
+          flip.petValue,
+
+        variant:
+          flip.petVariant,
+
+        image:
+          petImage(flip.petName),
+
+        side:
+          flip.side
+      }
+    });
+
+  } catch (error) {
+    console.error(
+      "Coinflip create:",
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      message: "Could not create coinflip"
+    });
+  }
+});
 
 
-/* =========================
-   TELEGRAM
-========================= */
+// ======================================================
+// JOIN COINFLIP
+// ======================================================
+
+app.post("/coinflips/:id/join", async (req, res) => {
+  const session =
+    await mongoose.startSession();
+
+  try {
+    const {
+      robloxId,
+      itemId
+    } = req.body;
+
+    const userId =
+      Number(robloxId);
+
+    if (
+      !Number.isSafeInteger(userId) ||
+      !mongoose.isValidObjectId(itemId)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid request"
+      });
+    }
+
+    session.startTransaction();
+
+    // Lock the active coinflip.
+    const flip =
+      await Coinflip.findOne({
+        _id: req.params.id,
+        status: "active"
+      }).session(session);
+
+    if (!flip) {
+      throw new Error(
+        "Coinflip is no longer available"
+      );
+    }
+
+    if (flip.creatorId === userId) {
+      throw new Error(
+        "You cannot join your own coinflip"
+      );
+    }
+
+    const user =
+      await User.findOne({
+        robloxId: userId
+      }).session(session);
+
+    if (!user) {
+      throw new Error(
+        "User not found"
+      );
+    }
+
+    const item =
+      user.inventory.id(itemId);
+
+    if (!item) {
+      throw new Error(
+        "Pet is not in your inventory"
+      );
+    }
+
+    // For this example the joining pet must
+    // match the creator's pet value.
+    if (Number(item.value) !== Number(flip.petValue)) {
+      throw new Error(
+        "Pet value does not match"
+      );
+    }
+
+    // Remove joiner's exact item.
+    const removed =
+      await User.findOneAndUpdate(
+
+        {
+          robloxId: userId,
+          "inventory._id": itemId
+        },
+
+        {
+          $pull: {
+            inventory: {
+              _id: itemId
+            }
+          }
+        },
+
+        {
+          new: true,
+          session
+        }
+      );
+
+    if (!removed) {
+      throw new Error(
+        "Pet could not be locked"
+      );
+    }
+
+    flip.status = "joined";
+    flip.joinerId = userId;
+    flip.joinerUsername =
+      user.username;
+    flip.joinerAvatar =
+      user.avatar;
+
+    await flip.save({
+      session
+    });
+
+    // Server-side winner.
+    const winnerSide =
+      crypto.randomInt(0, 2) === 0
+        ? flip.side
+        : (
+            flip.side === "heads"
+              ? "tails"
+              : "heads"
+          );
+
+    const creatorWins =
+      winnerSide === flip.side;
+
+    const winnerId =
+      creatorWins
+        ? flip.creatorId
+        : userId;
+
+    flip.winnerId = winnerId;
+    flip.status = "completed";
+    flip.completedAt = new Date();
+
+    await flip.save({
+      session
+    });
+
+    // Winner receives BOTH pets.
+    await User.findOneAndUpdate(
+      {
+        robloxId: winnerId
+      },
+
+      {
+        $push: {
+          inventory: {
+            name: flip.petName,
+            value: flip.petValue,
+            variant:
+              flip.petVariant || ""
+          }
+        },
+
+        $inc: {
+          wagered:
+            Number(flip.petValue) * 2
+        }
+      },
+
+      {
+        session
+      }
+    );
+
+    // Winner also receives the joiner's pet.
+    await User.findOneAndUpdate(
+      {
+        robloxId: winnerId
+      },
+
+      {
+        $push: {
+          inventory: {
+            name: item.name,
+            value: item.value,
+            variant:
+              item.variant || ""
+          }
+        }
+      },
+
+      {
+        session
+      }
+    );
+
+    // Loser wager tracking.
+    const loserId =
+      creatorWins
+        ? userId
+        : flip.creatorId;
+
+    await User.findOneAndUpdate(
+      {
+        robloxId: loserId
+      },
+
+      {
+        $inc: {
+          wagered:
+            Number(flip.petValue) * 2,
+
+          profit:
+            -Number(flip.petValue)
+        }
+      },
+
+      {
+        session
+      }
+    );
+
+    await session.commitTransaction();
+
+    res.json({
+      success: true,
+
+      winnerId,
+
+      winnerSide,
+
+      creatorSide:
+        flip.side,
+
+      coinflipId:
+        flip._id
+    });
+
+  } catch (error) {
+
+    try {
+      await session.abortTransaction();
+    } catch (_) {}
+
+    console.error(
+      "Join coinflip:",
+      error.message
+    );
+
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+
+  } finally {
+    await session.endSession();
+  }
+});
+
+
+// ======================================================
+// CANCEL COINFLIP
+// ======================================================
+
+app.post("/coinflips/:id/cancel", async (req, res) => {
+  const session =
+    await mongoose.startSession();
+
+  try {
+    const userId =
+      Number(req.body.robloxId);
+
+    session.startTransaction();
+
+    const flip =
+      await Coinflip.findOne({
+        _id: req.params.id,
+        creatorId: userId,
+        status: "active"
+      }).session(session);
+
+    if (!flip) {
+      throw new Error(
+        "Coinflip not found"
+      );
+    }
+
+    // Return the locked creator pet.
+    await User.findOneAndUpdate(
+      {
+        robloxId:
+          flip.creatorId
+      },
+
+      {
+        $push: {
+          inventory: {
+            name: flip.petName,
+            value: flip.petValue,
+            variant:
+              flip.petVariant || ""
+          }
+        }
+      },
+
+      {
+        session
+      }
+    );
+
+    flip.status = "cancelled";
+
+    await flip.save({
+      session
+    });
+
+    await session.commitTransaction();
+
+    res.json({
+      success: true,
+      message: "Coinflip cancelled"
+    });
+
+  } catch (error) {
+
+    try {
+      await session.abortTransaction();
+    } catch (_) {}
+
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+
+  } finally {
+    await session.endSession();
+  }
+});
+
+
+// ======================================================
+// TOP FLIPPERS
+// ======================================================
+
+app.get("/leaderboard", async (req, res) => {
+  try {
+    const users =
+      await User.find()
+        .sort({
+          wagered: -1
+        })
+        .limit(10)
+        .lean();
+
+    res.json({
+      success: true,
+
+      users:
+        users.map((user, index) => ({
+          place: index + 1,
+
+          username:
+            user.username,
+
+          avatar:
+            user.avatar,
+
+          wagered:
+            user.wagered || 0,
+
+          profit:
+            user.profit || 0
+        }))
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      users: []
+    });
+  }
+});
+
+
+// ======================================================
+// CHAT ONLINE COUNT
+// ======================================================
+
+app.get("/chat/online", async (req, res) => {
+  res.json({
+    success: true,
+
+    // UI-only approximate counter.
+    // It is deliberately not treated as real authentication.
+    online:
+      Math.floor(
+        20 +
+        Math.random() * 26
+      )
+  });
+});
+
+
+// ======================================================
+// TELEGRAM
+// ======================================================
 
 try {
-
-    require("./telegram");
-
-    console.log(
-        "Telegram module loaded"
-    );
-
+  require("./telegram");
+  console.log("Telegram module loaded");
 } catch (error) {
-
-    console.log(
-        "Telegram module not loaded:",
-        error.message
-    );
+  console.log(
+    "Telegram module not loaded:",
+    error.message
+  );
 }
 
 
-/* =========================
-   SERVER
-========================= */
+// ======================================================
+// START
+// ======================================================
 
 const PORT =
-    process.env.PORT ||
-    3000;
+  process.env.PORT || 3000;
 
-
-app.listen(
-    PORT,
-    () => {
-
-        console.log(
-            `ADMFLIP backend running on port ${PORT}`
-        );
-    }
-);
+app.listen(PORT, () => {
+  console.log(
+    `ADMFLIP backend running on port ${PORT}`
+  );
+});
