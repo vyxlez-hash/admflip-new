@@ -68,19 +68,24 @@ function toast(message){
 }
 
 async function api(path, options = {}){
-  const response = await fetch(`${BACKEND}${path}`, {
-    credentials: "include",
-    ...options,
-    headers: {
-      ...(options.body ? {"Content-Type":"application/json"} : {}),
-      ...(options.headers || {})
-    }
-  });
+  let response;
+  try{
+    response = await fetch(`${BACKEND}${path}`, {
+      credentials:"include",
+      ...options,
+      headers:{
+        ...(options.body ? {"Content-Type":"application/json"} : {}),
+        ...(options.headers || {})
+      }
+    });
+  }catch(error){
+    throw new Error("Backend is unreachable. Check that the ADMFLIP API is online.");
+  }
 
   const text = await response.text();
   let data = null;
-  try { data = text ? JSON.parse(text) : null; }
-  catch { data = text; }
+  try{ data = text ? JSON.parse(text) : null; }
+  catch{ data = text; }
 
   if(!response.ok){
     throw new Error(data?.message || data?.error || `Request failed (${response.status})`);
@@ -211,32 +216,66 @@ function makeVerificationPhrase(){
 }
 
 async function robloxLookup(username){
-  const response = await fetch("https://users.roblox.com/v1/usernames/users", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      usernames: [username],
-      excludeBannedUsers: false
-    })
-  });
+  const clean = username.trim();
+  if(!clean) throw new Error("Enter your Roblox username.");
+
+  // Roblox documents this public GET search endpoint. Using it avoids
+  // the browser preflight problem that can cause "Failed to fetch"
+  // with the username POST endpoint.
+  const searchUrl =
+    `https://users.roblox.com/v1/users/search?keyword=${encodeURIComponent(clean)}&limit=10`;
+
+  let response;
+  try{
+    response = await fetch(searchUrl, {
+      method:"GET",
+      credentials:"omit",
+      cache:"no-store",
+      headers:{"Accept":"application/json"}
+    });
+  }catch(error){
+    throw new Error(
+      "Roblox could not be reached from this browser. Disable a blocking extension/VPN and try again."
+    );
+  }
 
   if(!response.ok){
-    throw new Error("Roblox user search failed.");
+    throw new Error(`Roblox search failed (${response.status}).`);
   }
 
   const data = await response.json();
-  const match = data?.data?.[0];
+  const users = Array.isArray(data?.data) ? data.data : [];
 
-  if(!match?.id){
-    throw new Error("Roblox user not found.");
+  if(!users.length){
+    throw new Error(`No Roblox user found for "${clean}".`);
   }
 
-  const userResponse = await fetch(
-    `https://users.roblox.com/v1/users/${encodeURIComponent(match.id)}`
+  const exact = users.find(u =>
+    String(u.name || "").toLowerCase() === clean.toLowerCase()
   );
+  const match = exact || users[0];
+
+  if(!match?.id){
+    throw new Error("Roblox returned an invalid user result.");
+  }
+
+  let userResponse;
+  try{
+    userResponse = await fetch(
+      `https://users.roblox.com/v1/users/${encodeURIComponent(match.id)}`,
+      {
+        method:"GET",
+        credentials:"omit",
+        cache:"no-store",
+        headers:{"Accept":"application/json"}
+      }
+    );
+  }catch(error){
+    throw new Error("Found the Roblox user, but could not load their profile.");
+  }
 
   if(!userResponse.ok){
-    throw new Error("Could not load the Roblox profile.");
+    throw new Error(`Could not load the Roblox profile (${userResponse.status}).`);
   }
 
   return await userResponse.json();
@@ -543,15 +582,73 @@ async function loadCoinflips(){
 
   try{
     const data = await api("/coinflips");
-    const flips = Array.isArray(data) ? data : data?.coinflips || data?.flips || data?.data || [];
+    const flips = Array.isArray(data)
+      ? data
+      : data?.coinflips || data?.flips || data?.data || [];
+
     state.coinflips = flips;
     renderCoinflips(flips);
-    const count = el("activeCount");
-    if(count) count.textContent = flips.length;
+
+    const active = el("activeCount");
+    if(active) active.textContent = formatNumber(flips.length);
+
+    const total = flips.reduce((sum, flip) => {
+      const pet = flip.pet || flip.item || {};
+      const raw =
+        flip.totalValue ??
+        flip.value ??
+        flip.petValue ??
+        pet.value ??
+        pet.val ??
+        0;
+      const value = Number(String(raw).replace(/[^0-9.]/g,""));
+      return sum + (Number.isFinite(value) ? value : 0);
+    }, 0);
+
+    const totalNode = el("totalValue");
+    if(totalNode){
+      totalNode.textContent = formatValue(total);
+      totalNode.title = `${total.toLocaleString()} total value`;
+    }
+
+    // If the API returns an explicit online/active participant count,
+    // prefer it. Otherwise the number of active flips is the useful
+    // live "coinflipping now" figure.
+    const online =
+      data?.coinflippingNow ??
+      data?.coinflipping ??
+      data?.online ??
+      data?.onlineCount ??
+      flips.length;
+
+    const onlineNode = el("coinflipOnline");
+    if(onlineNode) onlineNode.textContent = formatNumber(online);
+
   }catch(error){
     console.error("ADMFLIP coinflips:",error);
-    container.innerHTML = `<div class="loading">No active coinflips.</div>`;
+    container.innerHTML = `<div class="loading">Unable to load coinflips right now.</div>`;
+
+    const active = el("activeCount");
+    const total = el("totalValue");
+    const online = el("coinflipOnline");
+    if(active) active.textContent = "0";
+    if(total) total.textContent = "0";
+    if(online) online.textContent = "0";
   }
+}
+
+function formatNumber(value){
+  const n=Number(value);
+  return Number.isFinite(n) ? n.toLocaleString() : "0";
+}
+
+function formatValue(value){
+  const n=Number(value);
+  if(!Number.isFinite(n) || n<=0) return "0";
+  if(n>=1000000000) return `${(n/1000000000).toFixed(n>=10000000000?0:1)}B`;
+  if(n>=1000000) return `${(n/1000000).toFixed(n>=10000000?0:1)}M`;
+  if(n>=1000) return `${(n/1000).toFixed(n>=100000?0:1)}K`;
+  return n.toLocaleString();
 }
 
 function renderCoinflips(flips){
@@ -564,7 +661,7 @@ function renderCoinflips(flips){
   }
 
   container.innerHTML = flips.map(flip => {
-    const username = flip.username || flip.user?.username || "Trader";
+    const username = flip.username || flip.user?.username || "Player";
     const pet = flip.pet || flip.item || {name:flip.petName || "Pet"};
     const side = flip.side || "heads";
     const image = petImage(pet);
@@ -1094,7 +1191,7 @@ async function init(){
   setInterval(() => {
     if(state.page === "coinflip") loadCoinflips();
     if(state.page === "chat" || state.chatOpen) loadChat();
-  },15000);
+  },5000);
 }
 
 if(document.readyState === "loading"){
