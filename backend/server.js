@@ -8,24 +8,12 @@ const app = express();
 
 const PORT = process.env.PORT || 3000;
 
-
-// ======================================================
-// BASIC MIDDLEWARE
-// ======================================================
-
 app.use(cors());
+app.use(express.json({ limit: "50kb" }));
 
-app.use(express.json({
-    limit: "100kb"
-}));
-
-
-app.set("trust proxy", 1);
-
-
-// ======================================================
+// ==============================
 // RATE LIMIT
-// ======================================================
+// ==============================
 
 const limiter = rateLimit({
     windowMs: 60 * 1000,
@@ -36,37 +24,26 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-
-// ======================================================
+// ==============================
 // MONGODB
-// ======================================================
+// ==============================
 
 console.log(
     "Mongo URL exists:",
     !!process.env.MONGO_URL
 );
 
-let mongoConnected = false;
-
 if (process.env.MONGO_URL) {
 
     mongoose.connect(process.env.MONGO_URL)
         .then(() => {
-
-            mongoConnected = true;
-
-            console.log(
-                "MongoDB connected"
-            );
-
+            console.log("MongoDB connected");
         })
-        .catch((error) => {
-
+        .catch((err) => {
             console.log(
                 "MongoDB error:",
-                error.message
+                err.message
             );
-
         });
 
 } else {
@@ -77,22 +54,77 @@ if (process.env.MONGO_URL) {
 
 }
 
-
-// ======================================================
+// ==============================
 // USER MODEL
-// ======================================================
+// ==============================
 
 const userSchema = new mongoose.Schema({
 
     robloxId: {
         type: Number,
         unique: true,
-        sparse: true
+        index: true
     },
+
+    username: String,
+
+    avatar: String,
+
+    inventory: [{
+        name: String,
+        value: Number
+    }],
+
+    deposited: [{
+        name: String,
+        value: Number
+    }]
+
+}, {
+    timestamps: true
+});
+
+const User =
+    mongoose.models.User ||
+    mongoose.model("User", userSchema);
+
+// ==============================
+// SETTINGS
+// ==============================
+
+const settingsSchema = new mongoose.Schema({
+
+    siteOnline: {
+        type: Boolean,
+        default: true
+    },
+
+    announcement: {
+        type: String,
+        default: ""
+    }
+
+});
+
+const Settings =
+    mongoose.models.Settings ||
+    mongoose.model("Settings", settingsSchema);
+
+// ==============================
+// CHAT MESSAGE MODEL
+// ==============================
+
+const chatMessageSchema = new mongoose.Schema({
 
     username: {
         type: String,
-        trim: true
+        required: true,
+        maxlength: 30
+    },
+
+    robloxId: {
+        type: Number,
+        required: true
     },
 
     avatar: {
@@ -100,108 +132,28 @@ const userSchema = new mongoose.Schema({
         default: ""
     },
 
-    inventory: {
-        type: Array,
-        default: []
-    },
-
-    deposited: {
-        type: Array,
-        default: []
+    message: {
+        type: String,
+        required: true,
+        maxlength: 250
     }
 
 }, {
     timestamps: true
 });
 
-
-const User =
-    mongoose.models.User ||
+const ChatMessage =
+    mongoose.models.ChatMessage ||
     mongoose.model(
-        "User",
-        userSchema
+        "ChatMessage",
+        chatMessageSchema
     );
 
+// ==============================
+// PET VALUES
+// ==============================
 
-// ======================================================
-// SETTINGS
-// ======================================================
-
-const settingsSchema =
-    new mongoose.Schema({
-
-        siteOnline: {
-            type: Boolean,
-            default: true
-        },
-
-        announcement: {
-            type: String,
-            default: ""
-        }
-
-    });
-
-
-const Settings =
-    mongoose.models.Settings ||
-    mongoose.model(
-        "Settings",
-        settingsSchema
-    );
-
-
-// ======================================================
-// CHAT MODEL
-// ======================================================
-
-const chatSchema =
-    new mongoose.Schema({
-
-        username: {
-            type: String,
-            required: true,
-            maxlength: 30
-        },
-
-        avatar: {
-            type: String,
-            default: ""
-        },
-
-        message: {
-            type: String,
-            required: true,
-            maxlength: 500
-        },
-
-        type: {
-            type: String,
-            enum: [
-                "message",
-                "announcement"
-            ],
-            default: "message"
-        }
-
-    }, {
-        timestamps: true
-    });
-
-
-const Chat =
-    mongoose.models.Chat ||
-    mongoose.model(
-        "Chat",
-        chatSchema
-    );
-
-
-// ======================================================
-// PET VALUES.TXT
-// ======================================================
-
-function loadLocalPets() {
+function loadPets() {
 
     try {
 
@@ -211,19 +163,13 @@ function loadLocalPets() {
                 "utf8"
             );
 
-
         const lines =
             text
                 .split(/\r?\n/)
-                .map(
-                    line =>
-                        line.trim()
-                )
+                .map(x => x.trim())
                 .filter(Boolean);
 
-
-        const result = [];
-
+        const pets = [];
 
         for (
             let i = 0;
@@ -231,901 +177,122 @@ function loadLocalPets() {
             i += 2
         ) {
 
-            let name =
-                lines[i];
+            const name = lines[i];
+            let value = lines[i + 1];
 
-            let value =
-                lines[i + 1];
-
-
-            if (
-                !name ||
-                !value
-            ) {
+            if (!name || !value) {
                 continue;
             }
 
-
-            // Keep decimals and commas.
-            // Remove currency symbols.
             value =
                 value
-                    .replace(
-                        /[$€£]/g,
-                        ""
-                    )
-                    .replace(
-                        /,/g,
-                        ""
-                    )
-                    .trim();
-
+                    .replace(/[$]/g, "")
+                    .replace(/,/g, "");
 
             const numericValue =
                 Number(value);
 
-
-            if (
-                Number.isNaN(
-                    numericValue
-                )
-            ) {
-                continue;
-            }
-
-
-            result.push({
-
+            pets.push({
                 name,
-
-                value:
-                    numericValue
-
+                value: Number.isFinite(numericValue)
+                    ? numericValue
+                    : 0
             });
 
         }
 
-
         console.log(
-            "Loaded local pets:",
-            result.length
+            "Loaded pets:",
+            pets.length
         );
 
+        return pets;
 
-        return result;
-
-    }
-    catch (error) {
+    } catch (error) {
 
         console.log(
-            "values.txt error:",
+            "Pet loading error:",
             error.message
         );
 
         return [];
-
     }
-
 }
 
+const pets = loadPets();
 
-const localPets =
-    loadLocalPets();
+// ==============================
+// HOME
+// ==============================
 
+app.get("/", (req, res) => {
 
-// ======================================================
-// AMVGG CACHE
-// ======================================================
-
-let amvggPets = [];
-
-let amvggLastUpdate = 0;
-
-const AMVGG_CACHE_TIME =
-    30 * 60 * 1000;
-
-
-// ======================================================
-// NORMALIZE PET NAME
-// ======================================================
-
-function normalizePetName(name) {
-
-    return String(name)
-        .toLowerCase()
-        .replace(
-            /\b(fly|ride|neon|mega|mega neon|m|n|f|r)\b/gi,
-            ""
-        )
-        .replace(
-            /\s+/g,
-            " "
-        )
-        .trim();
-
-}
-
-
-// ======================================================
-// NORMALIZE HTML
-// ======================================================
-
-function cleanText(value) {
-
-    return String(value || "")
-        .replace(
-            /&nbsp;/gi,
-            " "
-        )
-        .replace(
-            /&amp;/gi,
-            "&"
-        )
-        .replace(
-            /&quot;/gi,
-            '"'
-        )
-        .replace(
-            /&#39;/gi,
-            "'"
-        )
-        .replace(
-            /<[^>]*>/g,
-            ""
-        )
-        .replace(
-            /\s+/g,
-            " "
-        )
-        .trim();
-
-}
-
-
-// ======================================================
-// EXTRACT IMAGE URL
-// ======================================================
-
-function extractImageFromTag(tag) {
-
-    if (!tag) {
-        return "";
-    }
-
-
-    const attributes = [
-
-        "src",
-
-        "data-src",
-
-        "data-lazy-src",
-
-        "data-original",
-
-        "data-image"
-
-    ];
-
-
-    for (
-        const attribute
-        of attributes
-    ) {
-
-        const regex =
-            new RegExp(
-                attribute +
-                '\\s*=\\s*["\\']([^"\\']+)["\\']',
-                "i"
-            );
-
-
-        const match =
-            tag.match(regex);
-
-
-        if (
-            match &&
-            match[1]
-        ) {
-
-            let url =
-                match[1];
-
-
-            if (
-                url.startsWith("//")
-            ) {
-
-                url =
-                    "https:" +
-                    url;
-
-            }
-
-
-            if (
-                url.startsWith("/")
-            ) {
-
-                url =
-                    "https://amvgg.com" +
-                    url;
-
-            }
-
-
-            if (
-                url.startsWith("http")
-            ) {
-
-                return url;
-
-            }
-
-        }
-
-    }
-
-
-    return "";
-
-}
-
-
-// ======================================================
-// SCRAPE AMVGG
-// ======================================================
-
-async function fetchAMVGGPets() {
-
-    const now =
-        Date.now();
-
-
-    if (
-        amvggPets.length > 0 &&
-        now - amvggLastUpdate <
-            AMVGG_CACHE_TIME
-    ) {
-
-        return amvggPets;
-
-    }
-
-
-    console.log(
-        "Fetching AMVGG pet values..."
+    res.send(
+        "ADMFLIP backend is online"
     );
 
+});
+
+// ==============================
+// STATUS
+// ==============================
+
+app.get("/status", async (req, res) => {
 
     try {
 
-        const response =
-            await fetch(
-                "https://amvgg.com/values/pets",
-                {
+        let settings =
+            await Settings.findOne();
 
-                    headers: {
+        if (!settings) {
 
-                        "User-Agent":
-                            "Mozilla/5.0 " +
-                            "(compatible; ADMFLIP/1.0)",
-
-                        "Accept":
-                            "text/html"
-
-                    }
-
-                }
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                "AMVGG returned " +
-                response.status
-            );
+            settings =
+                await Settings.create({});
 
         }
 
+        res.json({
 
-        const html =
-            await response.text();
+            online: settings.siteOnline,
 
+            announcement:
+                settings.announcement
 
-        const pets = [];
+        });
 
+    } catch (error) {
 
-        /*
-         * AMVGG currently renders
-         * pet cards in the pets value
-         * list.
-         *
-         * We locate headings and then
-         * inspect the surrounding card.
-         */
+        res.json({
 
+            online: true,
 
-        const headingRegex =
-            /<(?:h2|h3|h4)[^>]*>([\s\S]*?)<\/(?:h2|h3|h4)>/gi;
+            announcement: ""
 
-
-        let headingMatch;
-
-
-        while (
-            (headingMatch =
-                headingRegex.exec(html))
-        ) {
-
-            const rawName =
-                cleanText(
-                    headingMatch[1]
-                );
-
-
-            if (
-                !rawName ||
-                rawName.length > 100
-            ) {
-                continue;
-            }
-
-
-            const before =
-                html.slice(
-                    Math.max(
-                        0,
-                        headingMatch.index -
-                        5000
-                    ),
-                    headingMatch.index
-                );
-
-
-            const after =
-                html.slice(
-                    headingMatch.index,
-                    Math.min(
-                        html.length,
-                        headingMatch.index +
-                        5000
-                    )
-                );
-
-
-            const card =
-                before + after;
-
-
-            const valueMatch =
-                card.match(
-                    /Value\s*([\d.]+)/i
-                );
-
-
-            if (!valueMatch) {
-                continue;
-            }
-
-
-            const value =
-                Number(
-                    valueMatch[1]
-                );
-
-
-            if (
-                Number.isNaN(value)
-            ) {
-                continue;
-            }
-
-
-            const image =
-                extractImageFromTag(
-                    card
-                );
-
-
-            const duplicate =
-                pets.some(
-                    pet =>
-                        pet.name.toLowerCase() ===
-                        rawName.toLowerCase()
-                );
-
-
-            if (duplicate) {
-                continue;
-            }
-
-
-            pets.push({
-
-                name:
-                    rawName,
-
-                value,
-
-                image,
-
-                normalized:
-                    normalizePetName(
-                        rawName
-                    )
-
-            });
-
-        }
-
-
-        /*
-         * Remove obviously invalid
-         * headings.
-         */
-
-        const filtered =
-            pets.filter(
-                pet => {
-
-                    if (
-                        pet.name.length < 1
-                    ) {
-                        return false;
-                    }
-
-
-                    if (
-                        pet.name
-                            .toLowerCase()
-                            .includes(
-                                "amvgg"
-                            )
-                    ) {
-                        return false;
-                    }
-
-
-                    return true;
-
-                }
-            );
-
-
-        if (
-            filtered.length > 0
-        ) {
-
-            amvggPets =
-                filtered;
-
-            amvggLastUpdate =
-                now;
-
-            console.log(
-                "AMVGG pets loaded:",
-                amvggPets.length
-            );
-
-        }
-        else {
-
-            console.log(
-                "AMVGG returned no parsed pets"
-            );
-
-        }
-
-
-        return amvggPets;
+        });
 
     }
-    catch (error) {
 
-        console.log(
-            "AMVGG fetch error:",
-            error.message
-        );
+});
 
+// ==============================
+// PETS
+// ==============================
 
-        return amvggPets;
+app.get("/pets", (req, res) => {
 
-    }
+    res.json({
 
-}
+        success: true,
 
+        pets
 
-// ======================================================
-// MATCH LOCAL PET TO AMVGG
-// ======================================================
+    });
 
-function findAMVGGPet(
-    localName
-) {
+});
 
-    const normalized =
-        normalizePetName(
-            localName
-        );
-
-
-    if (!normalized) {
-        return null;
-    }
-
-
-    // Exact match first.
-
-    let match =
-        amvggPets.find(
-            pet =>
-                pet.normalized ===
-                normalized
-        );
-
-
-    if (match) {
-        return match;
-    }
-
-
-    // Then loose match.
-
-    match =
-        amvggPets.find(
-            pet => {
-
-                return (
-                    pet.normalized
-                        .includes(
-                            normalized
-                        ) ||
-                    normalized.includes(
-                        pet.normalized
-                    )
-                );
-
-            }
-        );
-
-
-    return match || null;
-
-}
-
-
-// ======================================================
-// PET VARIANT PARSER
-// ======================================================
-
-function parsePetVariant(
-    originalName
-) {
-
-    let name =
-        String(originalName)
-            .trim();
-
-
-    let fly = false;
-
-    let ride = false;
-
-    let neon = false;
-
-    let mega = false;
-
-
-    /*
-     * Supports:
-     *
-     * FR Bat Dragon
-     * F R Bat Dragon
-     * N Bat Dragon
-     * M Bat Dragon
-     * Mega Neon Bat Dragon
-     * Neon Bat Dragon
-     * Ride Bat Dragon
-     * Fly Bat Dragon
-     */
-
-
-    const lower =
-        name.toLowerCase();
-
-
-    if (
-        /\bfly\b/i.test(lower) ||
-        /^\s*f\s+/i.test(lower) ||
-        /\bfly\s*ride\b/i.test(lower)
-    ) {
-
-        fly = true;
-
-    }
-
-
-    if (
-        /\bride\b/i.test(lower) ||
-        /^\s*r\s+/i.test(lower) ||
-        /\bfly\s*ride\b/i.test(lower)
-    ) {
-
-        ride = true;
-
-    }
-
-
-    if (
-        /\bneon\b/i.test(lower) ||
-        /^\s*n\s+/i.test(lower)
-    ) {
-
-        neon = true;
-
-    }
-
-
-    if (
-        /\bmega\s*neon\b/i.test(lower) ||
-        /^\s*m\s+/i.test(lower)
-    ) {
-
-        mega = true;
-
-        neon = true;
-
-    }
-
-
-    name =
-        name
-            .replace(
-                /\bmega\s+neon\b/gi,
-                ""
-            )
-            .replace(
-                /\bneon\b/gi,
-                ""
-            )
-            .replace(
-                /\bfly\b/gi,
-                ""
-            )
-            .replace(
-                /\bride\b/gi,
-                ""
-            )
-            .replace(
-                /^\s*[FRNM](?:\s+[FRNM])*\s+/i,
-                ""
-            )
-            .replace(
-                /\s+/g,
-                " "
-            )
-            .trim();
-
-
-    const badges = [];
-
-
-    if (mega) {
-        badges.push("MEGA");
-    }
-    else if (neon) {
-        badges.push("NEON");
-    }
-
-
-    if (fly) {
-        badges.push("FLY");
-    }
-
-
-    if (ride) {
-        badges.push("RIDE");
-    }
-
-
-    return {
-
-        name,
-
-        fly,
-
-        ride,
-
-        neon,
-
-        mega,
-
-        badges
-
-    };
-
-}
-
-
-// ======================================================
-// PET API
-// ======================================================
-
-app.get(
-    "/pets",
-    async (req, res) => {
-
-        try {
-
-            const amvgg =
-                await fetchAMVGGPets();
-
-
-            const result =
-                localPets.map(
-                    localPet => {
-
-                        const variant =
-                            parsePetVariant(
-                                localPet.name
-                            );
-
-
-                        const amvggPet =
-                            findAMVGGPet(
-                                variant.name
-                            );
-
-
-                        return {
-
-                            name:
-                                variant.name,
-
-                            displayName:
-                                localPet.name,
-
-                            value:
-                                localPet.value,
-
-                            image:
-                                amvggPet
-                                    ? amvggPet.image
-                                    : "",
-
-                            fly:
-                                variant.fly,
-
-                            ride:
-                                variant.ride,
-
-                            neon:
-                                variant.neon,
-
-                            mega:
-                                variant.mega,
-
-                            badges:
-                                variant.badges
-
-                        };
-
-                    }
-                );
-
-
-            res.json({
-
-                success: true,
-
-                source:
-                    "AMVGG",
-
-                pets:
-                    result
-
-            });
-
-        }
-        catch (error) {
-
-            console.log(
-                "Pets API error:",
-                error.message
-            );
-
-
-            res.status(500).json({
-
-                success: false,
-
-                pets: []
-
-            });
-
-        }
-
-    }
-);
-
-
-// ======================================================
-// HOME
-// ======================================================
-
-app.get(
-    "/",
-    (req, res) => {
-
-        res.send(
-            "ADMFLIP backend is online"
-        );
-
-    }
-);
-
-
-// ======================================================
-// STATUS
-// ======================================================
-
-app.get(
-    "/status",
-    async (req, res) => {
-
-        try {
-
-            let settings =
-                await Settings.findOne();
-
-
-            if (!settings) {
-
-                settings =
-                    await Settings.create({});
-
-            }
-
-
-            res.json({
-
-                online:
-                    settings.siteOnline,
-
-                announcement:
-                    settings.announcement
-
-            });
-
-        }
-        catch (error) {
-
-            console.log(
-                error.message
-            );
-
-
-            res.json({
-
-                online: true,
-
-                announcement: ""
-
-            });
-
-        }
-
-    }
-);
-
-
-// ======================================================
+// ==============================
 // ROBLOX USER
-// ======================================================
+// ==============================
 
 app.get(
     "/user/:username",
@@ -1134,14 +301,21 @@ app.get(
         try {
 
             const username =
-                req.params.username;
+                req.params.username.trim();
 
+            if (!username) {
+
+                return res.json({
+                    success: false,
+                    message: "Username required"
+                });
+
+            }
 
             const response =
                 await fetch(
                     "https://users.roblox.com/v1/usernames/users",
                     {
-
                         method: "POST",
 
                         headers: {
@@ -1149,25 +323,15 @@ app.get(
                                 "application/json"
                         },
 
-                        body:
-                            JSON.stringify({
-
-                                usernames: [
-                                    username
-                                ],
-
-                                excludeBannedUsers:
-                                    true
-
-                            })
-
+                        body: JSON.stringify({
+                            usernames: [username],
+                            excludeBannedUsers: true
+                        })
                     }
                 );
 
-
             const data =
                 await response.json();
-
 
             if (
                 !data.data ||
@@ -1185,23 +349,22 @@ app.get(
 
             }
 
-
             const user =
                 data.data[0];
 
-
             const avatarResponse =
                 await fetch(
-                    "https://thumbnails.roblox.com/v1/users/avatar-headshot" +
-                    "?userIds=" +
-                    user.id +
-                    "&size=150x150&format=Png"
+                    `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${user.id}&size=150x150&format=Png`
                 );
-
 
             const avatarData =
                 await avatarResponse.json();
 
+            const avatar =
+                avatarData.data &&
+                avatarData.data[0]
+                    ? avatarData.data[0].imageUrl
+                    : "";
 
             res.json({
 
@@ -1209,34 +372,28 @@ app.get(
 
                 user: {
 
-                    id:
-                        user.id,
+                    id: user.id,
 
-                    username:
-                        user.name,
+                    username: user.name,
 
-                    avatar:
-                        avatarData.data?.[0]
-                            ?.imageUrl || ""
+                    avatar
 
                 }
 
             });
 
-        }
-        catch (error) {
+        } catch (error) {
 
             console.log(
-                error
+                "Roblox user error:",
+                error.message
             );
-
 
             res.status(500).json({
 
                 success: false,
 
-                message:
-                    "Server error"
+                message: "Server error"
 
             });
 
@@ -1245,64 +402,54 @@ app.get(
     }
 );
 
-
-// ======================================================
-// CREATE PHRASE
-// ======================================================
+// ==============================
+// CREATE VERIFICATION PHRASE
+// ==============================
 
 function generatePhrase() {
 
     const words = [
-
         "BlueTiger",
-
         "FastCloud",
-
         "LuckyWave",
-
         "SilverMoon",
-
-        "GoldenLeaf"
-
+        "GoldenLeaf",
+        "DarkFalcon",
+        "CrystalWolf",
+        "NeonDragon"
     ];
 
-
-    return (
+    const word =
         words[
             Math.floor(
                 Math.random() *
                 words.length
             )
-        ] +
-        "-" +
+        ];
+
+    const number =
         Math.floor(
             1000 +
-            Math.random() *
-            9000
-        )
-    );
+            Math.random() * 9000
+        );
 
+    return `${word}-${number}`;
 }
 
+app.get("/create", (req, res) => {
 
-app.get(
-    "/create",
-    (req, res) => {
+    res.json({
 
-        res.json({
+        phrase:
+            generatePhrase()
 
-            phrase:
-                generatePhrase()
+    });
 
-        });
+});
 
-    }
-);
-
-
-// ======================================================
-// ROBLOX BIO VERIFY
-// ======================================================
+// ==============================
+// VERIFY ROBLOX BIO
+// ==============================
 
 app.post(
     "/check",
@@ -1315,59 +462,43 @@ app.post(
                 phrase
             } = req.body;
 
+            if (!username || !phrase) {
 
-            if (
-                typeof username !==
-                "string" ||
-                typeof phrase !==
-                "string"
-            ) {
-
-                return res.status(400).json({
+                return res.json({
 
                     success: false,
 
                     message:
-                        "Invalid request"
+                        "Username and phrase required"
 
                 });
 
             }
 
-
             const response =
                 await fetch(
                     "https://users.roblox.com/v1/usernames/users",
                     {
-
                         method: "POST",
 
                         headers: {
-
                             "Content-Type":
                                 "application/json"
-
                         },
 
-                        body:
-                            JSON.stringify({
+                        body: JSON.stringify({
 
-                                usernames: [
-                                    username
-                                ],
+                            usernames: [username],
 
-                                excludeBannedUsers:
-                                    true
+                            excludeBannedUsers: true
 
-                            })
+                        })
 
                     }
                 );
 
-
             const data =
                 await response.json();
-
 
             if (
                 !data.data ||
@@ -1385,20 +516,16 @@ app.post(
 
             }
 
-
             const id =
                 data.data[0].id;
-
 
             const profileResponse =
                 await fetch(
                     `https://users.roblox.com/v1/users/${id}`
                 );
 
-
             const profile =
                 await profileResponse.json();
-
 
             if (
                 profile.description &&
@@ -1406,42 +533,6 @@ app.post(
                     phrase
                 )
             ) {
-
-                if (
-                    mongoConnected
-                ) {
-
-                    await User.findOneAndUpdate(
-
-                        {
-                            robloxId: profile.id
-                        },
-
-                        {
-
-                            robloxId:
-                                profile.id,
-
-                            username:
-                                profile.name
-
-                        },
-
-                        {
-                            upsert: true,
-                            new: true
-                        }
-
-                    ).catch(
-                        error =>
-                            console.log(
-                                "User save error:",
-                                error.message
-                            )
-                    );
-
-                }
-
 
                 return res.json({
 
@@ -1457,7 +548,6 @@ app.post(
 
             }
 
-
             res.json({
 
                 success: false,
@@ -1467,13 +557,12 @@ app.post(
 
             });
 
-        }
-        catch (error) {
+        } catch (error) {
 
             console.log(
-                error
+                "Verification error:",
+                error.message
             );
-
 
             res.status(500).json({
 
@@ -1489,10 +578,254 @@ app.post(
     }
 );
 
+// ==================================================
+// AMVGG PET LOOKUP
+// ==================================================
+//
+// This searches the AMVGG pet page.
+// Example:
+// /amvgg-pet/Unicorn
+//
+// It extracts:
+// - value
+// - image
+// - variation information
+//
+// ==================================================
 
-// ======================================================
-// CHAT LINK FILTER
-// ======================================================
+function escapeRegex(text) {
+
+    return text.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        "\\$&"
+    );
+
+}
+
+app.get(
+    "/amvgg-pet/:petName",
+    async (req, res) => {
+
+        try {
+
+            const petName =
+                decodeURIComponent(
+                    req.params.petName
+                ).trim();
+
+            if (!petName) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    message:
+                        "Pet name required"
+
+                });
+
+            }
+
+            const slug =
+                petName
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, "-")
+                    .replace(/^-|-$/g, "");
+
+            const url =
+                `https://amvgg.com/pet/${slug}`;
+
+            const response =
+                await fetch(url, {
+
+                    headers: {
+
+                        "User-Agent":
+                            "Mozilla/5.0 ADMFLIP Value Lookup"
+
+                    }
+
+                });
+
+            if (!response.ok) {
+
+                return res.status(404).json({
+
+                    success: false,
+
+                    message:
+                        "Pet not found on AMVGG"
+
+                });
+
+            }
+
+            const html =
+                await response.text();
+
+            // ------------------------------
+            // IMAGE
+            // ------------------------------
+
+            let image = "";
+
+            const imageMatches =
+                html.match(
+                    /<img[^>]+src=["']([^"']+)["'][^>]*>/gi
+                ) || [];
+
+            for (
+                const tag of imageMatches
+            ) {
+
+                const match =
+                    tag.match(
+                        /src=["']([^"']+)["']/i
+                    );
+
+                if (!match) {
+                    continue;
+                }
+
+                const src = match[1];
+
+                if (
+                    !src.includes("logo") &&
+                    !src.includes("avatar") &&
+                    !src.includes("icon") &&
+                    (
+                        src.includes("/storage/") ||
+                        src.includes("/uploads/") ||
+                        src.includes("amvgg")
+                    )
+                ) {
+
+                    image = src;
+
+                    if (
+                        image.startsWith("/")
+                    ) {
+
+                        image =
+                            "https://amvgg.com" +
+                            image;
+
+                    }
+
+                    break;
+                }
+
+            }
+
+            // ------------------------------
+            // TEXT
+            // ------------------------------
+
+            const clean =
+                html
+                    .replace(
+                        /<script[\s\S]*?<\/script>/gi,
+                        " "
+                    )
+                    .replace(
+                        /<style[\s\S]*?<\/style>/gi,
+                        " "
+                    )
+                    .replace(
+                        /<[^>]+>/g,
+                        " "
+                    )
+                    .replace(
+                        /&nbsp;/g,
+                        " "
+                    )
+                    .replace(
+                        /&amp;/g,
+                        "&"
+                    )
+                    .replace(
+                        /\s+/g,
+                        " "
+                    );
+
+            // Look for "Value 0.123"
+            const valueMatch =
+                clean.match(
+                    /Value\s+([0-9]+(?:\.[0-9]+)?)/i
+                );
+
+            const value =
+                valueMatch
+                    ? Number(valueMatch[1])
+                    : null;
+
+            // ------------------------------
+            // VARIATIONS
+            // ------------------------------
+
+            const upper =
+                petName.toUpperCase();
+
+            const variations = {
+
+                ride:
+                    /\bR\b/.test(upper),
+
+                fly:
+                    /\bF\b/.test(upper),
+
+                neon:
+                    /\bN\b/.test(upper),
+
+                megaNeon:
+                    /\bM\b/.test(upper)
+
+            };
+
+            res.json({
+
+                success: true,
+
+                pet: {
+
+                    name: petName,
+
+                    value,
+
+                    image,
+
+                    variations
+
+                },
+
+                source: "AMVGG"
+
+            });
+
+        } catch (error) {
+
+            console.log(
+                "AMVGG lookup error:",
+                error.message
+            );
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "AMVGG lookup failed"
+
+            });
+
+        }
+
+    }
+);
+
+// ==================================================
+// CHAT
+// ==================================================
 
 function containsLink(text) {
 
@@ -1502,86 +835,42 @@ function containsLink(text) {
 
         /www\./i,
 
-        /ftp:\/\//i,
+        /\b[a-z0-9-]+\.(com|net|org|gg|io|xyz|me|co|tv|site|dev|app)\b/i,
 
-        /discord\.gg/i,
+        /\bdiscord\.gg\b/i,
 
-        /discord\.com\/invite/i,
+        /\bdiscord\.com\b/i,
 
-        /discordapp\.com\/invite/i,
+        /\bt\.me\b/i,
 
-        /t\.me\//i,
-
-        /telegram\.me\//i,
-
-        /bit\.ly\//i,
-
-        /tinyurl\.com/i,
-
-        /youtu\.be\//i,
-
-        /youtube\.com/i,
-
-        /\.com\b/i,
-
-        /\.net\b/i,
-
-        /\.org\b/i,
-
-        /\.gg\b/i,
-
-        /\.io\b/i,
-
-        /\.xyz\b/i,
-
-        /\.me\b/i,
-
-        /\.co\b/i
+        /\bbit\.ly\b/i
 
     ];
 
-
     return patterns.some(
-        regex =>
-            regex.test(text)
+        regex => regex.test(text)
     );
 
 }
 
-
-// ======================================================
-// GET CHAT
-// ======================================================
+// GET CHAT MESSAGES
 
 app.get(
-    "/chat",
+    "/chat/messages",
     async (req, res) => {
 
         try {
 
-            if (
-                !mongoConnected
-            ) {
-
-                return res.json({
-
-                    success: true,
-
-                    messages: []
-
-                });
-
-            }
-
-
             const messages =
-                await Chat.find()
+                await ChatMessage
+                    .find()
                     .sort({
-                        createdAt: 1
+                        createdAt: -1
                     })
                     .limit(100)
                     .lean();
 
+            messages.reverse();
 
             res.json({
 
@@ -1591,14 +880,12 @@ app.get(
 
             });
 
-        }
-        catch (error) {
+        } catch (error) {
 
             console.log(
-                "Chat load error:",
+                "Chat read error:",
                 error.message
             );
-
 
             res.status(500).json({
 
@@ -1613,26 +900,24 @@ app.get(
     }
 );
 
-
-// ======================================================
-// SEND CHAT
-// ======================================================
+// SEND CHAT MESSAGE
 
 app.post(
-    "/chat",
+    "/chat/messages",
     async (req, res) => {
 
         try {
 
             const {
                 username,
+                robloxId,
                 avatar,
                 message
             } = req.body;
 
-
             if (
                 !username ||
+                !robloxId ||
                 !message
             ) {
 
@@ -1641,24 +926,16 @@ app.post(
                     success: false,
 
                     message:
-                        "Missing username or message"
+                        "You must be signed in"
 
                 });
 
             }
 
-
-            const cleanUsername =
-                String(username)
-                    .trim()
-                    .slice(0, 30);
-
-
             const cleanMessage =
                 String(message)
                     .trim()
-                    .slice(0, 500);
-
+                    .replace(/\s+/g, " ");
 
             if (!cleanMessage) {
 
@@ -1667,12 +944,28 @@ app.post(
                     success: false,
 
                     message:
-                        "Message is empty"
+                        "Message cannot be empty"
 
                 });
 
             }
 
+            if (
+                cleanMessage.length > 250
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    message:
+                        "Message is too long"
+
+                });
+
+            }
+
+            // BLOCK ALL LINKS
 
             if (
                 containsLink(
@@ -1691,59 +984,74 @@ app.post(
 
             }
 
+            // Simple anti-spam cooldown
 
-            if (
-                !mongoConnected
-            ) {
+            const recent =
+                await ChatMessage
+                    .findOne({
+                        robloxId
+                    })
+                    .sort({
+                        createdAt: -1
+                    })
+                    .lean();
 
-                return res.status(503).json({
+            if (recent) {
 
-                    success: false,
+                const elapsed =
+                    Date.now() -
+                    new Date(
+                        recent.createdAt
+                    ).getTime();
 
-                    message:
-                        "Chat database is unavailable."
+                if (elapsed < 2500) {
 
-                });
+                    return res.status(429).json({
+
+                        success: false,
+
+                        message:
+                            "Slow down."
+
+                    });
+
+                }
 
             }
 
-
-            const saved =
-                await Chat.create({
+            const newMessage =
+                await ChatMessage.create({
 
                     username:
-                        cleanUsername,
+                        String(username)
+                            .slice(0, 30),
+
+                    robloxId:
+                        Number(robloxId),
 
                     avatar:
-                        String(
-                            avatar || ""
-                        ).slice(0, 500),
+                        String(avatar || ""),
 
                     message:
-                        cleanMessage,
-
-                    type:
-                        "message"
+                        cleanMessage
 
                 });
-
 
             res.json({
 
                 success: true,
 
-                message: saved
+                message:
+                    newMessage
 
             });
 
-        }
-        catch (error) {
+        } catch (error) {
 
             console.log(
                 "Chat send error:",
                 error.message
             );
-
 
             res.status(500).json({
 
@@ -1759,10 +1067,9 @@ app.post(
     }
 );
 
-
-// ======================================================
+// ==============================
 // TELEGRAM
-// ======================================================
+// ==============================
 
 try {
 
@@ -1772,8 +1079,7 @@ try {
         "Telegram module loaded"
     );
 
-}
-catch (error) {
+} catch (error) {
 
     console.log(
         "Telegram module error:",
@@ -1782,13 +1088,13 @@ catch (error) {
 
 }
 
-
-// ======================================================
-// START
-// ======================================================
+// ==============================
+// SERVER
+// ==============================
 
 app.listen(
     PORT,
+    "0.0.0.0",
     () => {
 
         console.log(
