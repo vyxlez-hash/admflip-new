@@ -906,3 +906,295 @@ button {
     justify-content: flex-start;
   }
 }
+/* =========================
+   COINFLIP CREATOR
+========================= */
+
+#coinflipCreate {
+    width: 100%;
+}
+
+.cf-create-box {
+    width: min(900px, 100%);
+    margin: 20px auto;
+    padding: 24px;
+    border-radius: 18px;
+    background: rgba(20, 15, 32, .96);
+    border: 1px solid rgba(170, 100, 255, .25);
+}
+
+.cf-create-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 22px;
+}
+
+.cf-create-header h2 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.cf-create-header p {
+    margin: 6px 0 0;
+    opacity: .6;
+}
+
+.cf-close {
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 10px;
+    background: rgba(255,255,255,.07);
+    color: white;
+    font-size: 25px;
+    cursor: pointer;
+}
+
+.cf-inventory {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fill,
+        minmax(180px, 1fr)
+    );
+    gap: 12px;
+}
+
+.cf-pet-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    width: 100%;
+    min-height: 92px;
+
+    padding: 12px;
+
+    border-radius: 14px;
+
+    border: 2px solid transparent;
+
+    background: rgba(255,255,255,.045);
+
+    color: white;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    transition:
+        border-color .18s ease,
+        background .18s ease,
+        transform .18s ease;
+}
+
+.cf-pet-card:hover {
+    transform: translateY(-2px);
+    background: rgba(170,100,255,.09);
+}
+
+.cf-pet-card.selected {
+    border-color: #9d62ff;
+    background: rgba(157,98,255,.16);
+    box-shadow: 0 0 0 1px rgba(157,98,255,.15);
+}
+
+.cf-pet-image-wrap {
+    position: relative;
+
+    width: 58px;
+    height: 58px;
+
+    flex: 0 0 58px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background: rgba(255,255,255,.05);
+
+    overflow: hidden;
+}
+
+.cf-pet-image {
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+}
+
+.cf-no-image {
+    display: none;
+
+    position: absolute;
+
+    inset: 0;
+
+    align-items: center;
+    justify-content: center;
+
+    font-weight: 800;
+    font-size: 14px;
+
+    opacity: .7;
+}
+
+.cf-pet-image-wrap.no-image .cf-no-image {
+    display: flex;
+}
+
+.cf-pet-info {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.cf-pet-info strong {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    font-size: 14px;
+}
+
+.cf-pet-info span {
+    font-size: 13px;
+    opacity: .65;
+}
+
+.cf-selected-check {
+    position: absolute;
+
+    top: 8px;
+    right: 8px;
+
+    width: 21px;
+    height: 21px;
+
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #79e2a1;
+    color: #101015;
+
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.cf-pet-card.selected .cf-selected-check {
+    display: flex;
+}
+
+.cf-side-section {
+    margin-top: 25px;
+    padding-top: 20px;
+
+    border-top: 1px solid rgba(255,255,255,.08);
+}
+
+.cf-side-section h3 {
+    margin: 0 0 12px;
+    font-size: 15px;
+}
+
+.cf-sides {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.cf-side {
+    padding: 15px;
+
+    border: 2px solid transparent;
+    border-radius: 14px;
+
+    background: rgba(255,255,255,.05);
+
+    color: white;
+
+    cursor: pointer;
+
+    font-weight: 700;
+
+    transition: .18s ease;
+}
+
+.cf-side:hover {
+    background: rgba(157,98,255,.1);
+}
+
+.cf-side span {
+    display: inline-flex;
+
+    width: 32px;
+    height: 32px;
+
+    align-items: center;
+    justify-content: center;
+
+    margin-right: 7px;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.1);
+}
+
+.cf-side.selected {
+    border-color: #9d62ff;
+    background: rgba(157,98,255,.18);
+}
+
+.cf-post {
+    width: 100%;
+
+    margin-top: 15px;
+
+    padding: 14px;
+
+    border: 0;
+    border-radius: 13px;
+
+    background: #9d62ff;
+
+    color: white;
+
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
+.cf-post:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+.cf-post:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+
+    .cf-create-box {
+        padding: 16px;
+    }
+
+    .cf-inventory {
+        grid-template-columns: 1fr;
+    }
+
+    .cf-sides {
+        grid-template-columns: 1fr;
+    }
+}
