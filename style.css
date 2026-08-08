@@ -1,352 +1,1698 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>ADMFLIP</title>
-  <link rel="icon" href="/logo.png">
-  <link rel="stylesheet" href="/style.css">
-</head>
+```css
+/* =========================================================
+   ADMFLIP — GLOBAL
+========================================================= */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #08090d;
+  --bg-soft: #0d0f15;
+  --panel: #11131a;
+  --panel-2: #151821;
+  --panel-3: #1a1d27;
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.13);
+
+  --text: #f5f7fb;
+  --muted: #8c93a3;
+  --muted-2: #656b79;
+
+  --accent: #ffffff;
+  --accent-text: #08090d;
+
+  --success: #55d98b;
+  --danger: #ff6262;
 
-<body>
+  --radius: 14px;
+  --radius-small: 10px;
 
-<header class="header">
+  --header-height: 72px;
+  --content-width: 1250px;
+}
 
-  <div class="brand">
-    <img src="/logo.png" alt="ADMFLIP">
-  </div>
+html {
+  scroll-behavior: smooth;
+}
 
-  <nav class="menu">
-    <a href="#coinflip" data-page="coinflip">Coinflip</a>
-    <a href="#leaderboard" data-page="leaderboard">Leaderboard</a>
-    <a href="#chat" data-page="chat">Chat</a>
-    <a href="#values" data-page="values">Values</a>
-  </nav>
+body {
+  min-height: 100vh;
 
-  <div class="account-buttons">
+  background:
+    radial-gradient(
+      circle at 50% -20%,
+      rgba(255, 255, 255, 0.06),
+      transparent 40%
+    ),
+    var(--bg);
 
-    <button class="login" id="loginBtn">
-      <img src="/roblox.png" alt="">
-      <span>Sign In</span>
-    </button>
+  color: var(--text);
 
-    <div id="accountBox" class="account-box hidden">
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 
-      <button id="profileBtn" class="profile-button">
-        <img id="accountAvatar" src="" alt="">
-        <span id="accountUsername"></span>
-      </button>
+  line-height: 1.5;
 
-      <button id="inventoryBtn" class="small-button">
-        Inventory
-      </button>
+  overflow-x: hidden;
+}
 
-      <button id="logoutBtn" class="small-button">
-        Log Out
-      </button>
+button,
+input {
+  font: inherit;
+}
 
-    </div>
+button {
+  cursor: pointer;
+}
 
-  </div>
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
 
-</header>
+a {
+  color: inherit;
+  text-decoration: none;
+}
 
 
-<main id="app">
+/* =========================================================
+   SCROLLBAR
+========================================================= */
 
-  <section id="coinflipPage" class="page">
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
 
-    <div class="page-head">
-      <div>
-        <div class="eyebrow">COINFLIP</div>
-        <h1>Active Coinflips</h1>
-        <p>Choose a side and find another trader.</p>
-      </div>
+::-webkit-scrollbar-track {
+  background: transparent;
+}
 
-      <button id="createCoinflipBtn" class="primary">
-        Create
-      </button>
-    </div>
+::-webkit-scrollbar-thumb {
+  background: #292d38;
+  border-radius: 999px;
+}
 
-    <div id="coinflips" class="coinflips">
-      <div class="loading">Loading coinflips...</div>
-    </div>
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3f4d;
+}
 
-  </section>
 
+/* =========================================================
+   HEADER
+========================================================= */
 
-  <section id="valuesPage" class="page hidden">
+.header {
+  height: var(--header-height);
 
-    <div class="page-head">
-      <div>
-        <div class="eyebrow">VALUES</div>
-        <h1>Pet Values</h1>
-        <p>Browse the current pet database.</p>
-      </div>
-    </div>
+  position: sticky;
+  top: 0;
+  z-index: 100;
 
-    <input
-      id="valueSearch"
-      class="search"
-      placeholder="Search pets..."
-      autocomplete="off"
-    >
+  display: flex;
+  align-items: center;
 
-    <div id="valuesGrid" class="pet-grid">
-      <div class="loading">Loading values...</div>
-    </div>
+  padding: 0 28px;
 
-  </section>
+  background: rgba(8, 9, 13, 0.88);
 
+  border-bottom: 1px solid var(--border);
 
-  <section id="leaderboardPage" class="page hidden">
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
 
-    <div class="page-head">
-      <div>
-        <div class="eyebrow">LEADERBOARD</div>
-        <h1>TOP FLIPPERS</h1>
-        <p>The top 10 players by total wagered value.</p>
-      </div>
-    </div>
+.brand {
+  width: 145px;
 
-    <div id="leaderboard" class="leaderboard">
-      <div class="loading">Loading leaderboard...</div>
-    </div>
+  display: flex;
+  align-items: center;
 
-  </section>
+  flex-shrink: 0;
+}
 
+.brand img {
+  display: block;
 
-  <section id="profilePage" class="page hidden">
+  width: 110px;
+  max-height: 42px;
 
-    <div id="profileContent"></div>
+  object-fit: contain;
+}
 
-  </section>
 
-</main>
+/* =========================================================
+   NAVIGATION
+========================================================= */
 
+.menu {
+  display: flex;
+  align-items: center;
+  gap: 5px;
 
-<!-- LOGIN -->
+  margin-left: 25px;
+}
 
-<div id="loginModal" class="modal hidden">
+.menu a {
+  position: relative;
 
-  <div class="modal-box">
+  padding: 9px 14px;
 
-    <button class="modal-close" id="closeLogin">
-      ×
-    </button>
+  color: var(--muted);
 
-    <div class="login-logo">
-      <img src="/logo.png" alt="ADMFLIP">
-    </div>
+  border-radius: 9px;
 
-    <h2>Roblox Sign In</h2>
+  font-size: 14px;
+  font-weight: 600;
 
-    <p class="muted">
-      Enter your Roblox username to verify your account.
-    </p>
+  transition:
+    color 0.18s ease,
+    background 0.18s ease;
+}
 
-    <input
-      id="username"
-      class="input"
-      placeholder="Roblox username"
-      autocomplete="off"
-    >
+.menu a:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+}
 
-    <div id="loginProfile" class="login-profile hidden"></div>
+.menu a.active {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.07);
+}
 
-    <div id="phrase" class="phrase hidden"></div>
 
-    <button
-      id="verify"
-      class="primary full"
-      style="display:none"
-    >
-      Verify
-    </button>
+/* =========================================================
+   ACCOUNT
+========================================================= */
 
-    <div id="loginMessage" class="message"></div>
+.account-buttons {
+  margin-left: auto;
 
-  </div>
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-</div>
+.login,
+.small-button,
+.profile-button {
+  border: 1px solid var(--border);
 
+  background: var(--panel);
 
-<!-- INVENTORY -->
+  color: var(--text);
 
-<div id="inventoryModal" class="modal hidden">
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
 
-  <div class="modal-box large">
+.login:hover,
+.small-button:hover,
+.profile-button:hover {
+  background: var(--panel-3);
+  border-color: var(--border-strong);
+}
 
-    <button class="modal-close" id="closeInventory">
-      ×
-    </button>
+.login {
+  height: 40px;
 
-    <h2>Your Inventory</h2>
+  display: flex;
+  align-items: center;
+  gap: 9px;
 
-    <div id="inventoryGrid" class="pet-grid">
-      Loading...
-    </div>
+  padding: 0 14px;
 
-  </div>
+  border-radius: 10px;
 
-</div>
+  font-size: 13px;
+  font-weight: 700;
+}
 
+.login img {
+  width: 19px;
+  height: 19px;
 
-<!-- CREATE COINFLIP -->
+  object-fit: contain;
+}
 
-<div id="createModal" class="modal hidden">
+.account-box {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
 
-  <div class="modal-box large">
+.profile-button {
+  height: 40px;
 
-    <button class="modal-close" id="closeCreate">
-      ×
-    </button>
+  display: flex;
+  align-items: center;
+  gap: 8px;
 
-    <h2>Create Coinflip</h2>
+  padding: 0 10px;
 
-    <p class="muted">
-      Choose one pet from your inventory.
-    </p>
+  border-radius: 10px;
 
-    <div id="createInventory" class="pet-grid">
-      Loading...
-    </div>
+  font-size: 13px;
+  font-weight: 700;
+}
 
-    <div id="sideArea" class="side-area hidden">
+.profile-button img {
+  width: 26px;
+  height: 26px;
 
-      <h3>Choose side</h3>
+  border-radius: 8px;
 
-      <div class="side-buttons">
+  object-fit: cover;
 
-        <button class="side-btn" data-side="H">
-          HEADS
-        </button>
+  background: var(--panel-3);
+}
 
-        <button class="side-btn" data-side="T">
-          TAILS
-        </button>
+.small-button {
+  height: 40px;
 
-      </div>
+  padding: 0 11px;
 
-      <button id="postCoinflip" class="primary full">
-        Post Coinflip
-      </button>
+  border-radius: 10px;
 
-    </div>
+  color: var(--muted);
 
-  </div>
+  font-size: 12px;
+  font-weight: 700;
+}
 
-</div>
+.small-button:hover {
+  color: var(--text);
+}
 
 
-<!-- RULES -->
+/* =========================================================
+   MAIN
+========================================================= */
 
-<div id="rulesModal" class="modal hidden">
+#app {
+  width: min(
+    calc(100% - 48px),
+    var(--content-width)
+  );
 
-  <div class="modal-box rules-box">
+  margin: 0 auto;
 
-    <button class="modal-close" id="closeRules">
-      ×
-    </button>
+  padding: 42px 0 100px;
 
-    <h2>Chat Rules</h2>
+  padding-right: 390px;
+}
 
-    <p class="muted">
-      Keep ADMFLIP chat welcoming and useful.
-    </p>
+.page {
+  width: 100%;
+}
 
-    <div class="rule">
-      <b>1 · Respect everyone</b>
-      <span>Harassment, hate speech, threats and targeted abuse are not allowed.</span>
-    </div>
+.page.hidden,
+.hidden {
+  display: none !important;
+}
 
-    <div class="rule">
-      <b>2 · No spam</b>
-      <span>Avoid repeated messages, excessive caps and flooding.</span>
-    </div>
 
-    <div class="rule">
-      <b>3 · No begging</b>
-      <span>Do not repeatedly ask players for items or account benefits.</span>
-    </div>
+/* =========================================================
+   PAGE HEADER
+========================================================= */
 
-    <div class="rule">
-      <b>4 · No advertising</b>
-      <span>No unrelated websites, communities or services.</span>
-    </div>
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
 
-    <div class="rule">
-      <b>5 · No scams or impersonation</b>
-      <span>Never mislead players or pretend to be ADMFLIP staff.</span>
-    </div>
+  gap: 25px;
 
-    <div class="rule">
-      <b>6 · No sexual content</b>
-      <span>Sexual or adult content is not allowed.</span>
-    </div>
+  margin-bottom: 28px;
+}
 
-  </div>
+.eyebrow {
+  margin-bottom: 7px;
 
-</div>
+  color: var(--muted-2);
 
+  font-size: 11px;
+  font-weight: 800;
 
-<!-- CHAT -->
+  letter-spacing: 0.14em;
+}
 
-<aside id="chatPanel" class="chat-panel">
+h1 {
+  font-size: clamp(28px, 4vw, 42px);
 
-  <div class="chat-head">
+  line-height: 1.05;
 
-    <div>
-      <strong>ADMFLIP CHAT</strong>
-      <span>
-        <i class="online-dot"></i>
-        <b id="onlineCount">--</b> online
-      </span>
-    </div>
+  letter-spacing: -0.04em;
 
-    <button id="rulesBtn" class="rules-icon" title="Rules">
-      ?
-    </button>
+  font-weight: 800;
+}
 
-    <button id="chatClose" class="chat-close">
-      ×
-    </button>
+h2 {
+  margin-bottom: 8px;
 
-  </div>
+  font-size: 25px;
 
+  letter-spacing: -0.025em;
+}
 
-  <div id="chatMessages" class="chat-messages">
-    <div class="loading">Loading chat...</div>
-  </div>
+h3 {
+  margin-bottom: 12px;
 
+  font-size: 15px;
+}
 
-  <form id="chatForm" class="chat-form">
+.page-head p,
+.muted {
+  color: var(--muted);
 
-    <input
-      id="chatInput"
-      placeholder="Sign in to chat..."
-      maxlength="250"
-      autocomplete="off"
-    >
+  font-size: 14px;
+}
 
-    <button type="submit">
-      Send
-    </button>
 
-  </form>
+/* =========================================================
+   BUTTONS
+========================================================= */
 
-</aside>
+.primary {
+  min-height: 42px;
 
+  padding: 0 18px;
 
-<button id="mobileChatButton" class="mobile-chat-button">
-  CHAT
-</button>
+  border: 0;
+  border-radius: 10px;
 
+  background: var(--accent);
 
-<div id="toast" class="toast"></div>
+  color: var(--accent-text);
 
+  font-size: 13px;
+  font-weight: 800;
 
-<script src="/script.js"></script>
+  transition:
+    transform 0.16s ease,
+    opacity 0.16s ease,
+    box-shadow 0.16s ease;
+}
 
-</body>
-</html>
+.primary:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 8px 25px rgba(255, 255, 255, 0.09);
+}
+
+.primary:active {
+  transform: translateY(0);
+}
+
+.primary.full {
+  width: 100%;
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+.search {
+  width: 100%;
+
+  height: 46px;
+
+  margin-bottom: 20px;
+
+  padding: 0 15px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 11px;
+
+  outline: none;
+
+  background: var(--panel);
+
+  color: var(--text);
+
+  font-size: 14px;
+
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.search::placeholder,
+.input::placeholder,
+.chat-form input::placeholder {
+  color: var(--muted-2);
+}
+
+.search:focus,
+.input:focus,
+.chat-form input:focus {
+  border-color: rgba(255, 255, 255, 0.22);
+
+  background: var(--panel-2);
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.loading {
+  min-height: 100px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 25px;
+
+  color: var(--muted);
+
+  font-size: 13px;
+
+  text-align: center;
+
+  border: 1px dashed var(--border);
+
+  border-radius: var(--radius);
+
+  background: rgba(255, 255, 255, 0.015);
+}
+
+
+/* =========================================================
+   PET GRID
+========================================================= */
+
+.pet-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fill,
+      minmax(155px, 1fr)
+    );
+
+  gap: 12px;
+}
+
+
+/* =========================================================
+   PET CARD
+========================================================= */
+
+.pet-card {
+  min-width: 0;
+
+  padding: 13px;
+
+  border: 1px solid var(--border);
+
+  border-radius: var(--radius);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.025),
+      rgba(255, 255, 255, 0.008)
+    ),
+    var(--panel);
+
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.pet-card:hover {
+  transform: translateY(-2px);
+
+  border-color: var(--border-strong);
+
+  background: var(--panel-2);
+}
+
+.pet-card.selected {
+  border-color: rgba(255, 255, 255, 0.42);
+
+  background: var(--panel-3);
+
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 12px 30px rgba(0, 0, 0, 0.25);
+}
+
+.pet-card .pet-image {
+  width: 100%;
+  height: 130px;
+
+  display: block;
+
+  margin-bottom: 12px;
+
+  object-fit: contain;
+
+  border-radius: 10px;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.045),
+      transparent 70%
+    );
+}
+
+.pet-card .pet-image.missing {
+  display: none;
+}
+
+.pet-name {
+  overflow: hidden;
+
+  margin-bottom: 7px;
+
+  color: var(--text);
+
+  font-size: 13px;
+  font-weight: 750;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pet-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 6px;
+
+  color: var(--muted);
+
+  font-size: 11px;
+}
+
+.pet-value {
+  color: var(--text);
+
+  font-weight: 800;
+}
+
+
+/* =========================================================
+   COINFLIPS
+========================================================= */
+
+.coinflips {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.coinflip {
+  overflow: hidden;
+
+  border: 1px solid var(--border);
+
+  border-radius: var(--radius);
+
+  background: var(--panel);
+
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.coinflip:hover {
+  border-color: var(--border-strong);
+  background: var(--panel-2);
+}
+
+.cf-users {
+  display: flex;
+  justify-content: space-between;
+
+  padding: 11px 15px;
+
+  border-bottom: 1px solid var(--border);
+
+  color: var(--muted);
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.cf-body {
+  min-height: 150px;
+
+  display: grid;
+
+  grid-template-columns:
+    1fr
+    110px
+    1fr;
+
+  align-items: center;
+
+  gap: 15px;
+
+  padding: 20px;
+}
+
+.cf-side {
+  min-width: 0;
+}
+
+.cf-pet {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.cf-pet img {
+  width: 72px;
+  height: 72px;
+
+  flex-shrink: 0;
+
+  object-fit: contain;
+
+  border-radius: 12px;
+
+  background: var(--panel-3);
+}
+
+.cf-pet b {
+  display: block;
+
+  overflow: hidden;
+
+  font-size: 13px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cf-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.coin {
+  width: 62px;
+  height: 62px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid var(--border-strong);
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      rgba(255, 255, 255, 0.11),
+      transparent 60%
+    ),
+    var(--panel-3);
+
+  color: var(--text);
+
+  font-size: 9px;
+  font-weight: 900;
+
+  letter-spacing: 0.05em;
+}
+
+.cf-join {
+  min-height: 36px;
+
+  padding: 0 14px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+
+/* =========================================================
+   LEADERBOARD
+========================================================= */
+
+.leaderboard {
+  display: flex;
+  flex-direction: column;
+
+  border: 1px solid var(--border);
+
+  border-radius: var(--radius);
+
+  overflow: hidden;
+
+  background: var(--panel);
+}
+
+.rank-row {
+  min-height: 65px;
+
+  display: grid;
+
+  grid-template-columns:
+    70px
+    1fr
+    150px;
+
+  align-items: center;
+
+  gap: 15px;
+
+  padding: 0 18px;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.rank-row:last-child {
+  border-bottom: 0;
+}
+
+.rank {
+  color: var(--muted);
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.rank-name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.rank-value {
+  color: var(--muted);
+
+  font-size: 13px;
+
+  text-align: right;
+}
+
+
+/* =========================================================
+   MODALS
+========================================================= */
+
+.modal {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 500;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(0, 0, 0, 0.72);
+
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+}
+
+.modal-box {
+  position: relative;
+
+  width: min(100%, 470px);
+
+  max-height: calc(100vh - 40px);
+
+  overflow-y: auto;
+
+  padding: 30px;
+
+  border: 1px solid var(--border-strong);
+
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.025),
+      transparent
+    ),
+    var(--panel);
+
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.55);
+}
+
+.modal-box.large {
+  width: min(100%, 850px);
+}
+
+.modal-close {
+  position: absolute;
+
+  top: 15px;
+  right: 15px;
+
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid var(--border);
+
+  border-radius: 9px;
+
+  background: var(--panel-2);
+
+  color: var(--muted);
+
+  font-size: 21px;
+  line-height: 1;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.modal-close:hover {
+  color: var(--text);
+
+  background: var(--panel-3);
+}
+
+
+/* =========================================================
+   LOGIN
+========================================================= */
+
+.login-logo {
+  width: 65px;
+  height: 65px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: 0 auto 20px;
+}
+
+.login-logo img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+}
+
+.modal-box > h2,
+.modal-box > .muted {
+  text-align: center;
+}
+
+.input {
+  width: 100%;
+  height: 46px;
+
+  margin-top: 20px;
+
+  padding: 0 14px;
+
+  outline: none;
+
+  border: 1px solid var(--border);
+
+  border-radius: 10px;
+
+  background: var(--bg-soft);
+
+  color: var(--text);
+
+  font-size: 14px;
+}
+
+.login-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  margin-top: 15px;
+
+  padding: 10px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 10px;
+
+  background: var(--bg-soft);
+}
+
+.login-profile img {
+  width: 40px;
+  height: 40px;
+
+  border-radius: 9px;
+
+  object-fit: cover;
+}
+
+.phrase {
+  margin-top: 14px;
+
+  padding: 14px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 10px;
+
+  background: var(--bg-soft);
+
+  color: var(--muted);
+
+  font-size: 13px;
+
+  text-align: center;
+}
+
+.phrase b {
+  color: var(--text);
+
+  font-size: 16px;
+}
+
+#verify {
+  margin-top: 14px;
+}
+
+.message {
+  min-height: 20px;
+
+  margin-top: 12px;
+
+  color: var(--muted);
+
+  font-size: 12px;
+
+  text-align: center;
+}
+
+
+/* =========================================================
+   CREATE COINFLIP
+========================================================= */
+
+.side-area {
+  margin-top: 25px;
+
+  padding-top: 22px;
+
+  border-top: 1px solid var(--border);
+}
+
+.side-buttons {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 10px;
+
+  margin-bottom: 13px;
+}
+
+.side-btn {
+  height: 48px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 10px;
+
+  background: var(--panel-2);
+
+  color: var(--muted);
+
+  font-size: 12px;
+  font-weight: 800;
+
+  transition:
+    color 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.side-btn:hover {
+  color: var(--text);
+
+  border-color: var(--border-strong);
+}
+
+.side-btn.selected {
+  color: var(--accent-text);
+
+  border-color: var(--accent);
+
+  background: var(--accent);
+}
+
+
+/* =========================================================
+   RULES
+========================================================= */
+
+.rules-box {
+  max-width: 550px;
+}
+
+.rule {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  padding: 14px 0;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.rule:last-child {
+  border-bottom: 0;
+}
+
+.rule b {
+  font-size: 13px;
+}
+
+.rule span {
+  color: var(--muted);
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   CHAT
+========================================================= */
+
+.chat-panel {
+  position: fixed;
+
+  z-index: 150;
+
+  top: calc(var(--header-height) + 20px);
+  right: 24px;
+
+  width: 350px;
+
+  height: calc(100vh - var(--header-height) - 40px);
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  border: 1px solid var(--border);
+
+  border-radius: 16px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.018),
+      transparent
+    ),
+    var(--panel);
+
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.chat-head {
+  min-height: 65px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 15px;
+
+  border-bottom: 1px solid var(--border);
+
+  flex-shrink: 0;
+}
+
+.chat-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chat-title strong {
+  font-size: 12px;
+
+  letter-spacing: 0.04em;
+}
+
+.chat-title span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  color: var(--muted);
+
+  font-size: 10px;
+}
+
+.chat-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.online-dot {
+  width: 7px;
+  height: 7px;
+
+  display: inline-block;
+
+  border-radius: 50%;
+
+  background: var(--success);
+
+  box-shadow:
+    0 0 8px rgba(85, 217, 139, 0.45);
+}
+
+.rules-icon,
+.chat-close {
+  width: 31px;
+  height: 31px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid var(--border);
+
+  border-radius: 8px;
+
+  background: var(--panel-2);
+
+  color: var(--muted);
+
+  font-weight: 800;
+}
+
+.rules-icon:hover,
+.chat-close:hover {
+  color: var(--text);
+
+  background: var(--panel-3);
+}
+
+.chat-messages {
+  flex: 1;
+
+  min-height: 0;
+
+  overflow-y: auto;
+
+  padding: 15px;
+}
+
+.chat-message {
+  display: flex;
+
+  gap: 9px;
+
+  padding: 8px 4px;
+}
+
+.chat-avatar {
+  width: 31px;
+  height: 31px;
+
+  flex-shrink: 0;
+
+  border-radius: 8px;
+
+  object-fit: cover;
+
+  background: var(--panel-3);
+}
+
+.chat-content {
+  min-width: 0;
+}
+
+.chat-username {
+  margin-bottom: 2px;
+
+  color: var(--text);
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.chat-text {
+  overflow-wrap: anywhere;
+
+  color: var(--muted);
+
+  font-size: 12px;
+
+  line-height: 1.45;
+}
+
+.chat-form {
+  display: flex;
+
+  gap: 7px;
+
+  padding: 11px;
+
+  border-top: 1px solid var(--border);
+
+  background: var(--panel);
+}
+
+.chat-form input {
+  min-width: 0;
+  flex: 1;
+
+  height: 39px;
+
+  padding: 0 11px;
+
+  outline: none;
+
+  border: 1px solid var(--border);
+
+  border-radius: 9px;
+
+  background: var(--bg-soft);
+
+  color: var(--text);
+
+  font-size: 12px;
+}
+
+.chat-form button {
+  height: 39px;
+
+  padding: 0 12px;
+
+  border: 0;
+
+  border-radius: 9px;
+
+  background: var(--accent);
+
+  color: var(--accent-text);
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+
+/* =========================================================
+   MOBILE CHAT BUTTON
+========================================================= */
+
+.mobile-chat-button {
+  display: none;
+
+  position: fixed;
+
+  right: 18px;
+  bottom: 18px;
+
+  z-index: 200;
+
+  height: 45px;
+
+  padding: 0 17px;
+
+  border: 1px solid var(--border-strong);
+
+  border-radius: 11px;
+
+  background: var(--accent);
+
+  color: var(--accent-text);
+
+  font-size: 12px;
+  font-weight: 900;
+
+  box-shadow:
+    0 12px 35px rgba(0, 0, 0, 0.35);
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+.toast {
+  position: fixed;
+
+  z-index: 1000;
+
+  left: 50%;
+  bottom: 25px;
+
+  max-width: min(90vw, 450px);
+
+  padding: 12px 16px;
+
+  border: 1px solid var(--border-strong);
+
+  border-radius: 10px;
+
+  background: var(--panel-3);
+
+  color: var(--text);
+
+  font-size: 12px;
+  font-weight: 700;
+
+  text-align: center;
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  transform:
+    translate(-50%, 15px);
+
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+
+  box-shadow:
+    0 15px 40px rgba(0, 0, 0, 0.35);
+}
+
+.toast.show {
+  opacity: 1;
+
+  transform:
+    translate(-50%, 0);
+}
+
+
+/* =========================================================
+   PROFILE
+========================================================= */
+
+#profileContent {
+  width: 100%;
+}
+
+#profileContent .pet-grid {
+  margin-top: 25px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1050px) {
+
+  #app {
+    padding-right: 0;
+  }
+
+  .chat-panel {
+    display: none;
+  }
+
+  .chat-panel.mobile-open {
+    display: flex;
+
+    top: 82px;
+    right: 18px;
+    bottom: 18px;
+
+    width: min(
+      390px,
+      calc(100vw - 36px)
+    );
+
+    height: auto;
+  }
+
+  .mobile-chat-button {
+    display: block;
+  }
+}
+
+
+@media (max-width: 760px) {
+
+  :root {
+    --header-height: 62px;
+  }
+
+  .header {
+    height: var(--header-height);
+
+    padding: 0 14px;
+  }
+
+  .brand {
+    width: auto;
+  }
+
+  .brand img {
+    width: 92px;
+  }
+
+  .menu {
+    margin-left: 10px;
+
+    gap: 1px;
+
+    overflow-x: auto;
+
+    scrollbar-width: none;
+  }
+
+  .menu::-webkit-scrollbar {
+    display: none;
+  }
+
+  .menu a {
+    padding: 7px 9px;
+
+    font-size: 11px;
+
+    white-space: nowrap;
+  }
+
+  .account-buttons {
+    margin-left: 8px;
+  }
+
+  .login {
+    width: 40px;
+
+    padding: 0;
+
+    justify-content: center;
+  }
+
+  .login span {
+    display: none;
+  }
+
+  .account-box {
+    gap: 4px;
+  }
+
+  .profile-button {
+    width: 40px;
+
+    padding: 0;
+
+    justify-content: center;
+  }
+
+  .profile-button span {
+    display: none;
+  }
+
+  .small-button {
+    display: none;
+  }
+
+  #app {
+    width: calc(100% - 28px);
+
+    padding-top: 28px;
+    padding-bottom: 80px;
+  }
+
+  .page-head {
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    margin-bottom: 20px;
+  }
+
+  .page-head .primary {
+    width: 100%;
+  }
+
+  h1 {
+    font-size: 30px;
+  }
+
+  .pet-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+
+    gap: 9px;
+  }
+
+  .pet-card {
+    padding: 10px;
+  }
+
+  .pet-card .pet-image {
+    height: 105px;
+  }
+
+  .cf-body {
+    grid-template-columns: 1fr;
+
+    gap: 20px;
+  }
+
+  .cf-center {
+    order: 2;
+  }
+
+  .cf-side:last-child {
+    order: 3;
+
+    padding-top: 15px;
+
+    border-top: 1px solid var(--border);
+  }
+
+  .rank-row {
+    grid-template-columns:
+      48px
+      1fr
+      100px;
+
+    padding: 0 12px;
+  }
+
+  .rank-value {
+    font-size: 11px;
+  }
+
+  .modal {
+    padding: 12px;
+  }
+
+  .modal-box {
+    max-height: calc(100vh - 24px);
+
+    padding: 23px 18px;
+  }
+
+  .chat-panel.mobile-open {
+    top: 12px;
+    right: 12px;
+    bottom: 12px;
+
+    width: calc(100vw - 24px);
+  }
+
+  .mobile-chat-button {
+    right: 14px;
+    bottom: 14px;
+  }
+}
+
+
+@media (max-width: 430px) {
+
+  .menu a {
+    padding-left: 7px;
+    padding-right: 7px;
+  }
+
+  .pet-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pet-card .pet-image {
+    height: 90px;
+  }
+
+  .cf-users {
+    padding: 9px 11px;
+  }
+
+  .cf-body {
+    padding: 15px;
+  }
+
+  .side-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .chat-form button {
+    padding: 0 10px;
+  }
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+```
