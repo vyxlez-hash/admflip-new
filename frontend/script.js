@@ -1,4 +1,3 @@
-
 const BACKEND = "https://admflip-new.onrender.com";
 
 const state = {
@@ -66,16 +65,13 @@ function petImage(name) {
 // =====================================================
 
 async function api(path, options = {}) {
-  const response = await fetch(
-    BACKEND + path,
-    {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers || {})
-      }
+  const response = await fetch(BACKEND + path, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {})
     }
-  );
+  });
 
   let data = {};
 
@@ -87,8 +83,7 @@ async function api(path, options = {}) {
 
   if (!response.ok) {
     throw new Error(
-      data.message ||
-      `Server error (${response.status})`
+      data.message || `Server error (${response.status})`
     );
   }
 
@@ -109,8 +104,7 @@ function saveUser() {
 }
 
 function restoreUser() {
-  const saved =
-    localStorage.getItem("admflipUser");
+  const saved = localStorage.getItem("admflipUser");
 
   if (!saved) return;
 
@@ -143,8 +137,7 @@ function showLoggedIn() {
   }
 
   if ($("chatInput")) {
-    $("chatInput").placeholder =
-      "Message chat...";
+    $("chatInput").placeholder = "Message chat...";
   }
 }
 
@@ -160,8 +153,7 @@ function logout() {
   $("accountBox")?.classList.add("hidden");
 
   if ($("chatInput")) {
-    $("chatInput").placeholder =
-      "Sign in to chat...";
+    $("chatInput").placeholder = "Sign in to chat...";
   }
 
   toast("Signed out.");
@@ -173,7 +165,7 @@ async function loadAccount() {
   try {
     const data = await api(
       "/account/" +
-      encodeURIComponent(state.user.id)
+        encodeURIComponent(state.user.id)
     );
 
     if (!data.success || !data.user) return;
@@ -183,10 +175,11 @@ async function loadAccount() {
       ...data.user
     };
 
-    state.inventory =
-      Array.isArray(data.user.inventory)
-        ? data.user.inventory
-        : [];
+    state.inventory = Array.isArray(
+      data.user.inventory
+    )
+      ? data.user.inventory
+      : [];
 
     saveUser();
     showLoggedIn();
@@ -226,8 +219,7 @@ let usernameTimer;
 $("username")?.addEventListener("input", () => {
   clearTimeout(usernameTimer);
 
-  const username =
-    $("username").value.trim();
+  const username = $("username").value.trim();
 
   if (!username) {
     $("loginProfile")?.classList.add("hidden");
@@ -251,8 +243,7 @@ $("username")?.addEventListener("input", () => {
 });
 
 async function lookupRobloxUser() {
-  const username =
-    $("username").value.trim();
+  const username = $("username")?.value.trim();
 
   if (!username) return;
 
@@ -262,19 +253,21 @@ async function lookupRobloxUser() {
   try {
     const data = await api(
       "/user/" +
-      encodeURIComponent(username)
+        encodeURIComponent(username)
     );
 
     if (!data.success) {
       throw new Error(
         data.message ||
-        "Roblox username not found."
+          "Roblox username not found."
       );
     }
 
     state.loginRobloxUser = data.user;
 
-    $("loginProfile").classList.remove("hidden");
+    $("loginProfile").classList.remove(
+      "hidden"
+    );
 
     $("loginProfile").innerHTML = `
       <img
@@ -282,6 +275,7 @@ async function lookupRobloxUser() {
           data.user.avatar || "/logo.png"
         )}"
         alt=""
+        onerror="this.src='/logo.png'"
       >
 
       <div>
@@ -290,7 +284,8 @@ async function lookupRobloxUser() {
         </strong>
 
         <small>
-          Roblox ID: ${escapeHtml(data.user.id)}
+          Roblox ID:
+          ${escapeHtml(data.user.id)}
         </small>
       </div>
     `;
@@ -298,11 +293,9 @@ async function lookupRobloxUser() {
     $("loginMessage").textContent =
       "Creating verification phrase...";
 
-    const phraseData =
-      await api("/create");
+    const phraseData = await api("/create");
 
-    state.phrase =
-      phraseData.phrase;
+    state.phrase = phraseData.phrase;
 
     $("phrase").classList.remove("hidden");
 
@@ -352,31 +345,25 @@ async function verifyRoblox() {
     return;
   }
 
-  const button = $("verify");
-
-  button.disabled = true;
-  button.textContent = "Checking...";
+  $("verify").disabled = true;
+  $("verify").textContent = "Checking...";
 
   try {
-    const data = await api(
-      "/check",
-      {
-        method: "POST",
+    const data = await api("/check", {
+      method: "POST",
 
-        body: JSON.stringify({
-          username:
-            state.loginRobloxUser.username,
+      body: JSON.stringify({
+        username:
+          state.loginRobloxUser.username,
 
-          phrase:
-            state.phrase
-        })
-      }
-    );
+        phrase: state.phrase
+      })
+    });
 
     if (!data.success) {
       throw new Error(
         data.message ||
-        "Verification failed."
+          "Verification failed."
       );
     }
 
@@ -393,11 +380,16 @@ async function verifyRoblox() {
 
     saveUser();
 
-    $("loginModal")?.classList.add("hidden");
+    $("loginModal")?.classList.add(
+      "hidden"
+    );
 
     $("username").value = "";
 
-    $("loginProfile")?.classList.add("hidden");
+    $("loginProfile")?.classList.add(
+      "hidden"
+    );
+
     $("phrase")?.classList.add("hidden");
 
     $("verify").style.display = "none";
@@ -415,11 +407,11 @@ async function verifyRoblox() {
 
     toast(
       error.message ||
-      "Verification failed."
+        "Verification failed."
     );
 
-    button.disabled = false;
-    button.textContent = "Verify";
+    $("verify").disabled = false;
+    $("verify").textContent = "Verify";
   }
 }
 
@@ -441,22 +433,24 @@ function showPage(page) {
 
   state.currentPage = page;
 
-  document.querySelectorAll(".page").forEach(
-    (element) => {
+  document
+    .querySelectorAll(".page")
+    .forEach((element) => {
       element.classList.add("hidden");
-    }
+    });
+
+  $(page + "Page")?.classList.remove(
+    "hidden"
   );
 
-  $(page + "Page")?.classList.remove("hidden");
-
-  document.querySelectorAll(".nav-item").forEach(
-    (button) => {
+  document
+    .querySelectorAll(".nav-item")
+    .forEach((button) => {
       button.classList.toggle(
         "active",
         button.dataset.page === page
       );
-    }
-  );
+    });
 
   if (page === "coinflip") {
     loadCoinflips();
@@ -480,29 +474,32 @@ function showPage(page) {
   );
 }
 
-document.querySelectorAll("[data-page]").forEach(
-  (element) => {
-    element.addEventListener("click", (event) => {
-      event.preventDefault();
+document
+  .querySelectorAll("[data-page]")
+  .forEach((element) => {
+    element.addEventListener(
+      "click",
+      (event) => {
+        event.preventDefault();
 
-      const page =
-        element.dataset.page;
+        const page =
+          element.dataset.page;
 
-      if (page === "chat") {
-        openChat();
-        return;
+        if (page === "chat") {
+          openChat();
+          return;
+        }
+
+        showPage(page);
+
+        history.replaceState(
+          null,
+          "",
+          "#" + page
+        );
       }
-
-      showPage(page);
-
-      history.replaceState(
-        null,
-        "",
-        "#" + page
-      );
-    });
-  }
-);
+    );
+  });
 
 function restorePage() {
   const hash =
@@ -513,8 +510,8 @@ function restorePage() {
 
   showPage(
     hash ||
-    saved ||
-    "coinflip"
+      saved ||
+      "coinflip"
   );
 }
 
@@ -533,13 +530,11 @@ async function loadValues() {
   }
 
   try {
-    const data =
-      await api("/pets");
+    const data = await api("/pets");
 
-    state.pets =
-      Array.isArray(data.pets)
-        ? data.pets
-        : [];
+    state.pets = Array.isArray(data.pets)
+      ? data.pets
+      : [];
 
     renderValues(state.pets);
   } catch (error) {
@@ -590,7 +585,9 @@ function makePetCard(
     <div class="pet-meta">
 
       <span>
-        ${escapeHtml(pet.rarity || "")}
+        ${escapeHtml(
+          pet.rarity || ""
+        )}
       </span>
 
       <span class="pet-value">
@@ -603,7 +600,9 @@ function makePetCard(
       pet.variant
         ? `
           <div class="pet-meta">
-            ${escapeHtml(pet.variant)}
+            ${escapeHtml(
+              pet.variant
+            )}
           </div>
         `
         : ""
@@ -611,22 +610,28 @@ function makePetCard(
   `;
 
   if (selectable) {
-    card.addEventListener("click", () => {
-      document
-        .querySelectorAll(
-          "#createInventory .pet-card"
-        )
-        .forEach((item) => {
-          item.classList.remove("selected");
-        });
+    card.addEventListener(
+      "click",
+      () => {
+        document
+          .querySelectorAll(
+            "#createInventory .pet-card"
+          )
+          .forEach((item) => {
+            item.classList.remove(
+              "selected"
+            );
+          });
 
-      card.classList.add("selected");
+        card.classList.add("selected");
 
-      state.selectedPet = pet;
+        state.selectedPet = pet;
 
-      $("sideArea")
-        ?.classList.remove("hidden");
-    });
+        $("sideArea")?.classList.remove(
+          "hidden"
+        );
+      }
+    );
   }
 
   return card;
@@ -659,11 +664,10 @@ function renderValues(pets) {
 $("valueSearch")?.addEventListener(
   "input",
   () => {
-    const query =
-      $("valueSearch")
-        .value
-        .toLowerCase()
-        .trim();
+    const query = $("valueSearch")
+      .value
+      .toLowerCase()
+      .trim();
 
     const filtered =
       state.pets.filter((pet) =>
@@ -687,14 +691,17 @@ async function loadInventory() {
   }
 
   try {
-    const data =
-      await api(
-        "/account/" +
-        encodeURIComponent(state.user.id)
-      );
+    const data = await api(
+      "/account/" +
+        encodeURIComponent(
+          state.user.id
+        )
+    );
 
     state.inventory =
-      Array.isArray(data.user?.inventory)
+      Array.isArray(
+        data.user?.inventory
+      )
         ? data.user.inventory
         : [];
 
@@ -719,13 +726,17 @@ $("inventoryBtn")?.addEventListener(
   async () => {
     if (!state.user) {
       $("loginModal")
-        ?.classList.remove("hidden");
+        ?.classList.remove(
+          "hidden"
+        );
 
       return;
     }
 
     $("inventoryModal")
-      ?.classList.remove("hidden");
+      ?.classList.remove(
+        "hidden"
+      );
 
     await loadInventory();
 
@@ -737,13 +748,14 @@ $("closeInventory")?.addEventListener(
   "click",
   () => {
     $("inventoryModal")
-      ?.classList.add("hidden");
+      ?.classList.add(
+        "hidden"
+      );
   }
 );
 
 function renderInventory() {
-  const grid =
-    $("inventoryGrid");
+  const grid = $("inventoryGrid");
 
   if (!grid) return;
 
@@ -759,74 +771,91 @@ function renderInventory() {
     return;
   }
 
-  state.inventory.forEach((item) => {
-    const pet = {
-      ...item,
+  state.inventory.forEach(
+    (item) => {
+      const pet = {
+        ...item,
 
-      id:
-        item.itemId ||
-        item._id,
+        id:
+          item.itemId ||
+          item._id,
 
-      name: item.name,
+        name: item.name,
 
-      value: item.value,
+        value: item.value,
 
-      variant:
-        item.variant || "",
+        variant:
+          item.variant || "",
 
-      image:
-        item.image ||
-        petImage(item.name)
-    };
+        image:
+          item.image ||
+          petImage(item.name)
+      };
 
-    grid.appendChild(
-      makePetCard(pet)
-    );
-  });
+      grid.appendChild(
+        makePetCard(pet)
+      );
+    }
+  );
 }
 
 // =====================================================
 // CREATE COINFLIP
 // =====================================================
 
-$("createCoinflipBtn")?.addEventListener(
-  "click",
-  async () => {
-    if (!state.user) {
-      $("loginModal")
-        ?.classList.remove("hidden");
+$("createCoinflipBtn")
+  ?.addEventListener(
+    "click",
+    async () => {
+      if (!state.user) {
+        $("loginModal")
+          ?.classList.remove(
+            "hidden"
+          );
 
-      toast("Sign in first.");
+        toast(
+          "Sign in first."
+        );
 
-      return;
+        return;
+      }
+
+      $("createModal")
+        ?.classList.remove(
+          "hidden"
+        );
+
+      state.selectedPet = null;
+      state.selectedSide = null;
+
+      document
+        .querySelectorAll(
+          ".side-btn"
+        )
+        .forEach((button) => {
+          button.classList.remove(
+            "selected"
+          );
+        });
+
+      $("sideArea")
+        ?.classList.add(
+          "hidden"
+        );
+
+      await loadInventory();
+
+      renderCreateInventory();
     }
-
-    $("createModal")
-      ?.classList.remove("hidden");
-
-    state.selectedPet = null;
-    state.selectedSide = null;
-
-    document
-      .querySelectorAll(".side-btn")
-      .forEach((button) => {
-        button.classList.remove("selected");
-      });
-
-    $("sideArea")
-      ?.classList.add("hidden");
-
-    await loadInventory();
-
-    renderCreateInventory();
-  }
-);
+  );
 
 $("closeCreate")?.addEventListener(
   "click",
   () => {
     $("createModal")
-      ?.classList.add("hidden");
+      ?.classList.add(
+        "hidden"
+      );
   }
 );
 
@@ -849,142 +878,165 @@ function renderCreateInventory() {
     return;
   }
 
-  state.inventory.forEach((item) => {
-    const pet = {
-      ...item,
+  state.inventory.forEach(
+    (item) => {
+      const pet = {
+        ...item,
 
-      id:
-        item.itemId ||
-        item._id,
+        id:
+          item.itemId ||
+          item._id,
 
-      name: item.name,
+        name: item.name,
 
-      value: item.value,
+        value: item.value,
 
-      variant:
-        item.variant || "",
+        variant:
+          item.variant || "",
 
-      image:
-        item.image ||
-        petImage(item.name)
-    };
+        image:
+          item.image ||
+          petImage(item.name)
+      };
 
-    grid.appendChild(
-      makePetCard(pet, true)
-    );
-  });
+      grid.appendChild(
+        makePetCard(
+          pet,
+          true
+        )
+      );
+    }
+  );
 }
 
 // =====================================================
 // SIDE
 // =====================================================
 
-document.querySelectorAll(".side-btn").forEach(
-  (button) => {
+document
+  .querySelectorAll(".side-btn")
+  .forEach((button) => {
     button.addEventListener(
       "click",
       () => {
         document
-          .querySelectorAll(".side-btn")
+          .querySelectorAll(
+            ".side-btn"
+          )
           .forEach((item) => {
             item.classList.remove(
               "selected"
             );
           });
 
-        button.classList.add("selected");
+        button.classList.add(
+          "selected"
+        );
 
         state.selectedSide =
           button.dataset.side;
       }
     );
-  }
-);
+  });
 
 // =====================================================
 // POST COINFLIP
 // =====================================================
 
-$("postCoinflip")?.addEventListener(
-  "click",
-  async () => {
-    if (!state.user) {
-      toast("Sign in first.");
-      return;
-    }
+$("postCoinflip")
+  ?.addEventListener(
+    "click",
+    async () => {
+      if (!state.user) {
+        toast(
+          "Sign in first."
+        );
 
-    if (!state.selectedPet) {
-      toast("Choose a pet first.");
-      return;
-    }
+        return;
+      }
 
-    if (!state.selectedSide) {
-      toast(
-        "Choose heads or tails."
-      );
-      return;
-    }
+      if (!state.selectedPet) {
+        toast(
+          "Choose a pet first."
+        );
 
-    const itemId =
-      state.selectedPet.id ||
-      state.selectedPet.itemId ||
-      state.selectedPet._id;
+        return;
+      }
 
-    if (!itemId) {
-      toast(
-        "This inventory item has no ID."
-      );
-      return;
-    }
+      if (!state.selectedSide) {
+        toast(
+          "Choose heads or tails."
+        );
 
-    const button =
-      $("postCoinflip");
+        return;
+      }
 
-    button.disabled = true;
-    button.textContent = "Posting...";
+      const itemId =
+        state.selectedPet.id ||
+        state.selectedPet.itemId ||
+        state.selectedPet._id;
 
-    try {
-      await api(
-        "/coinflips",
-        {
-          method: "POST",
+      if (!itemId) {
+        toast(
+          "This inventory item has no ID."
+        );
 
-          body: JSON.stringify({
-            robloxId:
-              state.user.id,
+        return;
+      }
 
-            itemId,
+      const button =
+        $("postCoinflip");
 
-            side:
-              state.selectedSide
-          })
-        }
-      );
-
-      toast("Coinflip posted.");
-
-      $("createModal")
-        ?.classList.add("hidden");
-
-      state.selectedPet = null;
-      state.selectedSide = null;
-
-      await loadAccount();
-      await loadCoinflips();
-    } catch (error) {
-      console.error(error);
-
-      toast(
-        error.message ||
-        "Could not create coinflip."
-      );
-    } finally {
-      button.disabled = false;
+      button.disabled = true;
       button.textContent =
-        "Post Coinflip";
+        "Posting...";
+
+      try {
+        await api(
+          "/coinflips",
+          {
+            method: "POST",
+
+            body: JSON.stringify({
+              robloxId:
+                state.user.id,
+
+              itemId,
+
+              side:
+                state.selectedSide
+            })
+          }
+        );
+
+        toast(
+          "Coinflip posted."
+        );
+
+        $("createModal")
+          ?.classList.add(
+            "hidden"
+          );
+
+        state.selectedPet = null;
+        state.selectedSide = null;
+
+        await loadAccount();
+        await loadCoinflips();
+      } catch (error) {
+        console.error(error);
+
+        toast(
+          error.message ||
+            "Could not create coinflip."
+        );
+      } finally {
+        button.disabled = false;
+        button.textContent =
+          "Post Coinflip";
+      }
     }
-  }
-);
+  );
 
 // =====================================================
 // COINFLIPS
@@ -1001,14 +1053,17 @@ async function loadCoinflips() {
       await api("/coinflips");
 
     const list =
-      Array.isArray(data.coinflips)
+      Array.isArray(
+        data.coinflips
+      )
         ? data.coinflips
         : [];
 
     renderCoinflips(list);
 
     if ($("activeCount")) {
-      $("activeCount").textContent =
+      $("activeCount")
+        .textContent =
         list.length;
     }
   } catch (error) {
@@ -1042,7 +1097,9 @@ function renderCoinflips(list) {
 
   list.forEach((flip) => {
     const element =
-      document.createElement("div");
+      document.createElement(
+        "div"
+      );
 
     element.className =
       "coinflip";
@@ -1054,7 +1111,9 @@ function renderCoinflips(list) {
 
     const image =
       flip.image ||
-      petImage(flip.petName);
+      petImage(
+        flip.petName
+      );
 
     element.innerHTML = `
       <div class="cf-users">
@@ -1062,7 +1121,7 @@ function renderCoinflips(list) {
         <span>
           ${escapeHtml(
             flip.username ||
-            "Trader"
+              "Trader"
           )}
         </span>
 
@@ -1071,7 +1130,6 @@ function renderCoinflips(list) {
         </span>
 
       </div>
-
 
       <div class="cf-body">
 
@@ -1083,7 +1141,9 @@ function renderCoinflips(list) {
               image
                 ? `
                   <img
-                    src="${escapeAttr(image)}"
+                    src="${escapeAttr(
+                      image
+                    )}"
                     alt=""
                     onerror="this.style.display='none'"
                   >
@@ -1096,7 +1156,7 @@ function renderCoinflips(list) {
               <b>
                 ${escapeHtml(
                   flip.petName ||
-                  "Unknown Pet"
+                    "Unknown Pet"
                 )}
               </b>
 
@@ -1124,11 +1184,12 @@ function renderCoinflips(list) {
 
         </div>
 
-
         <div class="cf-center">
 
           <div class="coin">
-            ${escapeHtml(side)}
+            ${escapeHtml(
+              side
+            )}
           </div>
 
           <small class="muted">
@@ -1136,7 +1197,6 @@ function renderCoinflips(list) {
           </small>
 
         </div>
-
 
         <div class="cf-side">
 
@@ -1157,7 +1217,9 @@ function renderCoinflips(list) {
       </div>
     `;
 
-    container.appendChild(element);
+    container.appendChild(
+      element
+    );
   });
 }
 
@@ -1173,10 +1235,14 @@ async function loadLeaderboard() {
 
   try {
     const data =
-      await api("/leaderboard");
+      await api(
+        "/leaderboard"
+      );
 
     const players =
-      Array.isArray(data.users)
+      Array.isArray(
+        data.users
+      )
         ? data.users
         : [];
 
@@ -1195,7 +1261,9 @@ async function loadLeaderboard() {
     players.forEach(
       (player, index) => {
         const row =
-          document.createElement("div");
+          document.createElement(
+            "div"
+          );
 
         row.className =
           "rank-row";
@@ -1204,7 +1272,7 @@ async function loadLeaderboard() {
           <div class="rank">
             #${escapeHtml(
               player.place ||
-              index + 1
+                index + 1
             )}
           </div>
 
@@ -1213,7 +1281,7 @@ async function loadLeaderboard() {
             <img
               src="${escapeAttr(
                 player.avatar ||
-                "/logo.png"
+                  "/logo.png"
               )}"
               alt=""
               onerror="this.src='/logo.png'"
@@ -1224,7 +1292,7 @@ async function loadLeaderboard() {
               <strong>
                 ${escapeHtml(
                   player.username ||
-                  "Unknown"
+                    "Unknown"
                 )}
               </strong>
 
@@ -1246,7 +1314,9 @@ async function loadLeaderboard() {
           </div>
         `;
 
-        container.appendChild(row);
+        container.appendChild(
+          row
+        );
       }
     );
   } catch (error) {
@@ -1266,7 +1336,9 @@ async function loadLeaderboard() {
 
 function openChat() {
   $("chatPanel")
-    ?.classList.add("mobile-open");
+    ?.classList.add(
+      "mobile-open"
+    );
 
   if ($("chatInput")) {
     $("chatInput").placeholder =
@@ -1280,7 +1352,9 @@ function openChat() {
 
 function closeChat() {
   $("chatPanel")
-    ?.classList.remove("mobile-open");
+    ?.classList.remove(
+      "mobile-open"
+    );
 }
 
 $("chatClose")?.addEventListener(
@@ -1288,41 +1362,46 @@ $("chatClose")?.addEventListener(
   closeChat
 );
 
-$("mobileChatButton")?.addEventListener(
-  "click",
-  () => {
-    $("chatPanel")
-      ?.classList.toggle(
-        "mobile-open"
-      );
+$("mobileChatButton")
+  ?.addEventListener(
+    "click",
+    () => {
+      $("chatPanel")
+        ?.classList.toggle(
+          "mobile-open"
+        );
 
-    loadChat();
-  }
-);
+      loadChat();
+    }
+  );
 
 async function loadOnlineCount() {
   try {
     const data =
-      await api("/chat/online");
+      await api(
+        "/chat/online"
+      );
 
     if ($("onlineCount")) {
-      $("onlineCount").textContent =
+      $("onlineCount")
+        .textContent =
         data.online ?? 0;
     }
 
     if ($("coinflipOnline")) {
-      $("coinflipOnline").textContent =
+      $("coinflipOnline")
+        .textContent =
         data.online ?? 0;
     }
   } catch {
     if ($("onlineCount")) {
-      $("onlineCount").textContent =
-        "--";
+      $("onlineCount")
+        .textContent = "--";
     }
 
     if ($("coinflipOnline")) {
-      $("coinflipOnline").textContent =
-        "--";
+      $("coinflipOnline")
+        .textContent = "--";
     }
   }
 }
@@ -1372,7 +1451,9 @@ function renderChat(messages) {
   messages.forEach(
     (message) => {
       const element =
-        document.createElement("div");
+        document.createElement(
+          "div"
+        );
 
       element.className =
         "chat-message";
@@ -1382,7 +1463,7 @@ function renderChat(messages) {
           class="chat-avatar"
           src="${escapeAttr(
             message.avatar ||
-            "/logo.png"
+              "/logo.png"
           )}"
           alt=""
           onerror="this.src='/logo.png'"
@@ -1393,7 +1474,7 @@ function renderChat(messages) {
           <div class="chat-username">
             ${escapeHtml(
               message.username ||
-              "User"
+                "User"
             )}
           </div>
 
@@ -1406,7 +1487,9 @@ function renderChat(messages) {
         </div>
       `;
 
-      container.appendChild(element);
+      container.appendChild(
+        element
+      );
     }
   );
 
@@ -1420,10 +1503,14 @@ $("chatForm")?.addEventListener(
     event.preventDefault();
 
     if (!state.user) {
-      toast("Sign in to chat.");
+      toast(
+        "Sign in to chat."
+      );
 
       $("loginModal")
-        ?.classList.remove("hidden");
+        ?.classList.remove(
+          "hidden"
+        );
 
       return;
     }
@@ -1463,7 +1550,7 @@ $("chatForm")?.addEventListener(
     } catch (error) {
       toast(
         error.message ||
-        "Could not send message."
+          "Could not send message."
       );
     }
   }
@@ -1477,7 +1564,9 @@ $("rulesBtn")?.addEventListener(
   "click",
   () => {
     $("rulesModal")
-      ?.classList.remove("hidden");
+      ?.classList.remove(
+        "hidden"
+      );
   }
 );
 
@@ -1485,7 +1574,9 @@ $("closeRules")?.addEventListener(
   "click",
   () => {
     $("rulesModal")
-      ?.classList.add("hidden");
+      ?.classList.add(
+        "hidden"
+      );
   }
 );
 
@@ -1498,7 +1589,9 @@ $("profileBtn")?.addEventListener(
   () => {
     if (!state.user) {
       $("loginModal")
-        ?.classList.remove("hidden");
+        ?.classList.remove(
+          "hidden"
+        );
 
       return;
     }
@@ -1546,7 +1639,6 @@ function renderProfile() {
 
     </div>
 
-
     <div class="profile-grid">
 
       <div class="profile-card">
@@ -1555,9 +1647,10 @@ function renderProfile() {
           class="profile-avatar"
           src="${escapeAttr(
             state.user.avatar ||
-            "/logo.png"
+              "/logo.png"
           )}"
           alt=""
+          onerror="this.src='/logo.png'"
         >
 
         <h2>
@@ -1575,49 +1668,34 @@ function renderProfile() {
 
       </div>
 
-
       <div class="profile-stat">
-
-        <span>
-          Balance
-        </span>
+        <span>Balance</span>
 
         <strong>
           ${formatValue(
             state.user.balance
           )}
         </strong>
-
       </div>
 
-
       <div class="profile-stat">
-
-        <span>
-          Wagered
-        </span>
+        <span>Wagered</span>
 
         <strong>
           ${formatValue(
             state.user.wagered
           )}
         </strong>
-
       </div>
 
-
       <div class="profile-stat">
-
-        <span>
-          Profit
-        </span>
+        <span>Profit</span>
 
         <strong>
           ${formatValue(
             state.user.profit
           )}
         </strong>
-
       </div>
 
     </div>
