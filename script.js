@@ -124,7 +124,13 @@ function openPage(page){
 
 function setupNavigation(){
   $$(".nav-item").forEach(button => {
-    button.addEventListener("click", () => openPage(button.dataset.page));
+    button.addEventListener("click", () => {
+      if(button.id === "topChatButton"){
+        toggleChat();
+        return;
+      }
+      openPage(button.dataset.page);
+    });
   });
 
   $$(".brand").forEach(brand => {
@@ -134,13 +140,20 @@ function setupNavigation(){
     });
   });
 
+  // Do not use #chat. Chat is a panel controlled only by the top Chat button.
   window.addEventListener("hashchange", () => {
     const page = location.hash.replace("#","") || "coinflip";
+    if(page === "chat"){
+      history.replaceState(null, "", location.pathname + location.search);
+      openPage("coinflip");
+      closeChat();
+      return;
+    }
     if(pages[page]) openPage(page);
   });
 
   const initial = location.hash.replace("#","") || "coinflip";
-  openPage(pages[initial] ? initial : "coinflip");
+  openPage(pages[initial] && initial !== "chat" ? initial : "coinflip");
 }
 
 /* ========================= LOGIN ========================= */
@@ -184,6 +197,51 @@ function setupLoginEvents(){
   el("verify")?.addEventListener("click", verifyRobloxBio);
 }
 
+function makeVerificationPhrase(){
+  const words = [
+    "silver","tiger","nova","pixel","shadow","comet","ember","frost",
+    "orbit","neon","rocket","storm","velvet","lunar","maple","swift",
+    "cosmic","prism","thunder","cobalt","sunset","raven","mint","blaze"
+  ];
+
+  const pick = () => words[Math.floor(Math.random() * words.length)];
+  const number = String(Math.floor(1000 + Math.random() * 9000));
+
+  return `admflip-${pick()}-${pick()}-${number}`;
+}
+
+async function robloxLookup(username){
+  const response = await fetch("https://users.roblox.com/v1/usernames/users", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      usernames: [username],
+      excludeBannedUsers: false
+    })
+  });
+
+  if(!response.ok){
+    throw new Error("Roblox user search failed.");
+  }
+
+  const data = await response.json();
+  const match = data?.data?.[0];
+
+  if(!match?.id){
+    throw new Error("Roblox user not found.");
+  }
+
+  const userResponse = await fetch(
+    `https://users.roblox.com/v1/users/${encodeURIComponent(match.id)}`
+  );
+
+  if(!userResponse.ok){
+    throw new Error("Could not load the Roblox profile.");
+  }
+
+  return await userResponse.json();
+}
+
 async function startVerification(){
   const input = el("username");
   const message = el("loginMessage");
@@ -199,40 +257,16 @@ async function startVerification(){
   if(message) message.textContent = "Searching Roblox...";
 
   try{
-    const userData = await api(`/user/${encodeURIComponent(username)}`);
-    const robloxUser = userData?.user || userData?.data || userData;
-
-    if(!robloxUser || !(robloxUser.id || robloxUser.userId)){
-      throw new Error("Roblox user not found.");
-    }
+    const robloxUser = await robloxLookup(username);
 
     state.verification = {
-      username,
+      username: robloxUser.name || username,
       robloxUser,
-      phrase: null
+      phrase: makeVerificationPhrase()
     };
 
     renderLoginProfile(robloxUser);
-
-    if(message) message.textContent = "Creating your verification phrase...";
-
-    const createData = await api("/create", {
-      method:"POST",
-      body:JSON.stringify({
-        username,
-        userId:robloxUser.id || robloxUser.userId
-      })
-    });
-
-    const phrase =
-      createData?.phrase ||
-      createData?.code ||
-      createData?.verification;
-
-    if(!phrase) throw new Error("The server did not return a verification phrase.");
-
-    state.verification.phrase = phrase;
-    renderPhrase(phrase);
+    renderPhrase(state.verification.phrase);
 
     const verify = el("verify");
     if(verify){
@@ -243,11 +277,11 @@ async function startVerification(){
 
     if(message){
       message.textContent =
-        "Copy the phrase into your Roblox profile bio, then click Verify.";
+        "Put the exact phrase into your Roblox profile About/Bio, then click Verify.";
     }
 
   }catch(error){
-    console.error("ADMFLIP login:", error);
+    console.error("ADMFLIP Roblox lookup:", error);
     if(message) message.textContent = error.message || "Unable to find Roblox account.";
   }
 }
@@ -257,6 +291,7 @@ function renderLoginProfile(user){
   if(!box) return;
 
   const username = user.username || user.name || "Roblox User";
+  const userId = user.id || user.userId || "";
   const avatar = user.avatar || user.avatarUrl || user.thumbnail || user.image || "/logo.png";
 
   box.innerHTML = `
@@ -267,7 +302,7 @@ function renderLoginProfile(user){
       <div>
         <strong style="display:block;font-size:13px">${escapeHTML(username)}</strong>
         <span style="display:block;margin-top:3px;color:var(--muted);font-size:10px">
-          Roblox account found
+          Roblox account found · ID ${escapeHTML(userId)}
         </span>
       </div>
     </div>`;
@@ -286,7 +321,7 @@ function renderPhrase(phrase){
       ${escapeHTML(phrase)}
     </strong>
     <p style="margin-top:9px;color:var(--muted);font-size:10px">
-      Copy this exact phrase into your Roblox profile bio.
+      Copy this exact phrase into your Roblox profile About/Bio.
     </p>`;
   show(box);
 }
@@ -295,7 +330,7 @@ async function verifyRobloxBio(){
   const message = el("loginMessage");
   const button = el("verify");
 
-  if(!state.verification?.username || !state.verification?.phrase){
+  if(!state.verification?.robloxUser?.id || !state.verification?.phrase){
     if(message) message.textContent = "Search for your Roblox username first.";
     return;
   }
@@ -307,41 +342,58 @@ async function verifyRobloxBio(){
   if(message) message.textContent = "Checking your Roblox profile bio...";
 
   try{
-    const result = await api("/check", {
-      method:"POST",
-      body:JSON.stringify({
-        username:state.verification.username,
-        phrase:state.verification.phrase,
-        userId:state.verification.robloxUser.id || state.verification.robloxUser.userId
-      })
-    });
+    // Re-fetch the public profile so the verification uses the latest bio.
+    const userId = state.verification.robloxUser.id;
+    const response = await fetch(
+      `https://users.roblox.com/v1/users/${encodeURIComponent(userId)}`
+    );
 
-    const verified =
-      result?.success === true ||
-      result?.verified === true ||
-      result?.valid === true ||
-      result?.ok === true;
+    if(!response.ok){
+      throw new Error("Could not check the Roblox profile.");
+    }
 
-    if(!verified){
+    const latestUser = await response.json();
+    const description = String(latestUser?.description || "");
+    const phrase = state.verification.phrase;
+
+    if(!description.toLowerCase().includes(phrase.toLowerCase())){
       throw new Error(
-        result?.message ||
-        "The verification phrase was not found in your Roblox bio."
+        "Verification phrase was not found in your Roblox bio. Add it exactly, save your profile, then try again."
       );
     }
 
-    const verifiedUser =
-      result?.user ||
-      result?.account ||
-      result?.data ||
-      state.verification.robloxUser;
-
     state.user = {
-      ...verifiedUser,
-      username:verifiedUser?.username || state.verification.username,
-      id:verifiedUser?.id || verifiedUser?.userId || state.verification.robloxUser.id,
-      avatar:verifiedUser?.avatar || verifiedUser?.avatarUrl ||
-        state.verification.robloxUser.avatar || "/logo.png"
+      username: latestUser.name || state.verification.username,
+      displayName: latestUser.displayName || latestUser.name || state.verification.username,
+      id: latestUser.id,
+      avatar: latestUser.avatar || latestUser.avatarUrl || "/logo.png",
+      verified: true
     };
+
+    // Keep your backend available for account/session creation if it supports it.
+    // This is deliberately best-effort and never sends a password or cookie.
+    try{
+      const account = await api("/check", {
+        method:"POST",
+        body:JSON.stringify({
+          username: state.user.username,
+          userId: state.user.id,
+          phrase
+        })
+      });
+
+      if(account?.user || account?.account || account?.data){
+        const backendUser = account.user || account.account || account.data;
+        state.user = {
+          ...state.user,
+          ...backendUser,
+          username: backendUser.username || state.user.username,
+          id: backendUser.id || backendUser.userId || state.user.id
+        };
+      }
+    }catch(backendError){
+      console.warn("ADMFLIP backend account sync skipped:", backendError);
+    }
 
     saveUser();
     updateAccountUI();
@@ -859,6 +911,7 @@ function openChat(){
   panel.classList.add("open");
   overlay?.classList.add("open");
   state.chatOpen = true;
+  el("topChatButton")?.classList.add("active");
   loadChat();
 }
 
@@ -866,6 +919,15 @@ function closeChat(){
   el("chatPanel")?.classList.remove("open");
   el("chatOverlay")?.classList.remove("open");
   state.chatOpen = false;
+  el("topChatButton")?.classList.remove("active");
+}
+
+function toggleChat(){
+  if(state.chatOpen){
+    closeChat();
+  }else{
+    openChat();
+  }
 }
 
 function setupChat(){
@@ -877,9 +939,6 @@ function setupChat(){
   el("rulesBtn")?.addEventListener("click",openRules);
 
   createChatPanel();
-
-  const button = el("mobileChatButton");
-  if(button) button.addEventListener("click",openChat);
 }
 
 /* ========================= INVENTORY ========================= */
