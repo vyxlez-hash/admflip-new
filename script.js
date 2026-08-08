@@ -1,1255 +1,2035 @@
-const BACKEND = "https://admflip-new.onrender.com";
-
-const $ = id => document.getElementById(id);
+const BACKEND = window.location.origin;
 
 
-/* =========================
-   STATE
-========================= */
+// =====================================================
+// ELEMENTS
+// =====================================================
 
-let currentUser =
-    JSON.parse(localStorage.getItem("admflipUser") || "null");
+const loginBtn =
+  document.getElementById("loginBtn");
 
-let authToken =
-    localStorage.getItem("admflipToken") || "";
+const logoutBtn =
+  document.getElementById("logoutBtn");
 
-let currentPage =
-    localStorage.getItem("admflipPage") || "coinflip";
+const modal =
+  document.getElementById("modal");
 
-let chatOpen =
-    localStorage.getItem("admflipChatOpen") === "true";
+const modalClose =
+  document.getElementById("modalClose");
 
-let selectedPet = null;
-let selectedSide = null;
+const usernameInput =
+  document.getElementById("username");
+
+const profile =
+  document.getElementById("profile");
+
+const phraseText =
+  document.getElementById("phrase");
+
+const verifyBtn =
+  document.getElementById("verify");
+
+const loginMessage =
+  document.getElementById("loginMessage");
+
+const chatPage =
+  document.getElementById("chatPage");
+
+const chatClose =
+  document.getElementById("chatClose");
+
+const chatMessages =
+  document.getElementById("chatMessages");
+
+const chatInput =
+  document.getElementById("chatInput");
+
+const sendChatBtn =
+  document.getElementById("sendChatBtn");
+
+const rulesBtn =
+  document.getElementById("rulesBtn");
+
+const rulesPopup =
+  document.getElementById("rulesPopup");
+
+const rulesClose =
+  document.getElementById("rulesClose");
+
+const onlineCount =
+  document.getElementById("onlineCount");
+
+const createFlipBtn =
+  document.getElementById("createFlipBtn");
+
+const createModal =
+  document.getElementById("createModal");
+
+const createClose =
+  document.getElementById("createClose");
+
+const inventoryForFlip =
+  document.getElementById("inventoryForFlip");
+
+const submitFlip =
+  document.getElementById("submitFlip");
+
+const flipMessage =
+  document.getElementById("flipMessage");
+
+const coinflipList =
+  document.getElementById("coinflipList");
+
+const leaderboard =
+  document.getElementById("leaderboard");
+
+const valuesList =
+  document.getElementById("valuesList");
+
+const petSearch =
+  document.getElementById("petSearch");
+
+
+// =====================================================
+// STATE
+// =====================================================
+
+let currentUser = null;
+
+let phrase = "";
 
 let pets = [];
 
+let selectedPet = null;
 
-/* =========================
-   UI MESSAGE
-========================= */
+let selectedSide = null;
 
-let toastTimer;
+let chatOpen = false;
 
-function message(text){
 
-    const toast = $("toast");
+// =====================================================
+// SAFE HTML
+// =====================================================
 
-    toast.textContent = text;
-    toast.classList.add("show");
+function escapeHTML(value) {
 
-    clearTimeout(toastTimer);
-
-    toastTimer = setTimeout(() => {
-        toast.classList.remove("show");
-    }, 3000);
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 
-/* =========================
-   API
-========================= */
+// =====================================================
+// SITE MESSAGE
+// =====================================================
 
-async function api(path, options = {}){
+function message(element, text, type = "") {
 
-    const headers = {
-        ...(options.headers || {})
-    };
+  if (!element) return;
 
-    if(authToken){
-        headers.Authorization = `Bearer ${authToken}`;
+  element.textContent = text;
+
+  element.className =
+    "site-message " + type;
+}
+
+
+// =====================================================
+// LOGIN RESTORE
+// =====================================================
+
+const savedUser =
+  localStorage.getItem("admflipUser");
+
+if (savedUser) {
+
+  try {
+
+    currentUser =
+      JSON.parse(savedUser);
+
+    if (
+      currentUser &&
+      currentUser.id
+    ) {
+
+      showUser();
+
+    } else {
+
+      localStorage.removeItem(
+        "admflipUser"
+      );
+
+      currentUser = null;
+
     }
 
-    if(options.body && !headers["Content-Type"]){
-        headers["Content-Type"] = "application/json";
-    }
+  } catch {
 
-    const response = await fetch(
-        BACKEND + path,
-        {
-            ...options,
-            headers
-        }
+    localStorage.removeItem(
+      "admflipUser"
     );
 
-    let data;
-
-    try{
-        data = await response.json();
-    }
-    catch{
-        throw new Error("Invalid server response");
-    }
-
-    if(!response.ok){
-        throw new Error(
-            data.message || "Server error"
-        );
-    }
-
-    return data;
+  }
 }
 
 
-/* =========================
-   LOGIN
-========================= */
+// =====================================================
+// SHOW USER
+// =====================================================
 
-function updateAccount(){
+function showUser() {
 
-    if(currentUser){
+  if (!currentUser) return;
 
-        $("loginBtn").innerHTML = `
-            <span>${escapeHtml(currentUser.username)}</span>
-        `;
 
-        $("logoutBtn").classList.remove("hidden");
+  const avatar =
+    currentUser.avatar ||
+    "/roblox.png";
 
-    }else{
 
-        $("loginBtn").innerHTML = `
-            <span>Sign In</span>
-        `;
+  loginBtn.innerHTML = `
 
-        $("logoutBtn").classList.add("hidden");
-    }
+    <img
+      src="${escapeHTML(avatar)}"
+      alt=""
+    >
+
+    <span>
+      ${escapeHTML(
+        currentUser.username
+      )}
+    </span>
+
+  `;
+
+
+  loginBtn.classList.add(
+    "logged"
+  );
+
+
+  logoutBtn.style.display =
+    "block";
 }
 
 
-$("loginBtn").onclick = () => {
+// =====================================================
+// LOGIN MODAL
+// =====================================================
 
-    if(currentUser){
+loginBtn.onclick = () => {
 
-        message("You are already signed in.");
+  if (currentUser) {
+    return;
+  }
 
-        return;
-    }
+  modal.classList.add("show");
 
-    $("loginModal").classList.remove("hidden");
+  usernameInput.focus();
 };
 
 
-$("closeLoginBtn").onclick = () => {
+modalClose.onclick = () => {
 
-    $("loginModal").classList.add("hidden");
+  modal.classList.remove(
+    "show"
+  );
+
 };
 
 
-$("findUserBtn").onclick = async () => {
+modal.onclick = (event) => {
+
+  if (
+    event.target === modal
+  ) {
+
+    modal.classList.remove(
+      "show"
+    );
+
+  }
+
+};
+
+
+// =====================================================
+// ROBLOX USER LOOKUP
+// =====================================================
+
+usernameInput.onchange =
+  async () => {
 
     const username =
-        $("usernameInput").value.trim();
+      usernameInput.value.trim();
 
-    if(!username){
 
-        message("Enter your Roblox username.");
-
-        return;
+    if (!username) {
+      return;
     }
 
-    $("findUserBtn").disabled = true;
-    $("findUserBtn").textContent = "Checking...";
-
-    try{
-
-        const data =
-            await api(
-                `/user/${encodeURIComponent(username)}`
-            );
-
-        if(!data.success){
-
-            message(
-                data.message ||
-                "Roblox user was not found."
-            );
-
-            return;
-        }
-
-        $("loginProfile").innerHTML = `
-            <div class="message" style="margin:15px 0">
-                <img
-                    class="messageAvatar"
-                    src="${safeUrl(data.user.avatar)}"
-                >
-                <div class="messageBody">
-                    <div class="messageName">
-                        ${escapeHtml(data.user.username)}
-                    </div>
-                    <div class="messageText">
-                        Put the verification phrase in your Roblox bio.
-                    </div>
-                </div>
-            </div>
-        `;
-
-        const phraseData =
-            await api("/create");
-
-        $("phraseBox").classList.remove("hidden");
-
-        $("phraseBox").innerHTML = `
-            Put this phrase in your Roblox bio:
-            <br><br>
-            <strong>${escapeHtml(
-                phraseData.phrase
-            )}</strong>
-        `;
-
-        $("verifyBtn").classList.remove("hidden");
-
-        $("verifyBtn").dataset.username =
-            data.user.username;
-
-        $("verifyBtn").dataset.phrase =
-            phraseData.phrase;
-
-    }
-    catch(error){
-
-        message(error.message);
-
-    }
-    finally{
-
-        $("findUserBtn").disabled = false;
-        $("findUserBtn").textContent = "Continue";
-
-    }
-};
-
-
-$("verifyBtn").onclick = async () => {
-
-    const username =
-        $("verifyBtn").dataset.username;
-
-    const phrase =
-        $("verifyBtn").dataset.phrase;
-
-    $("verifyBtn").disabled = true;
-    $("verifyBtn").textContent = "Verifying...";
-
-    try{
-
-        const data =
-            await api(
-                "/check",
-                {
-                    method:"POST",
-                    body:JSON.stringify({
-                        username,
-                        phrase
-                    })
-                }
-            );
-
-        if(!data.success){
-
-            message(
-                data.message ||
-                "Verification phrase was not found."
-            );
-
-            return;
-        }
-
-        /*
-         * Backend returns JWT.
-         */
-
-        if(data.token){
-
-            authToken = data.token;
-
-            localStorage.setItem(
-                "admflipToken",
-                authToken
-            );
-        }
-
-        currentUser = data.user || {
-            id:data.id,
-            username:data.username
-        };
-
-        localStorage.setItem(
-            "admflipUser",
-            JSON.stringify(currentUser)
-        );
-
-        updateAccount();
-
-        $("loginModal").classList.add("hidden");
-
-        message("Signed in successfully.");
-
-        loadCoinflips();
-
-        loadChat();
-
-    }
-    catch(error){
-
-        message(error.message);
-
-    }
-    finally{
-
-        $("verifyBtn").disabled = false;
-        $("verifyBtn").textContent = "Verify Roblox";
-
-    }
-};
-
-
-$("logoutBtn").onclick = () => {
-
-    currentUser = null;
-    authToken = "";
-
-    localStorage.removeItem("admflipUser");
-    localStorage.removeItem("admflipToken");
-
-    updateAccount();
-
-    message("Signed out.");
-
-    loadCoinflips();
-};
-
-
-/* =========================
-   PAGE NAVIGATION
-========================= */
-
-function showPage(page){
-
-    currentPage = page;
-
-    localStorage.setItem(
-        "admflipPage",
-        page
-    );
-
-    document
-        .querySelectorAll(".page")
-        .forEach(x => x.classList.add("hidden"));
-
-    const element =
-        $(
-            page === "coinflip"
-                ? "coinflipPage"
-                : page === "values"
-                    ? "valuesPage"
-                    : page === "leaderboard"
-                        ? "leaderboardPage"
-                        : "chatPage"
-        );
-
-    element.classList.remove("hidden");
-
-    document
-        .querySelectorAll(".nav button")
-        .forEach(button => {
-
-            button.classList.toggle(
-                "active",
-                button.dataset.page === page
-            );
-
-        });
-
-    if(page === "coinflip"){
-        loadCoinflips();
-    }
-
-    if(page === "values"){
-        loadValues();
-    }
-
-    if(page === "leaderboard"){
-        loadLeaderboard();
-    }
-
-    if(page === "chat"){
-        openChat();
-    }
-}
-
-
-document
-    .querySelectorAll(".nav button")
-    .forEach(button => {
-
-        button.onclick = () => {
-
-            const page =
-                button.dataset.page;
-
-            showPage(page);
-
-            if(page !== "chat" && chatOpen){
-                closeChat();
-            }
-        };
-    });
-
-
-/* =========================
-   CHAT
-========================= */
-
-function openChat(){
-
-    chatOpen = true;
-
-    localStorage.setItem(
-        "admflipChatOpen",
-        "true"
-    );
-
-    $("chatPanel").classList.add("open");
-
-    loadChat();
-}
-
-
-function closeChat(){
-
-    chatOpen = false;
-
-    localStorage.setItem(
-        "admflipChatOpen",
-        "false"
-    );
-
-    $("chatPanel").classList.remove("open");
-}
-
-
-$("closeChatBtn").onclick =
-    closeChat;
-
-
-$("mobileChatBtn").onclick = () => {
-
-    if(chatOpen){
-        closeChat();
-    }else{
-        openChat();
-    }
-};
-
-
-$("openChatBtn").onclick =
-    openChat;
-
-
-$("rulesBtn").onclick = () => {
-
-    $("rulesBox").classList.toggle(
-        "hidden"
-    );
-};
-
-
-$("chatForm").onsubmit = async event => {
-
-    event.preventDefault();
-
-    if(!currentUser || !authToken){
-
-        message(
-            "Sign in first to chat."
-        );
-
-        $("loginModal").classList.remove(
-            "hidden"
-        );
-
-        return;
-    }
-
-    const input =
-        $("chatInput");
-
-    const text =
-        input.value.trim();
-
-    if(!text){
-        return;
-    }
-
-    try{
-
-        await api(
-            "/chat",
-            {
-                method:"POST",
-                body:JSON.stringify({
-                    text
-                })
-            }
-        );
-
-        input.value = "";
-
-        loadChat();
-
-    }
-    catch(error){
-
-        message(error.message);
-
-    }
-};
-
-
-async function loadChat(){
-
-    try{
-
-        const data =
-            await api("/chat");
-
-        renderChat(
-            data.messages || []
-        );
-
-        if(
-            data.announcement
-        ){
-
-            renderAnnouncement(
-                data.announcement
-            );
-        }
-
-        if(
-            typeof data.online === "number"
-        ){
-
-            $("onlineCount").textContent =
-                data.online;
-        }
-
-    }
-    catch(error){
-
-        console.log(error);
-    }
-}
-
-
-function renderAnnouncement(text){
-
-    const container =
-        $("chatMessages");
-
-    const existing =
-        container.querySelector(
-            ".announcement"
-        );
-
-    if(existing){
-        existing.remove();
-    }
-
-    container.insertAdjacentHTML(
-        "afterbegin",
-        `
-        <div class="announcement">
-            <div class="announcementTitle">
-                ADMFLIP
-            </div>
-            <div>
-                ${escapeHtml(text)}
-            </div>
-        </div>
-        `
-    );
-}
-
-
-function renderChat(messages){
-
-    const container =
-        $("chatMessages");
-
-    const announcement =
-        container.querySelector(
-            ".announcement"
-        );
-
-    container.innerHTML = "";
-
-    if(announcement){
-        container.appendChild(
-            announcement
-        );
-    }
-
-    for(const msg of messages){
-
-        const avatar =
-            safeUrl(
-                msg.avatar ||
-                "logo.png"
-            );
-
-        container.insertAdjacentHTML(
-            "beforeend",
-            `
-            <div class="message">
-
-                <img
-                    class="messageAvatar"
-                    src="${avatar}"
-                >
-
-                <div class="messageBody">
-
-                    <div class="messageTop">
-
-                        <span class="messageName">
-                            ${escapeHtml(
-                                msg.username
-                            )}
-                        </span>
-
-                        <span class="messageTime">
-                            ${formatTime(
-                                msg.createdAt
-                            )}
-                        </span>
-
-                    </div>
-
-                    <div class="messageText">
-                        ${escapeHtml(
-                            msg.text
-                        )}
-                    </div>
-
-                </div>
-
-            </div>
-            `
-        );
-    }
-
-    container.scrollTop =
-        container.scrollHeight;
-}
-
-
-/* =========================
-   VALUES
-========================= */
-
-async function loadValues(){
-
-    if(pets.length){
-
-        renderPets();
-
-        return;
-    }
-
-    $("petList").innerHTML =
-        `<div class="loading">
-            Loading values...
-        </div>`;
-
-    try{
-
-        const data =
-            await api("/pets");
-
-        pets =
-            data.pets || [];
-
-        renderPets();
-
-    }
-    catch(error){
-
-        $("petList").innerHTML =
-            `<div class="empty">
-                Unable to load pet values.
-            </div>`;
-
-        console.log(error);
-    }
-}
-
-
-function renderPets(){
-
-    const search =
-        $("petSearch").value
-            .trim()
-            .toLowerCase();
-
-    const filtered =
-        pets.filter(pet =>
-            pet.name
-                .toLowerCase()
-                .includes(search)
-        );
-
-    if(!filtered.length){
-
-        $("petList").innerHTML =
-            `<div class="empty">
-                No pets found.
-            </div>`;
-
-        return;
-    }
-
-    $("petList").innerHTML =
-        filtered.map(pet => {
-
-            const image =
-                pet.image ||
-                `${BACKEND}/pet-image/${encodeURIComponent(
-                    pet.name
-                )}`;
-
-            return `
-                <div class="petCard">
-
-                    <img
-                        class="petImage"
-                        src="${safeUrl(image)}"
-                        onerror="this.src='logo.png'"
-                    >
-
-                    <div>
-
-                        <div class="petName">
-                            ${escapeHtml(
-                                pet.name
-                            )}
-                        </div>
-
-                        <div class="petValue">
-                            ${formatValue(
-                                pet.value
-                            )}
-                        </div>
-
-                    </div>
-
-                </div>
-            `;
-
-        }).join("");
-}
-
-
-$("petSearch").oninput =
-    renderPets;
-
-
-/* =========================
-   COINFLIP
-========================= */
-
-$("createCoinflipBtn").onclick = async () => {
-
-    if(!currentUser || !authToken){
-
-        message(
-            "Sign in first to create a coinflip."
-        );
-
-        $("loginModal").classList.remove(
-            "hidden"
-        );
-
-        return;
-    }
-
-    $("coinflipModal")
-        .classList.remove("hidden");
-
-    await loadInventory();
-};
-
-
-$("closeCoinflipBtn").onclick = () => {
-
-    $("coinflipModal")
-        .classList.add("hidden");
-};
-
-
-async function loadInventory(){
-
-    $("createInventory").innerHTML =
-        `<div class="loading">
-            Loading inventory...
-        </div>`;
-
-    try{
-
-        const data =
-            await api("/inventory");
-
-        const inventory =
-            data.inventory || [];
-
-        if(!inventory.length){
-
-            $("createInventory").innerHTML =
-                `<div class="empty">
-                    You don't have any pets.
-                </div>`;
-
-            $("depositBtn")
-                .classList.remove("hidden");
-
-            return;
-        }
-
-        $("depositBtn")
-            .classList.add("hidden");
-
-        $("createInventory").innerHTML =
-            inventory.map((pet,index) => {
-
-                const image =
-                    pet.image ||
-                    `${BACKEND}/pet-image/${encodeURIComponent(
-                        pet.name
-                    )}`;
-
-                return `
-                    <button
-                        class="inventoryPet"
-                        data-index="${index}"
-                    >
-
-                        <img
-                            src="${safeUrl(image)}"
-                            onerror="this.src='logo.png'"
-                        >
-
-                        <div class="inventoryPetInfo">
-
-                            <strong>
-                                ${escapeHtml(
-                                    pet.name
-                                )}
-                            </strong>
-
-                            <div class="inventoryPetValue">
-                                ${formatValue(
-                                    pet.value
-                                )}
-                            </div>
-
-                        </div>
-
-                    </button>
-                `;
-
-            }).join("");
-
-        document
-            .querySelectorAll(".inventoryPet")
-            .forEach((button,index) => {
-
-                button.onclick = () => {
-
-                    document
-                        .querySelectorAll(
-                            ".inventoryPet"
-                        )
-                        .forEach(x =>
-                            x.classList.remove(
-                                "selected"
-                            )
-                        );
-
-                    button.classList.add(
-                        "selected"
-                    );
-
-                    selectedPet =
-                        inventory[index];
-                };
-            });
-
-    }
-    catch(error){
-
-        message(error.message);
-
-    }
-}
-
-
-document
-    .querySelectorAll(".sideBtn")
-    .forEach(button => {
-
-        button.onclick = () => {
-
-            document
-                .querySelectorAll(".sideBtn")
-                .forEach(x =>
-                    x.classList.remove(
-                        "selected"
-                    )
-                );
-
-            button.classList.add(
-                "selected"
-            );
-
-            selectedSide =
-                button.dataset.side;
-        };
-    });
-
-
-$("submitCoinflipBtn").onclick =
-    async () => {
-
-        if(!selectedPet){
-
-            message(
-                "Choose a pet first."
-            );
-
-            return;
-        }
-
-        if(!selectedSide){
-
-            message(
-                "Choose Heads or Tails."
-            );
-
-            return;
-        }
-
-        try{
-
-            await api(
-                "/coinflips",
-                {
-                    method:"POST",
-                    body:JSON.stringify({
-                        petId:selectedPet._id,
-                        side:selectedSide
-                    })
-                }
-            );
-
-            selectedPet = null;
-            selectedSide = null;
-
-            $("coinflipModal")
-                .classList.add("hidden");
-
-            message(
-                "Coinflip created."
-            );
-
-            loadCoinflips();
-
-        }
-        catch(error){
-
-            message(error.message);
-
-        }
-    };
-
-
-async function loadCoinflips(){
-
-    $("coinflipList").innerHTML =
-        `<div class="loading">
-            Loading active coinflips...
-        </div>`;
-
-    try{
-
-        const data =
-            await api("/coinflips");
-
-        const list =
-            data.coinflips || [];
-
-        if(!list.length){
-
-            $("coinflipList").innerHTML =
-                `<div class="empty">
-                    No active coinflips yet.
-                </div>`;
-
-            return;
-        }
-
-        $("coinflipList").innerHTML =
-            list.map(cf => {
-
-                const image =
-                    cf.pet?.image ||
-                    `${BACKEND}/pet-image/${encodeURIComponent(
-                        cf.pet?.name || ""
-                    )}`;
-
-                return `
-                    <div class="coinflip">
-
-                        <img
-                            class="coinflipPet"
-                            src="${safeUrl(image)}"
-                            onerror="this.src='logo.png'"
-                        >
-
-                        <div class="coinflipInfo">
-
-                            <div class="coinflipName">
-                                ${escapeHtml(
-                                    cf.username
-                                )}
-                            </div>
-
-                            <div class="coinflipMeta">
-                                ${escapeHtml(
-                                    cf.pet?.name || "Pet"
-                                )}
-                                ·
-                                ${formatValue(
-                                    cf.pet?.value || 0
-                                )}
-                            </div>
-
-                        </div>
-
-                        <div class="sideBadge">
-                            ${escapeHtml(
-                                cf.side
-                            )}
-                        </div>
-
-                    </div>
-                `;
-
-            }).join("");
-
-    }
-    catch(error){
-
-        $("coinflipList").innerHTML =
-            `<div class="empty">
-                Unable to load coinflips.
-            </div>`;
-
-        console.log(error);
-    }
-}
-
-
-/* =========================
-   LEADERBOARD
-========================= */
-
-async function loadLeaderboard(){
-
-    try{
-
-        const data =
-            await api("/leaderboard");
-
-        const users =
-            data.users || [];
-
-        if(!users.length){
-
-            $("leaderboardList").innerHTML =
-                `<div class="empty">
-                    No leaderboard data yet.
-                </div>`;
-
-            return;
-        }
-
-        $("leaderboardList").innerHTML =
-            users.map((user,index) => {
-
-                return `
-                    <div class="leader">
-
-                        <div class="rank">
-                            #${index + 1}
-                        </div>
-
-                        <img
-                            src="${safeUrl(
-                                user.avatar ||
-                                "logo.png"
-                            )}"
-                        >
-
-                        <div class="leaderName">
-                            ${escapeHtml(
-                                user.username
-                            )}
-                        </div>
-
-                        <div class="leaderValue">
-                            ${formatValue(
-                                user.wagered
-                            )}
-                        </div>
-
-                    </div>
-                `;
-
-            }).join("");
-
-    }
-    catch(error){
-
-        $("leaderboardList").innerHTML =
-            `<div class="empty">
-                Unable to load leaderboard.
-            </div>`;
-    }
-}
-
-
-/* =========================
-   DEPOSIT
-========================= */
-
-$("depositBtn").onclick = () => {
 
     message(
-        "Discord deposits are coming soon."
+      loginMessage,
+      "Checking Roblox username..."
     );
+
+
+    try {
+
+      const response =
+        await fetch(
+          `${BACKEND}/user/${encodeURIComponent(username)}`
+        );
+
+
+      const data =
+        await response.json();
+
+
+      if (!data.success) {
+
+        message(
+          loginMessage,
+          data.message ||
+          "Roblox username not found.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      currentUser =
+        data.user;
+
+
+      profile.classList.remove(
+        "hidden"
+      );
+
+
+      profile.innerHTML = `
+
+        <div class="login-profile">
+
+          <img
+            src="${
+              escapeHTML(
+                currentUser.avatar ||
+                "/roblox.png"
+              )
+            }"
+          >
+
+          <strong>
+            ${escapeHTML(
+              currentUser.username
+            )}
+          </strong>
+
+        </div>
+
+      `;
+
+
+      const phraseResponse =
+        await fetch(
+          `${BACKEND}/create`
+        );
+
+
+      const phraseData =
+        await phraseResponse.json();
+
+
+      phrase =
+        phraseData.phrase;
+
+
+      phraseText.classList.remove(
+        "hidden"
+      );
+
+
+      phraseText.innerHTML = `
+
+        <div class="verification-phrase">
+
+          Put this phrase in your Roblox bio:
+
+          <strong>
+            ${escapeHTML(phrase)}
+          </strong>
+
+        </div>
+
+      `;
+
+
+      verifyBtn.style.display =
+        "block";
+
+
+      message(
+        loginMessage,
+        "Add the phrase to your Roblox bio, then click Verify."
+      );
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      message(
+        loginMessage,
+        "Unable to contact the server. Try again.",
+        "error"
+      );
+
+    }
+
+  };
+
+
+// =====================================================
+// VERIFY
+// =====================================================
+
+verifyBtn.onclick =
+  async () => {
+
+    if (!currentUser) {
+
+      message(
+        loginMessage,
+        "Enter your Roblox username first.",
+        "error"
+      );
+
+      return;
+    }
+
+
+    verifyBtn.disabled =
+      true;
+
+    verifyBtn.textContent =
+      "Checking...";
+
+
+    try {
+
+      const response =
+        await fetch(
+          `${BACKEND}/check`,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body: JSON.stringify({
+
+              username:
+                currentUser.username,
+
+              phrase:
+                phrase
+
+            })
+
+          }
+        );
+
+
+      const data =
+        await response.json();
+
+
+      if (!data.success) {
+
+        message(
+          loginMessage,
+          data.message ||
+          "Verification phrase not found.",
+          "error"
+        );
+
+        verifyBtn.disabled =
+          false;
+
+        verifyBtn.textContent =
+          "Verify";
+
+        return;
+      }
+
+
+      currentUser = {
+
+        id: data.id,
+
+        username:
+          data.username,
+
+        avatar:
+          data.avatar ||
+          currentUser.avatar ||
+          ""
+
+      };
+
+
+      localStorage.setItem(
+        "admflipUser",
+        JSON.stringify(currentUser)
+      );
+
+
+      showUser();
+
+
+      modal.classList.remove(
+        "show"
+      );
+
+
+      usernameInput.value =
+        "";
+
+      profile.innerHTML =
+        "";
+
+      phraseText.innerHTML =
+        "";
+
+      profile.classList.add(
+        "hidden"
+      );
+
+      phraseText.classList.add(
+        "hidden"
+      );
+
+      verifyBtn.style.display =
+        "none";
+
+
+      message(
+        loginMessage,
+        ""
+      );
+
+
+      loadUserInventory();
+
+    } catch (error) {
+
+      console.error(error);
+
+      message(
+        loginMessage,
+        "Verification failed. Try again.",
+        "error"
+      );
+
+      verifyBtn.disabled =
+        false;
+
+      verifyBtn.textContent =
+        "Verify";
+    }
+
+  };
+
+
+// =====================================================
+// LOGOUT
+// =====================================================
+
+logoutBtn.onclick = () => {
+
+  localStorage.removeItem(
+    "admflipUser"
+  );
+
+
+  currentUser = null;
+
+  phrase = "";
+
+  loginBtn.innerHTML = `
+
+    <img
+      src="/roblox.png"
+      alt=""
+    >
+
+    <span>
+      Sign In
+    </span>
+
+  `;
+
+
+  loginBtn.classList.remove(
+    "logged"
+  );
+
+
+  logoutBtn.style.display =
+    "none";
+
 };
 
 
-/* =========================
-   ONLINE COUNT
-========================= */
+// =====================================================
+// PAGES
+// =====================================================
 
-async function loadOnline(){
+function showPage(page) {
 
-    try{
+  document
+    .querySelectorAll(".page")
+    .forEach(
+      section => {
 
-        const data =
-            await api("/status");
-
-        if(
-            typeof data.online === "number"
-        ){
-
-            $("onlineCount").textContent =
-                data.online;
+        if (
+          section.id === "chatPage"
+        ) {
+          return;
         }
 
-    }
-    catch{}
-}
+        section.classList.add(
+          "hidden"
+        );
 
-
-/* =========================
-   SECURITY HELPERS
-========================= */
-
-function escapeHtml(value){
-
-    return String(value ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-}
-
-
-function safeUrl(url){
-
-    const value =
-        String(url || "");
-
-    if(
-        value.startsWith("https://") ||
-        value.startsWith("http://") ||
-        value.startsWith("/")
-    ){
-
-        return value;
-    }
-
-    return "logo.png";
-}
-
-
-function formatValue(value){
-
-    const number =
-        Number(value) || 0;
-
-    return number.toLocaleString();
-}
-
-
-function formatTime(date){
-
-    if(!date){
-        return "";
-    }
-
-    const d =
-        new Date(date);
-
-    if(Number.isNaN(d.getTime())){
-        return "";
-    }
-
-    return d.toLocaleTimeString(
-        [],
-        {
-            hour:"2-digit",
-            minute:"2-digit"
-        }
+      }
     );
+
+
+  const target =
+    document.getElementById(
+      `${page}Page`
+    );
+
+
+  if (target) {
+
+    target.classList.remove(
+      "hidden"
+    );
+
+  }
+
+
+  localStorage.setItem(
+    "admflipPage",
+    page
+  );
+
+
+  if (page === "coinflip") {
+    loadCoinflips();
+  }
+
+  if (page === "values") {
+    loadValues();
+  }
+
+  if (page === "leaderboard") {
+    loadLeaderboard();
+  }
+
 }
 
 
-/* =========================
-   START
-========================= */
+// =====================================================
+// CHAT
+// =====================================================
 
-updateAccount();
+function openChat() {
 
-showPage(currentPage);
+  chatOpen = true;
 
-if(chatOpen){
+  localStorage.setItem(
+    "admflipChatOpen",
+    "true"
+  );
+
+
+  chatPage.classList.remove(
+    "hidden"
+  );
+
+  chatPage.classList.add(
+    "chat-open"
+  );
+
+
+  loadChat();
+}
+
+
+function closeChat() {
+
+  chatOpen = false;
+
+  localStorage.setItem(
+    "admflipChatOpen",
+    "false"
+  );
+
+
+  chatPage.classList.remove(
+    "chat-open"
+  );
+
+  chatPage.classList.add(
+    "hidden"
+  );
+
+}
+
+
+function toggleChat() {
+
+  if (chatOpen) {
+
+    closeChat();
+
+  } else {
+
     openChat();
+
+  }
+
 }
 
-loadOnline();
 
-setInterval(
-    loadChat,
-    8000
+chatClose.onclick =
+  closeChat;
+
+
+document
+  .querySelectorAll(
+    ".menu button"
+  )
+  .forEach(button => {
+
+    button.onclick = () => {
+
+      const page =
+        button.dataset.page;
+
+
+      if (page === "chat") {
+
+        toggleChat();
+
+        return;
+
+      }
+
+
+      closeChat();
+
+      showPage(page);
+
+    };
+
+  });
+
+
+// =====================================================
+// RESTORE PAGE
+// =====================================================
+
+const savedPage =
+  localStorage.getItem(
+    "admflipPage"
+  ) || "coinflip";
+
+
+if (
+  savedPage === "chat"
+) {
+
+  showPage("coinflip");
+
+} else {
+
+  showPage(savedPage);
+
+}
+
+
+if (
+  localStorage.getItem(
+    "admflipChatOpen"
+  ) === "true"
+) {
+
+  openChat();
+
+}
+
+
+// =====================================================
+// CHAT
+// =====================================================
+
+async function loadChat() {
+
+  try {
+
+    const response =
+      await fetch(
+        `${BACKEND}/chat`
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if (
+      !data.success
+    ) {
+
+      chatMessages.innerHTML =
+        `<div class="empty">
+          Unable to load community.
+        </div>`;
+
+      return;
+    }
+
+
+    if (
+      !data.messages.length
+    ) {
+
+      chatMessages.innerHTML =
+        `<div class="empty">
+          Welcome to ADMFLIP.
+        </div>`;
+
+      return;
+    }
+
+
+    chatMessages.innerHTML =
+      data.messages
+        .map(msg => `
+
+          <div class="chat-message">
+
+            <img
+              src="${
+                escapeHTML(
+                  msg.avatar ||
+                  "/roblox.png"
+                )
+              }"
+              onerror="
+                this.style.display='none'
+              "
+            >
+
+            <div>
+
+              <strong>
+                ${escapeHTML(
+                  msg.username
+                )}
+              </strong>
+
+              <p>
+                ${escapeHTML(
+                  msg.message
+                )}
+              </p>
+
+            </div>
+
+          </div>
+
+        `)
+        .join("");
+
+
+    chatMessages.scrollTop =
+      chatMessages.scrollHeight;
+
+
+  } catch (error) {
+
+    console.error(error);
+
+  }
+
+}
+
+
+sendChatBtn.onclick =
+  sendChat;
+
+
+chatInput.addEventListener(
+  "keydown",
+  event => {
+
+    if (
+      event.key === "Enter"
+    ) {
+
+      event.preventDefault();
+
+      sendChat();
+
+    }
+
+  }
 );
 
+
+async function sendChat() {
+
+  if (!currentUser) {
+
+    modal.classList.add(
+      "show"
+    );
+
+    message(
+      loginMessage,
+      "Sign in before using chat.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  const text =
+    chatInput.value.trim();
+
+
+  if (!text) {
+    return;
+  }
+
+
+  const linkPattern =
+    /(https?:\/\/|www\.|discord\.gg|t\.me|[a-z0-9-]+\.(com|net|org|gg|io|xyz|me|co|tv|ly)(\/|\b))/i;
+
+
+  if (
+    linkPattern.test(text)
+  ) {
+
+    chatInput.value =
+      "";
+
+    return;
+  }
+
+
+  sendChatBtn.disabled =
+    true;
+
+
+  try {
+
+    const response =
+      await fetch(
+        `${BACKEND}/chat`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+
+            robloxId:
+              currentUser.id,
+
+            message:
+              text
+
+          })
+
+        }
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if (
+      !data.success
+    ) {
+
+      return;
+    }
+
+
+    chatInput.value =
+      "";
+
+    await loadChat();
+
+
+  } catch (error) {
+
+    console.error(error);
+
+  } finally {
+
+    sendChatBtn.disabled =
+      false;
+
+  }
+
+}
+
+
+// =====================================================
+// RULES
+// =====================================================
+
+rulesBtn.onclick = () => {
+
+  rulesPopup.classList.remove(
+    "hidden"
+  );
+
+};
+
+
+rulesClose.onclick = () => {
+
+  rulesPopup.classList.add(
+    "hidden"
+  );
+
+};
+
+
+rulesPopup.onclick = event => {
+
+  if (
+    event.target === rulesPopup
+  ) {
+
+    rulesPopup.classList.add(
+      "hidden"
+    );
+
+  }
+
+};
+
+
+// =====================================================
+// ONLINE COUNT
+// =====================================================
+
+function updateOnlineCount() {
+
+  /*
+   * This is intentionally a stable-ish display.
+   * It does not jump randomly every refresh.
+   */
+
+  const saved =
+    Number(
+      localStorage.getItem(
+        "admflipOnlineCount"
+      )
+    );
+
+
+  let count =
+    Number.isFinite(saved)
+      ? saved
+      : 42;
+
+
+  const change =
+    Math.floor(
+      Math.random() * 5
+    ) - 2;
+
+
+  count += change;
+
+
+  count =
+    Math.max(
+      30,
+      Math.min(
+        54,
+        count
+      )
+    );
+
+
+  localStorage.setItem(
+    "admflipOnlineCount",
+    String(count)
+  );
+
+
+  onlineCount.textContent =
+    `${count} online`;
+
+}
+
+
+updateOnlineCount();
+
+
 setInterval(
-    loadOnline,
-    30000
+  updateOnlineCount,
+  65000
+);
+
+
+// =====================================================
+// VALUES
+// =====================================================
+
+async function loadValues() {
+
+  valuesList.innerHTML =
+    `<div class="loading">
+      Loading pet values...
+    </div>`;
+
+
+  try {
+
+    const response =
+      await fetch(
+        `${BACKEND}/pets`
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if (
+      !data.success
+    ) {
+
+      valuesList.innerHTML =
+        `<div class="empty">
+          Pet values are unavailable.
+        </div>`;
+
+      return;
+    }
+
+
+    pets =
+      data.pets || [];
+
+
+    renderValues(
+      pets
+    );
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    valuesList.innerHTML =
+      `<div class="empty">
+        Pet values are unavailable.
+      </div>`;
+
+  }
+
+}
+
+
+function renderValues(list) {
+
+  if (!list.length) {
+
+    valuesList.innerHTML =
+      `<div class="empty">
+        No pet values found.
+      </div>`;
+
+    return;
+  }
+
+
+  valuesList.innerHTML =
+    list.map(pet => {
+
+      const images =
+        Array.isArray(
+          pet.images
+        )
+          ? pet.images
+          : [];
+
+
+      const image =
+        images[0] || "";
+
+
+      return `
+
+        <div class="value-card">
+
+          <div class="pet-image-wrap">
+
+            ${
+              image
+                ? `
+                  <img
+                    class="pet-image"
+                    src="${escapeHTML(image)}"
+                    alt=""
+                    data-images="${escapeHTML(
+                      JSON.stringify(images)
+                    )}"
+                    onerror="tryNextPetImage(this)"
+                  >
+                `
+                : ""
+            }
+
+          </div>
+
+
+          <div class="pet-info">
+
+            <strong>
+              ${escapeHTML(
+                cleanPetDisplayName(
+                  pet.name
+                )
+              )}
+            </strong>
+
+            <span>
+              ${formatValue(
+                pet.value
+              )}
+            </span>
+
+          </div>
+
+        </div>
+
+      `;
+
+    }).join("");
+
+}
+
+
+function cleanPetDisplayName(name) {
+
+  return String(name || "")
+    .replace(
+      /\b(ride|fly|neon|mega neon)\b/gi,
+      ""
+    )
+    .replace(
+      /\s+/g,
+      " "
+    )
+    .trim();
+
+}
+
+
+function formatValue(value) {
+
+  const number =
+    Number(value);
+
+
+  if (
+    !Number.isFinite(number)
+  ) {
+
+    return "N/A";
+
+  }
+
+
+  return number.toLocaleString();
+
+}
+
+
+window.tryNextPetImage =
+  function(img) {
+
+    try {
+
+      const images =
+        JSON.parse(
+          img.dataset.images ||
+          "[]"
+        );
+
+
+      const current =
+        Number(
+          img.dataset.index ||
+          0
+        );
+
+
+      const next =
+        current + 1;
+
+
+      if (
+        next >= images.length
+      ) {
+
+        img.style.display =
+          "none";
+
+        return;
+
+      }
+
+
+      img.dataset.index =
+        String(next);
+
+      img.src =
+        images[next];
+
+
+    } catch {
+
+      img.style.display =
+        "none";
+
+    }
+
+  };
+
+
+// =====================================================
+// SEARCH VALUES
+// =====================================================
+
+petSearch.addEventListener(
+  "input",
+  () => {
+
+    const query =
+      petSearch.value
+        .trim()
+        .toLowerCase();
+
+
+    const filtered =
+      pets.filter(
+        pet =>
+          pet.name
+            .toLowerCase()
+            .includes(query)
+      );
+
+
+    renderValues(
+      filtered
+    );
+
+  }
+);
+
+
+// =====================================================
+// LEADERBOARD
+// =====================================================
+
+async function loadLeaderboard() {
+
+  leaderboard.innerHTML =
+    `<div class="loading">
+      Loading leaderboard...
+    </div>`;
+
+
+  try {
+
+    const response =
+      await fetch(
+        `${BACKEND}/leaderboard`
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if (
+      !data.success ||
+      !data.users?.length
+    ) {
+
+      leaderboard.innerHTML =
+        `<div class="empty">
+          No wagered players yet.
+        </div>`;
+
+      return;
+    }
+
+
+    leaderboard.innerHTML =
+      data.users
+        .slice(0, 10)
+        .map(
+          (user, index) => {
+
+            const place =
+              index + 1;
+
+
+            return `
+
+              <div
+                class="
+                  leaderboard-row
+                  place-${place}
+                "
+              >
+
+                <div
+                  class="rank"
+                >
+                  ${place}
+                </div>
+
+
+                <img
+                  src="${
+                    escapeHTML(
+                      user.avatar ||
+                      "/roblox.png"
+                    )
+                  }"
+                  onerror="
+                    this.src='/roblox.png'
+                  "
+                >
+
+
+                <div
+                  class="leader-user"
+                >
+
+                  <strong>
+                    ${escapeHTML(
+                      user.username
+                    )}
+                  </strong>
+
+                  <span>
+                    Wagered
+                  </span>
+
+                </div>
+
+
+                <div
+                  class="leader-value"
+                >
+                  ${formatValue(
+                    user.wagered
+                  )}
+                </div>
+
+              </div>
+
+            `;
+
+          }
+        )
+        .join("");
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    leaderboard.innerHTML =
+      `<div class="empty">
+        Unable to load leaderboard.
+      </div>`;
+
+  }
+
+}
+
+
+// =====================================================
+// CREATE COINFLIP
+// =====================================================
+
+createFlipBtn.onclick =
+  async () => {
+
+    if (!currentUser) {
+
+      modal.classList.add(
+        "show"
+      );
+
+      message(
+        loginMessage,
+        "Sign in before creating a coinflip.",
+        "error"
+      );
+
+      return;
+    }
+
+
+    createModal.classList.remove(
+      "hidden"
+    );
+
+
+    selectedPet =
+      null;
+
+    selectedSide =
+      null;
+
+
+    flipMessage.textContent =
+      "";
+
+
+    await loadUserInventory();
+
+  };
+
+
+createClose.onclick = () => {
+
+  createModal.classList.add(
+    "hidden"
+  );
+
+};
+
+
+createModal.onclick = event => {
+
+  if (
+    event.target === createModal
+  ) {
+
+    createModal.classList.add(
+      "hidden"
+    );
+
+  }
+
+};
+
+
+// =====================================================
+// INVENTORY
+// =====================================================
+
+async function loadUserInventory() {
+
+  if (!currentUser) {
+
+    inventoryForFlip.innerHTML =
+      `<div class="empty">
+        Sign in first.
+      </div>`;
+
+    return;
+  }
+
+
+  inventoryForFlip.innerHTML =
+    `<div class="loading">
+      Loading inventory...
+    </div>`;
+
+
+  try {
+
+    const response =
+      await fetch(
+        `${BACKEND}/user-data/${currentUser.id}`
+      );
+
+
+    const data =
+      await response.json();
+
+
+    const inventory =
+      data?.user?.inventory ||
+      [];
+
+
+    if (!inventory.length) {
+
+      inventoryForFlip.innerHTML = `
+
+        <div class="empty">
+
+          <p>
+            You don't have any pets yet.
+          </p>
+
+          <button
+            class="primary"
+            onclick="
+              window.open(
+                'https://discord.com',
+                '_blank'
+              )
+            "
+          >
+            Deposit via Discord
+          </button>
+
+          <small>
+            Automatic bot deposits coming soon.
+          </small>
+
+        </div>
+
+      `;
+
+      return;
+    }
+
+
+    inventoryForFlip.innerHTML =
+      inventory
+        .map(
+          (item, index) => `
+
+            <button
+              class="inventory-item"
+              data-index="${index}"
+            >
+
+              <span>
+                ${escapeHTML(
+                  cleanPetDisplayName(
+                    item.name
+                  )
+                )}
+              </span>
+
+              <strong>
+                ${formatValue(
+                  item.value
+                )}
+              </strong>
+
+            </button>
+
+          `
+        )
+        .join("");
+
+
+    document
+      .querySelectorAll(
+        ".inventory-item"
+      )
+      .forEach(button => {
+
+        button.onclick = () => {
+
+          document
+            .querySelectorAll(
+              ".inventory-item"
+            )
+            .forEach(
+              x =>
+                x.classList.remove(
+                  "selected"
+                )
+            );
+
+
+          button.classList.add(
+            "selected"
+          );
+
+
+          const index =
+            Number(
+              button.dataset.index
+            );
+
+
+          selectedPet =
+            inventory[index];
+
+        };
+
+      });
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    inventoryForFlip.innerHTML =
+      `<div class="empty">
+        Unable to load inventory.
+      </div>`;
+
+  }
+
+}
+
+
+// =====================================================
+// SIDE
+// =====================================================
+
+document
+  .querySelectorAll(
+    ".side-selector button"
+  )
+  .forEach(button => {
+
+    button.onclick = () => {
+
+      document
+        .querySelectorAll(
+          ".side-selector button"
+        )
+        .forEach(
+          x =>
+            x.classList.remove(
+              "selected"
+            )
+        );
+
+
+      button.classList.add(
+        "selected"
+      );
+
+
+      selectedSide =
+        button.dataset.side;
+
+    };
+
+  });
+
+
+// =====================================================
+// SUBMIT COINFLIP
+// =====================================================
+
+submitFlip.onclick =
+  async () => {
+
+    if (!currentUser) {
+
+      message(
+        flipMessage,
+        "Sign in first.",
+        "error"
+      );
+
+      return;
+    }
+
+
+    if (!selectedPet) {
+
+      message(
+        flipMessage,
+        "Choose a pet first.",
+        "error"
+      );
+
+      return;
+    }
+
+
+    if (!selectedSide) {
+
+      message(
+        flipMessage,
+        "Choose Heads or Tails.",
+        "error"
+      );
+
+      return;
+    }
+
+
+    submitFlip.disabled =
+      true;
+
+
+    try {
+
+      const response =
+        await fetch(
+          `${BACKEND}/coinflips`,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body: JSON.stringify({
+
+              robloxId:
+                currentUser.id,
+
+              petName:
+                selectedPet.name,
+
+              side:
+                selectedSide
+
+            })
+
+          }
+        );
+
+
+      const data =
+        await response.json();
+
+
+      if (!data.success) {
+
+        message(
+          flipMessage,
+          data.message ||
+          "Unable to create coinflip.",
+          "error"
+        );
+
+        return;
+      }
+
+
+      createModal.classList.add(
+        "hidden"
+      );
+
+
+      await loadCoinflips();
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      message(
+        flipMessage,
+        "Unable to create coinflip.",
+        "error"
+      );
+
+    } finally {
+
+      submitFlip.disabled =
+        false;
+
+    }
+
+  };
+
+
+// =====================================================
+// ACTIVE COINFLIPS
+// =====================================================
+
+async function loadCoinflips() {
+
+  coinflipList.innerHTML =
+    `<div class="loading">
+      Loading active coinflips...
+    </div>`;
+
+
+  try {
+
+    const response =
+      await fetch(
+        `${BACKEND}/coinflips`
+      );
+
+
+    const data =
+      await response.json();
+
+
+    if (
+      !data.success ||
+      !data.coinflips?.length
+    ) {
+
+      coinflipList.innerHTML =
+        `<div class="empty">
+          No active coinflips yet.
+        </div>`;
+
+      return;
+    }
+
+
+    coinflipList.innerHTML =
+      data.coinflips
+        .map(flip => `
+
+          <div class="coinflip-card">
+
+            <div class="flip-user">
+
+              <img
+                src="${
+                  escapeHTML(
+                    flip.creatorAvatar ||
+                    "/roblox.png"
+                  )
+                }"
+                onerror="
+                  this.src='/roblox.png'
+                "
+              >
+
+              <strong>
+                ${escapeHTML(
+                  flip.creatorUsername
+                )}
+              </strong>
+
+            </div>
+
+
+            <div class="flip-pet">
+
+              <strong>
+                ${escapeHTML(
+                  cleanPetDisplayName(
+                    flip.petName
+                  )
+                )}
+              </strong>
+
+              <span>
+                ${formatValue(
+                  flip.petValue
+                )}
+              </span>
+
+            </div>
+
+
+            <div class="flip-side">
+
+              ${
+                escapeHTML(
+                  flip.side
+                ).toUpperCase()
+              }
+
+            </div>
+
+
+            <button
+              class="primary join-flip"
+              data-id="${escapeHTML(
+                flip._id
+              )}"
+            >
+              Join
+            </button>
+
+          </div>
+
+        `)
+        .join("");
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    coinflipList.innerHTML =
+      `<div class="empty">
+        Unable to load coinflips.
+      </div>`;
+
+  }
+
+}
+
+
+// =====================================================
+// INITIAL DATA
+// =====================================================
+
+loadValues();
+
+loadCoinflips();
+
+loadLeaderboard();
+
+
+// Refresh active coinflips periodically
+setInterval(
+  loadCoinflips,
+  15000
+);
+
+
+// Refresh chat only when open
+setInterval(
+  () => {
+
+    if (chatOpen) {
+      loadChat();
+    }
+
+  },
+  5000
 );
