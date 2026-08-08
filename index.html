@@ -1,339 +1,372 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADMFLIP</title>
-<link rel="icon" href="logo.png">
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+  <title>ADMFLIP</title>
+
+  <link rel="icon" href="/logo.png">
+  <link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
 
-<header class="header">
+<header class="site-header">
 
-    <div class="brand">
-        <img src="logo.png" alt="ADMFLIP">
+  <a class="brand" href="#/">
+    <span class="brand-logo">
+      <img src="/logo.png" alt="ADMFLIP">
+    </span>
+  </a>
+
+  <nav class="desktop-nav">
+    <button data-route="#/coinflip">Coinflip</button>
+    <button data-route="#/leaderboard">Leaderboard</button>
+    <button id="mobileChatNav">Chat</button>
+    <button data-route="#/values">Values</button>
+  </nav>
+
+  <div class="account-area">
+
+    <button id="loginBtn" class="login-btn">
+      <span class="roblox-icon">R</span>
+      <span>Sign In</span>
+    </button>
+
+    <div id="accountUser" class="account-user hidden">
+
+      <button id="profileBtn" class="profile-button">
+
+        <img
+          id="accountAvatar"
+          src="/logo.png"
+          alt=""
+        >
+
+        <span id="accountUsername">
+          User
+        </span>
+
+      </button>
+
+      <button id="inventoryBtn" class="small-account-btn">
+        Inventory
+      </button>
+
+      <button id="logoutBtn" class="small-account-btn logout">
+        Log Out
+      </button>
+
     </div>
 
-    <nav class="menu">
-        <a href="#" data-page="coinflip">Coinflip</a>
-        <a href="#" data-page="leaderboard">Leaderboard</a>
-        <a href="#" id="chatNav">Chat</a>
-        <a href="#" data-page="values">Values</a>
-    </nav>
-
-    <div class="account-buttons">
-
-        <button class="login" id="loginBtn">
-            <img src="roblox.png" alt="">
-            <span>Sign In</span>
-        </button>
-
-        <button class="inventory-btn" id="inventoryBtn" style="display:none;">
-            Inventory
-        </button>
-
-        <button class="logout" id="logoutBtn" style="display:none;">
-            Log Out
-        </button>
-
-    </div>
+  </div>
 
 </header>
 
 
-<main id="app">
-
-    <!-- COINFLIP -->
-
-    <section class="page active" id="coinflipPage">
-
-        <div class="page-header">
-            <div>
-                <span class="page-kicker">COINFLIP</span>
-                <h1>Active Coinflips</h1>
-                <p>Choose a coinflip and play against another trader.</p>
-            </div>
-
-            <button class="primary-btn" id="createCoinflipBtn">
-                Create
-            </button>
-        </div>
-
-        <div id="coinflipCreate" style="display:none;"></div>
-
-        <div id="coinflipsList" class="coinflips-list">
-            <div class="loading">
-                Loading coinflips...
-            </div>
-        </div>
-
-    </section>
-
-
-    <!-- VALUES -->
-
-    <section class="page" id="valuesPage">
-
-        <div class="page-header">
-            <div>
-                <span class="page-kicker">VALUES</span>
-                <h1>Pet Values</h1>
-                <p>Browse the current ADMFLIP pet values.</p>
-            </div>
-        </div>
-
-        <div class="value-search">
-            <input
-                id="petSearch"
-                type="search"
-                placeholder="Search pets..."
-                autocomplete="off"
-            >
-        </div>
-
-        <div id="petsGrid" class="pets-grid">
-            <div class="loading">
-                Loading pet values...
-            </div>
-        </div>
-
-    </section>
-
-
-    <!-- LEADERBOARD -->
-
-    <section class="page" id="leaderboardPage">
-
-        <div class="page-header">
-            <div>
-                <span class="page-kicker">LEADERBOARD</span>
-                <h1>TOP FLIPPERS</h1>
-                <p>The 10 users with the highest total wager.</p>
-            </div>
-        </div>
-
-        <div id="leaderboardList" class="leaderboard-list">
-            <div class="loading">
-                Loading leaderboard...
-            </div>
-        </div>
-
-    </section>
-
-
-    <!-- INVENTORY -->
-
-    <section class="page" id="inventoryPage">
-
-        <div class="page-header">
-            <div>
-                <span class="page-kicker">INVENTORY</span>
-                <h1>Your Inventory</h1>
-                <p>Your pets and their current values.</p>
-            </div>
-        </div>
-
-        <div id="inventoryGrid" class="pets-grid">
-            <div class="loading">
-                Loading inventory...
-            </div>
-        </div>
-
-    </section>
-
-</main>
-
-
-<!-- LOGIN -->
-
-<div class="modal" id="modal">
-
-    <div class="box">
-
-        <div class="login-logo">
-            <img src="logo.png" alt="ADMFLIP">
-        </div>
-
-        <h2>Roblox Sign In</h2>
-
-        <input
-            id="username"
-            placeholder="Roblox username"
-            autocomplete="off"
-        >
-
-        <div id="profile" class="hidden"></div>
-
-        <div id="phrase" class="hidden"></div>
-
-        <button id="verify" style="display:none;">
-            Verify
-        </button>
-
-    </div>
-
-</div>
-
-
-<!-- CHAT -->
+<!-- =====================================================
+     DESKTOP CHAT
+====================================================== -->
 
 <aside id="chatPanel" class="chat-panel">
 
-    <div class="chat-header">
+  <div class="chat-header">
 
-        <div>
-            <strong>ADMFLIP CHAT</strong>
+    <div>
+      <strong>ADMFLIP CHAT</strong>
 
-            <div class="chat-online">
-                <span></span>
-                <b id="onlineCount">32</b> online
-            </div>
-        </div>
-
-        <button id="chatClose" class="chat-close">
-            ×
-        </button>
-
+      <div class="chat-online">
+        <span class="online-dot"></span>
+        <span id="onlineCount">37</span> online
+      </div>
     </div>
 
+    <button
+      id="chatCloseBtn"
+      class="chat-close"
+      aria-label="Close chat"
+    >
+      ×
+    </button>
 
-    <div class="chat-messages" id="chatMessages">
-        <div class="chat-loading">
-            Loading community...
-        </div>
+  </div>
+
+
+  <div id="chatMessages" class="chat-messages">
+
+    <div class="chat-loading">
+      Loading chat...
     </div>
 
+  </div>
 
-    <div class="chat-footer">
 
-        <button
-            id="rulesBtn"
-            class="rules-btn"
-            title="Chat rules"
-        >
-            ?
-        </button>
+  <div class="chat-footer">
 
-        <input
-            id="chatInput"
-            placeholder="Sign in to chat..."
-            maxlength="250"
-            autocomplete="off"
-        >
+    <button
+      id="chatRulesBtn"
+      class="rules-icon"
+      title="Chat Rules"
+    >
+      ?
+    </button>
 
-        <button id="chatSend">
-            Send
-        </button>
+    <input
+      id="chatInput"
+      type="text"
+      maxlength="300"
+      placeholder="Sign in to chat..."
+      autocomplete="off"
+    >
 
-    </div>
+    <button id="chatSendBtn" class="chat-send">
+      Send
+    </button>
+
+  </div>
 
 </aside>
 
 
 <!-- MOBILE CHAT BUTTON -->
 
-<button id="mobileChatBtn" class="mobile-chat-btn">
-    CHAT
+<button
+  id="mobileChatBtn"
+  class="mobile-chat-btn"
+>
+  CHAT
 </button>
 
 
-<!-- RULES -->
+<div id="chatOverlay" class="chat-overlay"></div>
 
-<div id="rulesModal" class="rules-modal">
 
-    <div class="rules-box">
+<!-- =====================================================
+     MAIN
+====================================================== -->
 
-        <button id="rulesClose" class="rules-close">
-            ×
-        </button>
+<main id="app" class="app">
 
-        <span class="page-kicker">COMMUNITY</span>
+  <div class="page-loader">
+    <div class="spinner"></div>
+  </div>
 
-        <h2>Chat Rules</h2>
+</main>
 
-        <p>
-            Keep ADMFLIP chat welcoming and useful.
-            Breaking these rules may result in a temporary
-            or permanent mute.
-        </p>
 
-        <div class="rule">
-            <b>1. Respect everyone</b>
-            <span>
-                Harassment, hate speech, threats, and targeted
-                abuse are not allowed.
-            </span>
-        </div>
+<!-- =====================================================
+     LOGIN MODAL
+====================================================== -->
 
-        <div class="rule">
-            <b>2. Do not spam</b>
-            <span>
-                Avoid repeated messages, excessive caps,
-                and flooding the chat.
-            </span>
-        </div>
+<div id="loginModal" class="modal">
 
-        <div class="rule">
-            <b>3. No begging</b>
-            <span>
-                Do not repeatedly ask other players for items
-                or account benefits.
-            </span>
-        </div>
+  <div class="modal-box login-box">
 
-        <div class="rule">
-            <b>4. No advertising</b>
-            <span>
-                Do not promote unrelated websites,
-                communities, or services.
-            </span>
-        </div>
+    <button class="modal-close" data-close="loginModal">
+      ×
+    </button>
 
-        <div class="rule">
-            <b>5. No scams or impersonation</b>
-            <span>
-                Never mislead players or pretend to be
-                ADMFLIP staff.
-            </span>
-        </div>
+    <div class="login-logo">
+      <img src="/logo.png" alt="ADMFLIP">
+    </div>
 
-        <div class="rule">
-            <b>6. Follow moderation</b>
-            <span>
-                Moderator decisions and instructions
-                must be respected.
-            </span>
-        </div>
+    <h2>Roblox Sign In</h2>
 
-        <div class="chat-roles">
+    <p class="muted">
+      Enter your Roblox username to verify your account.
+    </p>
 
-            <strong>Chat roles</strong>
+    <input
+      id="usernameInput"
+      class="text-input"
+      placeholder="Roblox username"
+      autocomplete="off"
+    >
 
-            <span>
-                <b>Whale</b>
-                Awarded after wagering 10M Value in total.
-            </span>
+    <div id="loginProfile" class="login-profile hidden"></div>
 
-            <span>
-                <b>High Roller</b>
-                Awarded after wagering 5M Value in total.
-            </span>
+    <div id="verificationBox" class="verification-box hidden">
 
-        </div>
+      <p>
+        Put this phrase in your Roblox profile bio:
+      </p>
+
+      <strong id="verificationPhrase"></strong>
+
+      <button id="verifyBtn" class="primary-btn">
+        Verify
+      </button>
 
     </div>
+
+    <div id="loginStatus" class="form-status"></div>
+
+  </div>
 
 </div>
 
 
-<!-- SITE MESSAGE -->
+<!-- =====================================================
+     INVENTORY MODAL
+====================================================== -->
 
-<div id="siteMessage" class="site-message"></div>
+<div id="inventoryModal" class="modal">
+
+  <div class="modal-box large-modal">
+
+    <button class="modal-close" data-close="inventoryModal">
+      ×
+    </button>
+
+    <h2>Your Inventory</h2>
+
+    <div id="inventoryGrid" class="pet-grid">
+      Loading...
+    </div>
+
+  </div>
+
+</div>
 
 
-<script src="script.js"></script>
+<!-- =====================================================
+     RULES MODAL
+====================================================== -->
+
+<div id="rulesModal" class="modal">
+
+  <div class="modal-box rules-box">
+
+    <button class="modal-close" data-close="rulesModal">
+      ×
+    </button>
+
+    <div class="rules-title">
+      <span>?</span>
+      <div>
+        <h2>Chat Rules</h2>
+        <p>Keep ADMFLIP welcoming and useful.</p>
+      </div>
+    </div>
+
+    <div class="rule-list">
+
+      <div class="rule">
+        <b>1</b>
+        <div>
+          <strong>Respect everyone</strong>
+          <p>
+            Harassment, hate speech, threats, and targeted abuse
+            are not allowed.
+          </p>
+        </div>
+      </div>
+
+      <div class="rule">
+        <b>2</b>
+        <div>
+          <strong>Do not spam</strong>
+          <p>
+            Avoid repeated messages, excessive caps, and flooding.
+          </p>
+        </div>
+      </div>
+
+      <div class="rule">
+        <b>3</b>
+        <div>
+          <strong>No begging</strong>
+          <p>
+            Do not repeatedly ask other players for items or benefits.
+          </p>
+        </div>
+      </div>
+
+      <div class="rule">
+        <b>4</b>
+        <div>
+          <strong>No advertising</strong>
+          <p>
+            Do not promote unrelated websites, communities, or services.
+          </p>
+        </div>
+      </div>
+
+      <div class="rule">
+        <b>5</b>
+        <div>
+          <strong>No scams or impersonation</strong>
+          <p>
+            Never mislead players or pretend to be ADMFLIP staff.
+          </p>
+        </div>
+      </div>
+
+      <div class="rule">
+        <b>6</b>
+        <div>
+          <strong>Follow moderation</strong>
+          <p>
+            Moderator decisions and instructions must be respected.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="chat-roles">
+
+      <div>
+        <span>Whale</span>
+        <small>
+          Awarded after wagering 10M value.
+        </small>
+      </div>
+
+      <div>
+        <span>High Roller</span>
+        <small>
+          Awarded after wagering 5M value.
+        </small>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     PROFILE MODAL
+====================================================== -->
+
+<div id="profileModal" class="modal">
+
+  <div class="modal-box">
+
+    <button class="modal-close" data-close="profileModal">
+      ×
+    </button>
+
+    <div id="profileContent">
+      Loading...
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     TOAST
+====================================================== -->
+
+<div id="toastContainer"></div>
+
+
+<script src="/script.js"></script>
 
 </body>
 </html>
