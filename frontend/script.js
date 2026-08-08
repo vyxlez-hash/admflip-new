@@ -45,7 +45,9 @@ function escapeAttr(value) {
 }
 
 function formatValue(value) {
-  return Number(value || 0).toLocaleString("en-US", {
+  const number = Number(value || 0);
+
+  return number.toLocaleString("en-US", {
     maximumFractionDigits: 6
   });
 }
@@ -189,7 +191,7 @@ async function loadAccount() {
 }
 
 // =====================================================
-// LOGIN MODAL
+// LOGIN
 // =====================================================
 
 $("loginBtn")?.addEventListener("click", () => {
@@ -214,7 +216,7 @@ document.querySelectorAll(".modal").forEach((modal) => {
 // ROBLOX LOOKUP
 // =====================================================
 
-let usernameTimer;
+let usernameTimer = null;
 
 $("username")?.addEventListener("input", () => {
   clearTimeout(usernameTimer);
@@ -265,9 +267,7 @@ async function lookupRobloxUser() {
 
     state.loginRobloxUser = data.user;
 
-    $("loginProfile").classList.remove(
-      "hidden"
-    );
+    $("loginProfile").classList.remove("hidden");
 
     $("loginProfile").innerHTML = `
       <img
@@ -284,8 +284,7 @@ async function lookupRobloxUser() {
         </strong>
 
         <small>
-          Roblox ID:
-          ${escapeHtml(data.user.id)}
+          Roblox ID: ${escapeHtml(data.user.id)}
         </small>
       </div>
     `;
@@ -380,16 +379,11 @@ async function verifyRoblox() {
 
     saveUser();
 
-    $("loginModal")?.classList.add(
-      "hidden"
-    );
+    $("loginModal")?.classList.add("hidden");
 
     $("username").value = "";
 
-    $("loginProfile")?.classList.add(
-      "hidden"
-    );
-
+    $("loginProfile")?.classList.add("hidden");
     $("phrase")?.classList.add("hidden");
 
     $("verify").style.display = "none";
@@ -439,9 +433,7 @@ function showPage(page) {
       element.classList.add("hidden");
     });
 
-  $(page + "Page")?.classList.remove(
-    "hidden"
-  );
+  $(page + "Page")?.classList.remove("hidden");
 
   document
     .querySelectorAll(".nav-item")
@@ -532,7 +524,9 @@ async function loadValues() {
   try {
     const data = await api("/pets");
 
-    state.pets = Array.isArray(data.pets)
+    state.pets = Array.isArray(
+      data.pets
+    )
       ? data.pets
       : [];
 
@@ -627,9 +621,10 @@ function makePetCard(
 
         state.selectedPet = pet;
 
-        $("sideArea")?.classList.remove(
-          "hidden"
-        );
+        $("sideArea")
+          ?.classList.remove(
+            "hidden"
+          );
       }
     );
   }
@@ -664,10 +659,11 @@ function renderValues(pets) {
 $("valueSearch")?.addEventListener(
   "input",
   () => {
-    const query = $("valueSearch")
-      .value
-      .toLowerCase()
-      .trim();
+    const query =
+      $("valueSearch")
+        .value
+        .toLowerCase()
+        .trim();
 
     const filtered =
       state.pets.filter((pet) =>
@@ -755,7 +751,8 @@ $("closeInventory")?.addEventListener(
 );
 
 function renderInventory() {
-  const grid = $("inventoryGrid");
+  const grid =
+    $("inventoryGrid");
 
   if (!grid) return;
 
@@ -1062,8 +1059,7 @@ async function loadCoinflips() {
     renderCoinflips(list);
 
     if ($("activeCount")) {
-      $("activeCount")
-        .textContent =
+      $("activeCount").textContent =
         list.length;
     }
   } catch (error) {
@@ -1097,9 +1093,7 @@ function renderCoinflips(list) {
 
   list.forEach((flip) => {
     const element =
-      document.createElement(
-        "div"
-      );
+      document.createElement("div");
 
     element.className =
       "coinflip";
@@ -1235,14 +1229,10 @@ async function loadLeaderboard() {
 
   try {
     const data =
-      await api(
-        "/leaderboard"
-      );
+      await api("/leaderboard");
 
     const players =
-      Array.isArray(
-        data.users
-      )
+      Array.isArray(data.users)
         ? data.users
         : [];
 
@@ -1383,25 +1373,23 @@ async function loadOnlineCount() {
       );
 
     if ($("onlineCount")) {
-      $("onlineCount")
-        .textContent =
+      $("onlineCount").textContent =
         data.online ?? 0;
     }
 
     if ($("coinflipOnline")) {
-      $("coinflipOnline")
-        .textContent =
+      $("coinflipOnline").textContent =
         data.online ?? 0;
     }
   } catch {
     if ($("onlineCount")) {
-      $("onlineCount")
-        .textContent = "--";
+      $("onlineCount").textContent =
+        "--";
     }
 
     if ($("coinflipOnline")) {
-      $("coinflipOnline")
-        .textContent = "--";
+      $("coinflipOnline").textContent =
+        "--";
     }
   }
 }
