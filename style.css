@@ -1,208 +1,167 @@
+/* ADMFLIP FIXES - append to the END of style.css */
 
-/* =========================================================
-   ADMFLIP FIXES — login banner, mobile, chat, coinflips
-   Append this AFTER your existing CSS.
-   ========================================================= */
-
-.login-modal-box{
-  width:min(100%,470px);
-  padding:18px;
-  overflow:hidden;
+/* Site logo: 142x30 desktop, responsive on mobile */
+.brand {
+  width:142px;
+  min-width:142px;
+  height:42px;
+  justify-content:flex-start;
+}
+.brand-logo,
+.brand img {
+  width:142px;
+  height:30px;
+  object-fit:contain;
 }
 
-.login-banner-wrap{
-  width:100%;
-  margin:-18px -18px 20px;
-  width:calc(100% + 36px);
+@media (max-width:650px) {
+  .brand {
+    width:112px;
+    min-width:112px;
+    height:36px;
+  }
+  .brand-logo,
+  .brand img {
+    width:112px;
+    height:26px;
+  }
+}
+
+/* Bigger login button */
+.header-right .login {
+  min-width:112px;
+  height:44px;
+  padding:0 18px;
+  border-radius:12px;
+}
+.header-right .login img {
+  width:20px;
+  height:20px;
+}
+
+/* Login modal banner only: no Roblox icon */
+.login-modal-box {
+  width:min(100%,520px);
+  padding:20px;
   overflow:hidden;
-  border-radius:17px 17px 12px 12px;
-  border-bottom:1px solid var(--border-hover);
+}
+.login-banner-wrap {
+  width:100%;
+  margin:-20px -20px 22px;
+  width:calc(100% + 40px);
+  overflow:hidden;
+  border-radius:18px 18px 0 0;
   background:var(--panel2);
 }
-
-.login-banner{
+.login-banner {
   display:block;
   width:100%;
   height:auto;
-  min-height:130px;
-  max-height:240px;
+  min-height:120px;
+  max-height:230px;
   object-fit:cover;
-  object-position:center;
 }
-
-.login-search-row{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) auto;
-  gap:8px;
-  margin-top:16px;
+.login-search-row {
+  display:flex;
+  gap:9px;
+  align-items:stretch;
 }
-
-.login-search-row .input{
-  margin-top:0;
+.login-search-row .input {
+  margin-top:20px;
+  flex:1;
   min-width:0;
 }
-
-.login-profile-inner{
+.login-search-row .primary {
+  margin-top:20px;
+  min-width:112px;
+}
+.login-profile-row {
   display:flex;
   align-items:center;
-  gap:12px;
+  gap:11px;
 }
-
-.login-profile-inner img{
-  width:44px;
-  height:44px;
-  flex:0 0 44px;
-  border-radius:10px;
+.login-profile-row img {
+  width:42px;
+  height:42px;
+  border-radius:11px;
   object-fit:cover;
   background:var(--panel3);
 }
-
-.login-profile-inner strong{
+.login-profile-row strong {
   display:block;
   font-size:13px;
 }
-
-.login-profile-inner span{
+.login-profile-row span {
   display:block;
-  margin-top:3px;
-  color:var(--muted);
-  font-size:10px;
-}
-
-.phrase-label{
-  margin-bottom:8px;
   color:var(--muted2);
-  font-size:9px;
-  font-weight:900;
-  letter-spacing:.12em;
-}
-
-.phrase strong{
-  display:block;
-  padding:12px;
-  border-radius:9px;
-  background:var(--panel3);
-  color:var(--text);
-  font-size:14px;
-  word-break:break-all;
-  user-select:all;
-}
-
-.phrase p{
-  margin-top:9px;
-  color:var(--muted);
   font-size:10px;
 }
-
-.coinflip.coinflip-posted{
-  position:relative;
-  border-color:rgba(168,85,247,.75);
-  box-shadow:0 0 0 1px rgba(168,85,247,.16),0 14px 40px rgba(76,29,149,.12);
+.login-modal-box .phrase {
+  border-radius:13px;
+  background:var(--panel2);
+  border-color:var(--border-hover);
 }
 
-.cf-posted-badge{
-  position:absolute;
-  top:10px;
-  right:12px;
-  z-index:2;
-  padding:4px 7px;
-  border:1px solid rgba(168,85,247,.35);
-  border-radius:999px;
-  background:rgba(88,28,135,.22);
-  color:#c084fc;
-  font-size:8px;
-  font-weight:900;
-  letter-spacing:.1em;
+/* Purple coinflip cards */
+.coinflip {
+  border-color:rgba(168,85,247,.55);
+  box-shadow:0 0 0 1px rgba(168,85,247,.08),
+             0 12px 40px rgba(91,33,182,.10);
+}
+.coinflip:hover {
+  border-color:rgba(192,132,252,.8);
+  box-shadow:0 0 0 1px rgba(168,85,247,.12),
+             0 16px 50px rgba(91,33,182,.16);
 }
 
-.cf-user{
-  display:flex;
-  align-items:center;
-  gap:7px;
-  min-width:0;
-}
-
-.cf-user img{
-  width:24px;
-  height:24px;
-  border-radius:7px;
-  object-fit:cover;
-  background:var(--panel3);
-}
-
-.cf-side-label{
-  color:#c084fc;
-  font-size:9px;
-  font-weight:900;
-  letter-spacing:.08em;
-}
-
-.chat-announcement{
-  position:relative;
-  margin:7px 0;
-  padding:12px;
+/* Pinned site-chat announcements */
+.chat-message.chat-announcement,
+.chat-message[data-type="announcement"] {
+  margin:8px 0;
+  padding:11px;
   border:1px solid rgba(168,85,247,.55);
   border-radius:12px;
-  background:linear-gradient(145deg,rgba(126,34,206,.14),rgba(255,255,255,.025));
-  box-shadow:0 8px 25px rgba(76,29,149,.12);
+  background:linear-gradient(135deg,rgba(168,85,247,.12),rgba(255,255,255,.025));
 }
-
-.chat-announcement-pin{
-  display:inline-flex;
-  margin-bottom:6px;
-  padding:3px 6px;
-  border:1px solid rgba(168,85,247,.35);
-  border-radius:999px;
+.chat-message.chat-announcement .chat-username::after,
+.chat-message[data-type="announcement"] .chat-username::after {
+  content:"  📌 PINNED";
   color:#c084fc;
   font-size:8px;
-  font-weight:900;
-  letter-spacing:.1em;
+  letter-spacing:.08em;
+}
+.chat-message.chat-announcement .chat-text,
+.chat-message[data-type="announcement"] .chat-text {
+  color:var(--text);
 }
 
-@media(max-width:650px){
-  .login-modal-box{
+/* Mobile login */
+@media (max-width:650px) {
+  .login-modal-box {
     width:100%;
-    padding:14px;
+    padding:16px;
     border-radius:16px;
   }
-
-  .login-banner-wrap{
-    margin:-14px -14px 16px;
-    width:calc(100% + 28px);
-    border-radius:15px 15px 10px 10px;
+  .login-banner-wrap {
+    margin:-16px -16px 18px;
+    width:calc(100% + 32px);
+    border-radius:16px 16px 0 0;
   }
-
-  .login-banner{
-    min-height:105px;
+  .login-banner {
+    min-height:100px;
     max-height:190px;
   }
-
-  .login-search-row{
-    grid-template-columns:1fr;
+  .login-search-row {
+    flex-direction:column;
   }
-
-  .login-search-row .primary{
+  .login-search-row .input,
+  .login-search-row .primary {
     width:100%;
+    margin-top:12px;
   }
-
-  .coinflip.coinflip-posted{
-    border-width:1px;
-  }
-
-  .cf-posted-badge{
-    position:static;
-    display:inline-flex;
-    margin:10px 12px 0;
-  }
-}
-
-@media(max-width:430px){
-  .login-banner{
-    min-height:95px;
-    max-height:165px;
-  }
-
-  .login-modal-box{
-    max-height:calc(100vh - 18px);
+  .header-right .login {
+    min-width:46px;
+    width:46px;
+    padding:0;
   }
 }
