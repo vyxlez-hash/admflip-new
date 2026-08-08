@@ -1,299 +1,556 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+>
 
 <title>ADMFLIP</title>
 
-<link rel="icon" href="logo.png">
-<link rel="stylesheet" href="style.css">
+<link
+  rel="icon"
+  href="/logo.png"
+>
+
+<link
+  rel="stylesheet"
+  href="/style.css"
+>
+
 </head>
+
 
 <body>
 
+
 <header class="header">
 
-    <div class="brand">
-        <img src="logo.png" alt="ADMFLIP">
-        <span>ADMFLIP</span>
-    </div>
+  <div class="brand">
 
-    <nav class="nav">
-        <button data-page="coinflip">Coinflip</button>
-        <button data-page="values">Values</button>
-        <button data-page="chat">Chat</button>
-        <button data-page="leaderboard">Leaderboard</button>
-    </nav>
+    <img
+      src="/logo.png"
+      alt="ADMFLIP"
+    >
 
-    <div class="account">
+  </div>
 
-        <button id="loginBtn" class="loginBtn">
-            <span>Sign In</span>
-        </button>
 
-        <button id="logoutBtn" class="logoutBtn hidden">
-            Log Out
-        </button>
+  <nav class="menu">
 
-    </div>
+    <button data-page="coinflip">
+      Coinflip
+    </button>
+
+    <button data-page="leaderboard">
+      Leaderboard
+    </button>
+
+    <button data-page="values">
+      Values
+    </button>
+
+    <button data-page="chat">
+      Chat
+    </button>
+
+  </nav>
+
+
+  <div class="account-buttons">
+
+    <button
+      class="login"
+      id="loginBtn"
+    >
+
+      <img
+        src="/roblox.png"
+        alt=""
+      >
+
+      <span>
+        Sign In
+      </span>
+
+    </button>
+
+
+    <button
+      class="logout"
+      id="logoutBtn"
+      style="display:none;"
+    >
+      Log Out
+    </button>
+
+  </div>
 
 </header>
 
 
-<main class="site">
 
-    <section id="coinflipPage" class="page">
+<main id="app">
 
-        <div class="pageHeader">
-            <div>
-                <small>COINFLIP</small>
-                <h1>Active Coinflips</h1>
-                <p>Find another trader and choose your side.</p>
-            </div>
 
-            <button id="createCoinflipBtn" class="purpleBtn">
-                Create
-            </button>
+  <!-- ========================= -->
+  <!-- COINFLIP -->
+  <!-- ========================= -->
+
+  <section
+    id="coinflipPage"
+    class="page"
+  >
+
+    <div class="page-header">
+
+      <div>
+
+        <span class="eyebrow">
+          COINFLIP
+        </span>
+
+        <h1>
+          Coinflip
+        </h1>
+
+        <p>
+          Find another trader and post your side.
+        </p>
+
+      </div>
+
+
+      <div class="page-actions">
+
+        <button
+          id="createFlipBtn"
+          class="primary"
+        >
+          Create
+        </button>
+
+        <button
+          id="historyBtn"
+        >
+          History
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="coinflipList"
+      class="coinflip-list"
+    >
+
+      <div class="loading">
+        Loading active coinflips...
+      </div>
+
+    </div>
+
+  </section>
+
+
+
+  <!-- ========================= -->
+  <!-- LEADERBOARD -->
+  <!-- ========================= -->
+
+  <section
+    id="leaderboardPage"
+    class="page hidden"
+  >
+
+    <div class="page-header">
+
+      <div>
+
+        <span class="eyebrow">
+          LEADERBOARD
+        </span>
+
+        <h1>
+          TOP FLIPPERS
+        </h1>
+
+        <p>
+          The 10 players with the highest wagered value.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="leaderboard"
+      class="leaderboard"
+    >
+
+      <div class="loading">
+        Loading leaderboard...
+      </div>
+
+    </div>
+
+  </section>
+
+
+
+  <!-- ========================= -->
+  <!-- VALUES -->
+  <!-- ========================= -->
+
+  <section
+    id="valuesPage"
+    class="page hidden"
+  >
+
+    <div class="page-header">
+
+      <div>
+
+        <span class="eyebrow">
+          VALUES
+        </span>
+
+        <h1>
+          Pet Values
+        </h1>
+
+        <p>
+          Browse current pet values.
+        </p>
+
+      </div>
+
+
+      <input
+        id="petSearch"
+        class="pet-search"
+        placeholder="Search pets..."
+        autocomplete="off"
+      >
+
+    </div>
+
+
+    <div
+      id="valuesList"
+      class="values-list"
+    >
+
+      <div class="loading">
+        Loading pet values...
+      </div>
+
+    </div>
+
+  </section>
+
+
+
+  <!-- ========================= -->
+  <!-- CHAT PAGE HOLDER -->
+  <!-- ========================= -->
+
+  <section
+    id="chatPage"
+    class="page hidden"
+  >
+
+    <div class="chat-box">
+
+      <div class="chat-top">
+
+        <div>
+
+          <strong>
+            Community
+          </strong>
+
+          <span
+            id="onlineCount"
+          >
+            42 online
+          </span>
+
         </div>
 
-        <div id="coinflipList" class="coinflipList">
-            <div class="empty">
-                No active coinflips yet.
-            </div>
+
+        <button
+          id="chatClose"
+          class="chat-close"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div class="chat-toolbar">
+
+        <button
+          id="rulesBtn"
+        >
+          ?
+        </button>
+
+      </div>
+
+
+      <div
+        id="chatMessages"
+        class="chat-messages"
+      >
+
+        <div class="loading">
+          Loading community...
         </div>
 
-    </section>
+      </div>
 
 
-    <section id="valuesPage" class="page hidden">
-
-        <div class="pageHeader">
-            <div>
-                <small>VALUES</small>
-                <h1>Pet Values</h1>
-                <p>Search current ADMFLIP pet values.</p>
-            </div>
-        </div>
+      <div class="chat-input-row">
 
         <input
-            id="petSearch"
-            class="search"
-            placeholder="Search a pet..."
-            autocomplete="off"
+          id="chatInput"
+          placeholder="Write a message..."
+          maxlength="300"
+          autocomplete="off"
         >
 
-        <div id="petList" class="petList">
-            <div class="loading">Loading values...</div>
-        </div>
+        <button
+          id="sendChatBtn"
+          class="primary"
+        >
+          Send
+        </button>
 
-    </section>
+      </div>
 
+    </div>
 
-    <section id="leaderboardPage" class="page hidden">
+  </section>
 
-        <div class="pageHeader">
-            <div>
-                <small>LEADERBOARD</small>
-                <h1>Top Traders</h1>
-                <p>See the traders with the most wagered value.</p>
-            </div>
-        </div>
-
-        <div id="leaderboardList" class="leaderboardList">
-            <div class="loading">Loading leaderboard...</div>
-        </div>
-
-    </section>
-
-
-    <section id="chatPage" class="page hidden">
-        <div class="chatStandalone">
-            <h1>Community</h1>
-            <p>Open the community panel from the left side.</p>
-            <button id="openChatBtn" class="purpleBtn">
-                Open Chat
-            </button>
-        </div>
-    </section>
 
 </main>
 
 
-<!-- LEFT CHAT -->
 
-<aside id="chatPanel" class="chatPanel">
+<!-- ========================= -->
+<!-- LOGIN MODAL -->
+<!-- ========================= -->
 
-    <div class="chatHeader">
+<div
+  class="modal"
+  id="modal"
+>
 
-        <div>
-            <strong>Community</strong>
-            <div class="online">
-                <span></span>
-                <b id="onlineCount">42</b> online
-            </div>
-        </div>
+  <div
+    class="login-box"
+    id="loginBox"
+  >
 
-        <button id="closeChatBtn">×</button>
-
-    </div>
-
-
-    <div class="chatRulesRow">
-        <button id="rulesBtn">Rules</button>
-    </div>
+    <button
+      class="modal-close"
+      id="modalClose"
+      aria-label="Close"
+    >
+      ×
+    </button>
 
 
-    <div id="rulesBox" class="rulesBox hidden">
+    <div class="login-logo">
 
-        <strong>Community Rules</strong>
-
-        <ul>
-            <li>No advertising.</li>
-            <li>No harassment.</li>
-            <li>No sexual content.</li>
-            <li>No scams or impersonation.</li>
-            <li>No external site links.</li>
-        </ul>
+      <img
+        src="/logo.png"
+        alt="ADMFLIP"
+      >
 
     </div>
 
 
-    <div id="chatMessages" class="chatMessages">
-
-        <div class="announcement">
-
-            <div class="announcementTitle">
-                ADMFLIP
-            </div>
-
-            <div>
-                Welcome to the community.
-            </div>
-
-        </div>
-
-    </div>
+    <h2>
+      Roblox Sign In
+    </h2>
 
 
-    <form id="chatForm" class="chatForm">
-
-        <input
-            id="chatInput"
-            placeholder="Sign in to chat..."
-            maxlength="300"
-            autocomplete="off"
-        >
-
-        <button type="submit">
-            Send
-        </button>
-
-    </form>
-
-</aside>
+    <p class="muted">
+      Verify your Roblox account to continue.
+    </p>
 
 
-<!-- MOBILE CHAT BUTTON -->
+    <input
+      id="username"
+      placeholder="Roblox username"
+      autocomplete="off"
+    >
 
-<button id="mobileChatBtn" class="mobileChatBtn">
-    Chat
-</button>
+
+    <div
+      id="profile"
+      class="hidden"
+    ></div>
 
 
-<!-- SIGN IN MODAL -->
+    <div
+      id="phrase"
+      class="hidden"
+    ></div>
 
-<div id="loginModal" class="modal hidden">
 
-    <div class="modalBox">
+    <button
+      id="verify"
+      class="primary"
+      style="display:none;"
+    >
+      Verify
+    </button>
 
-        <button id="closeLoginBtn" class="modalClose">
-            ×
-        </button>
 
-        <img class="modalLogo" src="logo.png" alt="ADMFLIP">
+    <div
+      id="loginMessage"
+      class="site-message"
+    ></div>
 
-        <h2>Sign in</h2>
-
-        <p>
-            Verify your Roblox account to use ADMFLIP.
-        </p>
-
-        <input
-            id="usernameInput"
-            placeholder="Roblox username"
-            maxlength="20"
-            autocomplete="off"
-        >
-
-        <button id="findUserBtn" class="purpleBtn full">
-            Continue
-        </button>
-
-        <div id="loginProfile"></div>
-
-        <div id="phraseBox" class="phraseBox hidden"></div>
-
-        <button id="verifyBtn" class="purpleBtn full hidden">
-            Verify Roblox
-        </button>
-
-    </div>
+  </div>
 
 </div>
 
 
+
+<!-- ========================= -->
 <!-- CREATE COINFLIP MODAL -->
+<!-- ========================= -->
 
-<div id="coinflipModal" class="modal hidden">
+<div
+  class="modal hidden"
+  id="createModal"
+>
 
-    <div class="modalBox large">
+  <div class="login-box">
 
-        <button id="closeCoinflipBtn" class="modalClose">
-            ×
-        </button>
+    <button
+      class="modal-close"
+      id="createClose"
+    >
+      ×
+    </button>
 
-        <h2>Create Coinflip</h2>
 
-        <p>
-            Choose a pet from your inventory and your side.
-        </p>
+    <h2>
+      Create Coinflip
+    </h2>
 
-        <div id="createInventory" class="createInventory">
-            <div class="loading">Loading inventory...</div>
-        </div>
 
-        <div class="sideButtons">
+    <p class="muted">
+      Choose a pet and your side.
+    </p>
 
-            <button class="sideBtn" data-side="heads">
-                Heads
-            </button>
 
-            <button class="sideBtn" data-side="tails">
-                Tails
-            </button>
+    <div
+      id="inventoryForFlip"
+      class="inventory-list"
+    >
+      Loading inventory...
+    </div>
 
-        </div>
 
-        <button id="submitCoinflipBtn" class="purpleBtn full">
-            Create Coinflip
-        </button>
+    <div
+      class="side-selector"
+    >
 
-        <button id="depositBtn" class="depositBtn hidden">
-            Deposit via Discord — automatic bot soon
-        </button>
+      <button
+        data-side="heads"
+      >
+        Heads
+      </button>
+
+      <button
+        data-side="tails"
+      >
+        Tails
+      </button>
 
     </div>
+
+
+    <button
+      id="submitFlip"
+      class="primary"
+    >
+      Post Coinflip
+    </button>
+
+
+    <div
+      id="flipMessage"
+      class="site-message"
+    ></div>
+
+  </div>
 
 </div>
 
 
-<!-- SITE MESSAGE -->
 
-<div id="toast" class="toast"></div>
+<!-- ========================= -->
+<!-- RULES -->
+<!-- ========================= -->
+
+<div
+  class="rules-popup hidden"
+  id="rulesPopup"
+>
+
+  <div class="rules-box">
+
+    <button
+      id="rulesClose"
+      class="modal-close"
+    >
+      ×
+    </button>
 
 
-<script src="script.js"></script>
+    <h3>
+      Chat Rules
+    </h3>
+
+
+    <div class="rule">
+      No advertising.
+    </div>
+
+    <div class="rule">
+      No harassment.
+    </div>
+
+    <div class="rule">
+      No sexual activities or sexual content.
+    </div>
+
+    <div class="rule">
+      No links or site advertising.
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<script src="/script.js"></script>
 
 </body>
+
 </html>
