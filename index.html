@@ -26,13 +26,7 @@
 
 <body>
 
-
-<!-- =========================
-     HEADER
-========================= -->
-
 <header class="header">
-
 
     <div class="brand">
 
@@ -46,45 +40,30 @@
 
     <nav class="menu">
 
-
         <a href="#" data-page="coinflip">
             Coinflip
         </a>
-
 
         <a href="#" data-page="leaderboard">
             Leaderboard
         </a>
 
-
-        <a
-            href="#"
-            id="chatMenu"
-            data-page="chat"
-        >
+        <a href="#" data-page="chat">
             Chat
         </a>
 
-
-        <a
-            href="#"
-            id="valuesMenu"
-            data-page="values"
-        >
+        <a href="#" data-page="values">
             Values
         </a>
-
 
     </nav>
 
 
     <div class="account-buttons">
 
-
         <button
             class="login"
             id="loginBtn"
-            type="button"
         >
 
             <img
@@ -102,34 +81,21 @@
         <button
             class="logout"
             id="logoutBtn"
-            type="button"
-            style="display:none;"
+            style="display:none"
         >
-
             Log Out
-
         </button>
 
-
     </div>
-
 
 </header>
 
 
-
-<!-- =========================
-     MOBILE MENU
-========================= -->
-
 <button
     id="mobileMenuButton"
     class="mobile-menu-button"
-    type="button"
 >
-
     ☰
-
 </button>
 
 
@@ -138,304 +104,260 @@
     class="mobile-menu"
 >
 
-
     <a href="#" data-page="coinflip">
         Coinflip
     </a>
-
 
     <a href="#" data-page="leaderboard">
         Leaderboard
     </a>
 
-
     <a href="#" data-page="chat">
         Chat
     </a>
-
 
     <a href="#" data-page="values">
         Values
     </a>
 
-
 </div>
 
-
-
-<!-- =========================
-     MAIN SITE
-========================= -->
 
 <main id="siteContent">
 
 
-    <!-- HOME -->
+<section
+    id="homePage"
+    class="page active-page"
+>
 
-    <section
-        id="homePage"
-        class="page active-page"
-    >
+    <div class="hero">
 
+        <div class="hero-glow"></div>
 
-        <div class="hero">
+        <div class="hero-content">
 
-
-            <div class="hero-content">
-
-
-                <div class="hero-badge">
-                    ADMFLIP
-                </div>
-
-
-                <h1>
-                    Trade. Flip. Win.
-                </h1>
-
-
-                <p>
-                    Your Adopt Me trading community.
-                </p>
-
-
-                <div class="hero-buttons">
-
-
-                    <button class="primary-button">
-                        Start Flipping
-                    </button>
-
-
-                    <button
-                        class="secondary-button"
-                        id="viewValuesButton"
-                    >
-                        View Values
-                    </button>
-
-
-                </div>
-
-
+            <div class="hero-badge">
+                THE ADOPT ME TRADING HUB
             </div>
 
+            <h1>
+                Trade.
+                <span>Flip.</span>
+                Win.
+            </h1>
 
-        </div>
+            <p>
+                Trade smarter with ADMFLIP.
+            </p>
 
+            <div class="hero-buttons">
 
-    </section>
-
-
-
-    <!-- CHAT -->
-
-    <section
-        id="chatPage"
-        class="page"
-    >
-
-
-        <div class="page-header">
-
-
-            <div>
-
-                <h2>
-                    Site Chat
-                </h2>
-
-                <p>
-                    Talk with other ADMFLIP users.
-                </p>
-
-            </div>
-
-
-            <button
-                id="closeChat"
-                class="close-panel"
-            >
-                ×
-            </button>
-
-
-        </div>
-
-
-        <div class="chat-container">
-
-
-            <div
-                id="chatMessages"
-                class="chat-messages"
-            ></div>
-
-
-            <div
-                id="chatLoginMessage"
-                class="chat-login-message"
-            >
-
-                🔒
-
-                <strong>
-                    Sign in to chat
-                </strong>
-
-                <span>
-                    Verify your Roblox account first.
-                </span>
-
-            </div>
-
-
-            <form
-                id="chatForm"
-                class="chat-form"
-                style="display:none;"
-            >
-
-                <input
-                    id="chatInput"
-                    type="text"
-                    maxlength="500"
-                    autocomplete="off"
-                    placeholder="Write a message..."
+                <button
+                    class="primary-button"
+                    onclick="openPage('values')"
                 >
-
-
-                <button type="submit">
-                    Send
+                    Explore Values
                 </button>
 
-            </form>
-
-
-        </div>
-
-
-    </section>
-
-
-
-    <!-- VALUES -->
-
-    <section
-        id="valuesPage"
-        class="page"
-    >
-
-
-        <div class="page-header">
-
-
-            <div>
-
-                <h2>
-                    Pet Values
-                </h2>
-
-                <p>
-                    Current ADMFLIP pet values.
-                </p>
+                <button
+                    class="secondary-button"
+                    onclick="openPage('chat')"
+                >
+                    Open Chat
+                </button>
 
             </div>
 
+        </div>
 
-            <button
-                id="closeValues"
-                class="close-panel"
-            >
-                ×
-            </button>
+    </div>
 
+</section>
+
+
+<section
+    id="chatPage"
+    class="page"
+>
+
+    <div class="page-header">
+
+        <div>
+
+            <div class="page-kicker">
+                COMMUNITY
+            </div>
+
+            <h2>
+                Site Chat
+            </h2>
+
+            <p>
+                Talk with ADMFLIP traders.
+            </p>
 
         </div>
 
+        <button
+            id="closeChat"
+            class="close-panel"
+        >
+            ×
+        </button>
 
-        <div class="values-tools">
-
-
-            <input
-                id="valueSearch"
-                type="search"
-                placeholder="Search pets..."
-                autocomplete="off"
-            >
+    </div>
 
 
-        </div>
+    <div class="chat-container">
+
+        <div
+            id="chatMessages"
+            class="chat-messages"
+        ></div>
 
 
         <div
-            id="petList"
-            class="pet-list"
+            id="chatLoginMessage"
+            class="chat-login-message"
         >
 
-            <div class="loading">
-                Loading values...
+            <strong>
+                Sign in to chat
+            </strong>
+
+            <span>
+                Verify your Roblox account first.
+            </span>
+
+        </div>
+
+
+        <form
+            id="chatForm"
+            class="chat-form"
+            style="display:none"
+        >
+
+            <input
+                id="chatInput"
+                maxlength="500"
+                autocomplete="off"
+                placeholder="Send a message..."
+            >
+
+            <button>
+                Send
+            </button>
+
+        </form>
+
+    </div>
+
+</section>
+
+
+<section
+    id="valuesPage"
+    class="page"
+>
+
+    <div class="page-header">
+
+        <div>
+
+            <div class="page-kicker">
+                AMVGG VALUES
             </div>
 
-        </div>
-
-
-    </section>
-
-
-
-    <!-- LEADERBOARD -->
-
-    <section
-        id="leaderboardPage"
-        class="page"
-    >
-
-        <div class="empty-page">
-
             <h2>
-                Leaderboard
+                Pet Values
             </h2>
 
             <p>
-                Leaderboard coming soon.
+                Search the ADMFLIP value list.
             </p>
 
         </div>
 
-    </section>
+
+        <button
+            id="closeValues"
+            class="close-panel"
+        >
+            ×
+        </button>
+
+    </div>
 
 
+    <div class="values-tools">
 
-    <!-- COINFLIP -->
+        <input
+            id="valueSearch"
+            type="search"
+            placeholder="Search for a pet..."
+            autocomplete="off"
+        >
 
-    <section
-        id="coinflipPage"
-        class="page"
+    </div>
+
+
+    <div
+        id="petList"
+        class="pet-list"
     >
 
-        <div class="empty-page">
-
-            <h2>
-                Coinflip
-            </h2>
-
-            <p>
-                Coinflip coming soon.
-            </p>
-
+        <div class="loading">
+            Loading values...
         </div>
 
-    </section>
+    </div>
 
+</section>
+
+
+<section
+    id="leaderboardPage"
+    class="page"
+>
+
+    <div class="empty-page">
+
+        <h2>
+            Leaderboard
+        </h2>
+
+        <p>
+            Coming soon.
+        </p>
+
+    </div>
+
+</section>
+
+
+<section
+    id="coinflipPage"
+    class="page"
+>
+
+    <div class="empty-page">
+
+        <h2>
+            Coinflip
+        </h2>
+
+        <p>
+            Coming soon.
+        </p>
+
+    </div>
+
+</section>
 
 </main>
 
-
-
-<!-- =========================
-     ANNOUNCEMENT
-========================= -->
 
 <div
     id="announcement"
@@ -443,21 +365,15 @@
 ></div>
 
 
-
-<!-- =========================
-     MAINTENANCE
-========================= -->
-
 <div
     id="maintenance"
     class="maintenance hidden"
 >
 
-
     <div class="maintenance-box">
 
         <div class="maintenance-icon">
-            ⚙️
+            ⚙
         </div>
 
         <h1>
@@ -469,83 +385,62 @@
         </h2>
 
         <p>
-            We're working on something.
-            Please come back soon.
+            We'll be back soon.
         </p>
 
     </div>
 
-
 </div>
 
-
-
-<!-- =========================
-     LOGIN MODAL
-========================= -->
 
 <div
     class="modal"
     id="modal"
 >
 
-
     <div class="box">
-
 
         <button
             id="modalClose"
             class="modal-close"
-            type="button"
         >
             ×
         </button>
-
 
         <h2>
             Roblox Sign In
         </h2>
 
-
         <p class="modal-description">
-            Verify your Roblox account to use ADMFLIP chat.
+            Verify your Roblox account to continue.
         </p>
-
 
         <input
             id="username"
             placeholder="Roblox username"
             autocomplete="off"
-            maxlength="30"
         >
-
 
         <div
             id="profile"
             class="hidden"
         ></div>
 
-
         <div
             id="phrase"
             class="hidden"
         ></div>
 
-
         <button
             id="verify"
-            type="button"
-            style="display:none;"
+            style="display:none"
         >
             Verify
         </button>
 
-
     </div>
 
-
 </div>
-
 
 
 <script src="script.js"></script>
