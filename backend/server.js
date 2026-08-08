@@ -2,97 +2,205 @@ const express = require("express");
 const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
 const fs = require("fs");
+const crypto = require("crypto");
+const cheerio = require("cheerio");
 
 const app = express();
 
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
-app.use(express.json({ limit: "50kb" }));
+const MONGO_URL = process.env.MONGO_URL;
 
-// ==============================
-// RATE LIMIT
-// ==============================
+const JWT_SECRET =
+    process.env.JWT_SECRET ||
+    "CHANGE_THIS_SECRET_IN_RENDER";
 
-const limiter = rateLimit({
+const ADMIN_TELEGRAM_ID =
+    String(process.env.TELEGRAM_ADMIN_ID || "");
+
+const IMAGE_SOURCE =
+    "https://elvebredd.com/adopt-me-calculator";
+
+
+// =====================================================
+// EXPRESS
+// =====================================================
+
+app.set("trust proxy", 1);
+
+app.use(cors({
+    origin: true,
+    credentials: true
+}));
+
+app.use(express.json({
+    limit: "100kb"
+}));
+
+
+app.use(rateLimit({
     windowMs: 60 * 1000,
-    max: 100,
+    max: 120,
     standardHeaders: true,
     legacyHeaders: false
-});
+}));
 
-app.use(limiter);
 
-// ==============================
-// MONGODB
-// ==============================
+// =====================================================
+// DATABASE
+// =====================================================
 
 console.log(
     "Mongo URL exists:",
-    !!process.env.MONGO_URL
+    !!MONGO_URL
 );
 
-if (process.env.MONGO_URL) {
+if (!MONGO_URL) {
 
-    mongoose.connect(process.env.MONGO_URL)
-        .then(() => {
-            console.log("MongoDB connected");
-        })
-        .catch((err) => {
-            console.log(
-                "MongoDB error:",
-                err.message
-            );
-        });
-
-} else {
-
-    console.log(
+    console.error(
         "MONGO_URL is missing"
     );
 
 }
 
-// ==============================
-// USER MODEL
-// ==============================
 
-const userSchema = new mongoose.Schema({
+mongoose.connect(MONGO_URL || "")
+    .then(() => {
+
+        console.log(
+            "MongoDB connected"
+        );
+
+    })
+    .catch(error => {
+
+        console.error(
+            "MongoDB error:",
+            error.message
+        );
+
+    });
+
+
+// =====================================================
+// USER SCHEMA
+// =====================================================
+
+const PetSchema = new mongoose.Schema({
+
+    petId: {
+        type: String,
+        required: true,
+        unique: false
+    },
+
+    name: {
+        type: String,
+        required: true,
+        trim: true
+    },
+
+    variant: {
+        type: String,
+        enum: [
+            "NP",
+            "R",
+            "F",
+            "FR",
+            "N",
+            "NR",
+            "NF",
+            "NFR",
+            "M",
+            "MR",
+            "MF",
+            "MFR"
+        ],
+        default: "NP"
+    },
+
+    value: {
+        type: Number,
+        required: true,
+        min: 0
+    },
+
+    image: {
+        type: String,
+        default: ""
+    },
+
+    locked: {
+        type: Boolean,
+        default: false
+    }
+
+}, {
+    _id: false
+});
+
+
+const UserSchema = new mongoose.Schema({
 
     robloxId: {
         type: Number,
-        unique: true,
+        required: true,
+        unique: true
+    },
+
+    username: {
+        type: String,
+        required: true,
         index: true
     },
 
-    username: String,
+    avatar: {
+        type: String,
+        default: ""
+    },
 
-    avatar: String,
+    balance: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
 
-    inventory: [{
-        name: String,
-        value: Number
-    }],
+    wagered: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
 
-    deposited: [{
-        name: String,
-        value: Number
-    }]
+    profit: {
+        type: Number,
+        default: 0
+    },
+
+    inventory: {
+        type: [PetSchema],
+        default: []
+    }
 
 }, {
     timestamps: true
 });
 
+
 const User =
     mongoose.models.User ||
-    mongoose.model("User", userSchema);
+    mongoose.model(
+        "User",
+        UserSchema
+    );
 
-// ==============================
+
+// =====================================================
 // SETTINGS
-// ==============================
+// =====================================================
 
-const settingsSchema = new mongoose.Schema({
+const SettingsSchema = new mongoose.Schema({
 
     siteOnline: {
         type: Boolean,
@@ -106,25 +214,38 @@ const settingsSchema = new mongoose.Schema({
 
 });
 
+
 const Settings =
     mongoose.models.Settings ||
-    mongoose.model("Settings", settingsSchema);
+    mongoose.model(
+        "Settings",
+        SettingsSchema
+    );
 
-// ==============================
-// CHAT MESSAGE MODEL
-// ==============================
 
-const chatMessageSchema = new mongoose.Schema({
+// =====================================================
+// CHAT
+// =====================================================
+
+const ChatSchema = new mongoose.Schema({
+
+    type: {
+        type: String,
+        enum: [
+            "message",
+            "announcement"
+        ],
+        default: "message"
+    },
+
+    userId: {
+        type: Number,
+        default: null
+    },
 
     username: {
         type: String,
-        required: true,
-        maxlength: 30
-    },
-
-    robloxId: {
-        type: Number,
-        required: true
+        default: ""
     },
 
     avatar: {
@@ -132,30 +253,334 @@ const chatMessageSchema = new mongoose.Schema({
         default: ""
     },
 
-    message: {
+    content: {
         type: String,
         required: true,
-        maxlength: 250
+        maxlength: 500
     }
 
 }, {
     timestamps: true
 });
 
-const ChatMessage =
-    mongoose.models.ChatMessage ||
+
+const Chat =
+    mongoose.models.Chat ||
     mongoose.model(
-        "ChatMessage",
-        chatMessageSchema
+        "Chat",
+        ChatSchema
     );
 
-// ==============================
-// PET VALUES
-// ==============================
 
-function loadPets() {
+// =====================================================
+// COINFLIP
+// =====================================================
+
+const CoinflipSchema = new mongoose.Schema({
+
+    flipId: {
+        type: String,
+        unique: true,
+        required: true
+    },
+
+    creatorId: {
+        type: Number,
+        required: true
+    },
+
+    creatorUsername: {
+        type: String,
+        required: true
+    },
+
+    petId: {
+        type: String,
+        required: true
+    },
+
+    petName: {
+        type: String,
+        required: true
+    },
+
+    petVariant: {
+        type: String,
+        required: true
+    },
+
+    petValue: {
+        type: Number,
+        required: true
+    },
+
+    petImage: {
+        type: String,
+        default: ""
+    },
+
+    side: {
+        type: String,
+        enum: [
+            "heads",
+            "tails"
+        ],
+        required: true
+    },
+
+    status: {
+        type: String,
+        enum: [
+            "open",
+            "matched",
+            "finished",
+            "cancelled"
+        ],
+        default: "open"
+    },
+
+    opponentId: {
+        type: Number,
+        default: null
+    },
+
+    winnerId: {
+        type: Number,
+        default: null
+    }
+
+}, {
+    timestamps: true
+});
+
+
+const Coinflip =
+    mongoose.models.Coinflip ||
+    mongoose.model(
+        "Coinflip",
+        CoinflipSchema
+    );
+
+
+// =====================================================
+// PET VALUE CACHE
+// =====================================================
+
+const PetValueSchema = new mongoose.Schema({
+
+    name: {
+        type: String,
+        unique: true,
+        required: true
+    },
+
+    value: {
+        type: Number,
+        default: 0
+    },
+
+    image: {
+        type: String,
+        default: ""
+    },
+
+    updatedAt: {
+        type: Date,
+        default: Date.now
+    }
+
+});
+
+
+const PetValue =
+    mongoose.models.PetValue ||
+    mongoose.model(
+        "PetValue",
+        PetValueSchema
+    );
+
+
+// =====================================================
+// HELPERS
+// =====================================================
+
+function makePetId() {
+
+    return crypto
+        .randomUUID();
+
+}
+
+
+function makeFlipId() {
+
+    return crypto
+        .randomUUID();
+
+}
+
+
+function signToken(user) {
+
+    return jwt.sign({
+
+        userId: user.robloxId,
+
+        username: user.username
+
+    }, JWT_SECRET, {
+        expiresIn: "30d"
+    });
+
+}
+
+
+function auth(req, res, next) {
 
     try {
+
+        const header =
+            req.headers.authorization || "";
+
+        if (!header.startsWith("Bearer ")) {
+
+            return res.status(401).json({
+
+                success: false,
+
+                message: "Authentication required"
+
+            });
+
+        }
+
+
+        const token =
+            header.substring(7);
+
+
+        const decoded =
+            jwt.verify(
+                token,
+                JWT_SECRET
+            );
+
+
+        req.auth = decoded;
+
+        next();
+
+    }
+    catch {
+
+        return res.status(401).json({
+
+            success: false,
+
+            message: "Invalid or expired login"
+
+        });
+
+    }
+
+}
+
+
+async function getCurrentUser(req) {
+
+    return User.findOne({
+        robloxId: req.auth.userId
+    });
+
+}
+
+
+function cleanText(value, max = 500) {
+
+    return String(value || "")
+        .trim()
+        .slice(0, max);
+
+}
+
+
+function containsLink(text) {
+
+    const value =
+        String(text || "")
+            .toLowerCase();
+
+
+    const patterns = [
+
+        /https?:\/\//i,
+
+        /www\./i,
+
+        /\b[a-z0-9-]+\.(com|net|org|gg|io|me|xyz|co|tv|dev)\b/i,
+
+        /discord\.gg/i,
+
+        /discord\.com/i,
+
+        /t\.me\//i
+
+    ];
+
+
+    return patterns.some(
+        regex => regex.test(value)
+    );
+
+}
+
+
+function normalizeVariant(value) {
+
+    const variant =
+        String(value || "NP")
+            .toUpperCase();
+
+
+    const valid = [
+
+        "NP",
+        "R",
+        "F",
+        "FR",
+        "N",
+        "NR",
+        "NF",
+        "NFR",
+        "M",
+        "MR",
+        "MF",
+        "MFR"
+
+    ];
+
+
+    return valid.includes(variant)
+        ? variant
+        : "NP";
+
+}
+
+
+// =====================================================
+// PET VALUES FILE
+// =====================================================
+
+function loadLocalPets() {
+
+    try {
+
+        if (!fs.existsSync("./values.txt")) {
+
+            return [];
+
+        }
+
 
         const text =
             fs.readFileSync(
@@ -163,13 +588,16 @@ function loadPets() {
                 "utf8"
             );
 
+
         const lines =
             text
                 .split(/\r?\n/)
                 .map(x => x.trim())
                 .filter(Boolean);
 
-        const pets = [];
+
+        const result = [];
+
 
         for (
             let i = 0;
@@ -177,53 +605,431 @@ function loadPets() {
             i += 2
         ) {
 
-            const name = lines[i];
-            let value = lines[i + 1];
+            const name =
+                lines[i];
+
+            let value =
+                lines[i + 1];
+
 
             if (!name || !value) {
+
                 continue;
+
             }
 
-            value =
-                value
-                    .replace(/[$]/g, "")
-                    .replace(/,/g, "");
 
-            const numericValue =
+            /*
+             * IMPORTANT:
+             *
+             * The old code used:
+             *
+             * .replace(/./g, "")
+             *
+             * which removed EVERYTHING.
+             *
+             * This version only removes commas/currency.
+             */
+
+            value =
+                String(value)
+                    .replace(/[$,]/g, "")
+                    .replace(/[^\d.]/g, "");
+
+
+            const number =
                 Number(value);
 
-            pets.push({
+
+            if (!Number.isFinite(number)) {
+
+                continue;
+
+            }
+
+
+            result.push({
+
                 name,
-                value: Number.isFinite(numericValue)
-                    ? numericValue
-                    : 0
+
+                value: number,
+
+                image: ""
+
             });
 
         }
 
-        console.log(
-            "Loaded pets:",
-            pets.length
-        );
 
-        return pets;
+        return result;
 
-    } catch (error) {
+    }
+    catch (error) {
 
-        console.log(
-            "Pet loading error:",
+        console.error(
+            "Values file error:",
             error.message
         );
 
         return [];
+
     }
+
 }
 
-const pets = loadPets();
 
-// ==============================
+const localPets =
+    loadLocalPets();
+
+
+console.log(
+    "Loaded local pets:",
+    localPets.length
+);
+
+
+// =====================================================
+// IMAGE LOOKUP
+// =====================================================
+
+let imagePageCache = null;
+
+let imagePageCacheTime = 0;
+
+
+async function getCalculatorHTML() {
+
+    const now =
+        Date.now();
+
+
+    /*
+     * Cache the page for 30 minutes.
+     * Do not request the external site for every user.
+     */
+
+    if (
+        imagePageCache &&
+        now - imagePageCacheTime <
+            30 * 60 * 1000
+    ) {
+
+        return imagePageCache;
+
+    }
+
+
+    const response =
+        await fetch(
+            IMAGE_SOURCE,
+            {
+                headers: {
+                    "User-Agent":
+                        "ADMFLIP/2.0"
+                }
+            }
+        );
+
+
+    if (!response.ok) {
+
+        throw new Error(
+            "Calculator image source unavailable"
+        );
+
+    }
+
+
+    imagePageCache =
+        await response.text();
+
+    imagePageCacheTime =
+        now;
+
+
+    return imagePageCache;
+
+}
+
+
+async function findPetImage(name) {
+
+    /*
+     * First use Mongo cache.
+     */
+
+    const cached =
+        await PetValue.findOne({
+            name: {
+                $regex:
+                    new RegExp(
+                        "^" +
+                        escapeRegex(name) +
+                        "$",
+                        "i"
+                    )
+            }
+        }).lean();
+
+
+    if (
+        cached &&
+        cached.image
+    ) {
+
+        return cached.image;
+
+    }
+
+
+    try {
+
+        const html =
+            await getCalculatorHTML();
+
+
+        const $ =
+            cheerio.load(html);
+
+
+        let found = "";
+
+
+        $("img").each(
+            (_, element) => {
+
+                if (found) return;
+
+
+                const src =
+                    $(element)
+                        .attr("src");
+
+
+                const alt =
+                    $(element)
+                        .attr("alt") ||
+                    "";
+
+
+                const title =
+                    $(element)
+                        .attr("title") ||
+                    "";
+
+
+                const combined =
+                    `${alt} ${title}`
+                        .toLowerCase();
+
+
+                if (
+                    combined.includes(
+                        name.toLowerCase()
+                    ) &&
+                    src
+                ) {
+
+                    found =
+                        makeAbsoluteURL(
+                            src
+                        );
+
+                }
+
+            }
+        );
+
+
+        return found;
+
+    }
+    catch (error) {
+
+        console.error(
+            "Pet image lookup:",
+            error.message
+        );
+
+        return "";
+
+    }
+
+}
+
+
+function escapeRegex(value) {
+
+    return String(value)
+        .replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&"
+        );
+
+}
+
+
+function makeAbsoluteURL(src) {
+
+    if (!src) return "";
+
+    if (
+        src.startsWith("http://") ||
+        src.startsWith("https://")
+    ) {
+
+        return src;
+
+    }
+
+
+    if (src.startsWith("//")) {
+
+        return "https:" + src;
+
+    }
+
+
+    if (src.startsWith("/")) {
+
+        return "https://elvebredd.com" + src;
+
+    }
+
+
+    return "";
+}
+
+
+// =====================================================
+// PET VALUE LOOKUP
+// =====================================================
+
+async function getPetValue(name) {
+
+    const local =
+        localPets.find(
+            pet =>
+                pet.name.toLowerCase() ===
+                String(name).toLowerCase()
+        );
+
+
+    if (local) {
+
+        return local.value;
+
+    }
+
+
+    const cached =
+        await PetValue.findOne({
+
+            name: {
+                $regex:
+                    new RegExp(
+                        "^" +
+                        escapeRegex(name) +
+                        "$",
+                        "i"
+                    )
+            }
+
+        }).lean();
+
+
+    if (cached) {
+
+        return cached.value;
+
+    }
+
+
+    return 0;
+
+}
+
+
+async function getPetMetadata(name) {
+
+    let record =
+        await PetValue.findOne({
+
+            name: {
+                $regex:
+                    new RegExp(
+                        "^" +
+                        escapeRegex(name) +
+                        "$",
+                        "i"
+                    )
+            }
+
+        });
+
+
+    const value =
+        await getPetValue(name);
+
+
+    let image =
+        record?.image || "";
+
+
+    if (!image) {
+
+        image =
+            await findPetImage(name);
+
+    }
+
+
+    if (record) {
+
+        record.value =
+            value;
+
+        record.image =
+            image;
+
+        record.updatedAt =
+            new Date();
+
+        await record.save();
+
+    }
+    else {
+
+        await PetValue.create({
+
+            name,
+
+            value,
+
+            image,
+
+            updatedAt:
+                new Date()
+
+        });
+
+    }
+
+
+    return {
+
+        value,
+
+        image
+
+    };
+
+}
+
+
+// =====================================================
 // HOME
-// ==============================
+// =====================================================
 
 app.get("/", (req, res) => {
 
@@ -233,66 +1039,209 @@ app.get("/", (req, res) => {
 
 });
 
-// ==============================
+
+// =====================================================
 // STATUS
-// ==============================
+// =====================================================
 
-app.get("/status", async (req, res) => {
+app.get(
+    "/status",
+    async (req, res) => {
 
-    try {
+        try {
 
-        let settings =
-            await Settings.findOne();
+            let settings =
+                await Settings.findOne();
 
-        if (!settings) {
 
-            settings =
-                await Settings.create({});
+            if (!settings) {
+
+                settings =
+                    await Settings.create({});
+
+            }
+
+
+            res.json({
+
+                success: true,
+
+                online:
+                    settings.siteOnline,
+
+                announcement:
+                    settings.announcement
+
+            });
+
+        }
+        catch {
+
+            res.json({
+
+                success: true,
+
+                online: true,
+
+                announcement: ""
+
+            });
 
         }
 
-        res.json({
+    }
+);
 
-            online: settings.siteOnline,
 
-            announcement:
-                settings.announcement
+// =====================================================
+// PETS
+// =====================================================
 
-        });
+app.get(
+    "/pets",
+    async (req, res) => {
 
-    } catch (error) {
+        try {
 
-        res.json({
+            const values =
+                localPets.map(
+                    pet => ({
+                        name: pet.name,
+                        value: pet.value,
+                        image: ""
+                    })
+                );
 
-            online: true,
 
-            announcement: ""
+            /*
+             * Add cached Mongo images.
+             */
 
-        });
+            const cached =
+                await PetValue.find({});
+
+
+            const cacheMap =
+                new Map();
+
+
+            for (const item of cached) {
+
+                cacheMap.set(
+                    item.name.toLowerCase(),
+                    item
+                );
+
+            }
+
+
+            const result =
+                values.map(pet => {
+
+                    const cachedItem =
+                        cacheMap.get(
+                            pet.name.toLowerCase()
+                        );
+
+
+                    return {
+
+                        name: pet.name,
+
+                        value:
+                            pet.value,
+
+                        image:
+                            cachedItem?.image ||
+                            ""
+
+                    };
+
+                });
+
+
+            res.json({
+
+                success: true,
+
+                pets: result
+
+            });
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Unable to load pets"
+
+            });
+
+        }
 
     }
+);
 
-});
 
-// ==============================
-// PETS
-// ==============================
+// =====================================================
+// PET IMAGE
+// =====================================================
 
-app.get("/pets", (req, res) => {
+app.get(
+    "/pet-image/:name",
+    async (req, res) => {
 
-    res.json({
+        try {
 
-        success: true,
+            const name =
+                req.params.name;
 
-        pets
 
-    });
+            const metadata =
+                await getPetMetadata(
+                    name
+                );
 
-});
 
-// ==============================
-// ROBLOX USER
-// ==============================
+            res.json({
+
+                success: true,
+
+                name,
+
+                value:
+                    metadata.value,
+
+                image:
+                    metadata.image
+
+            });
+
+        }
+        catch {
+
+            res.status(500).json({
+
+                success: false,
+
+                image: ""
+
+            });
+
+        }
+
+    }
+);
+
+
+// =====================================================
+// ROBLOX USER LOOKUP
+// =====================================================
 
 app.get(
     "/user/:username",
@@ -301,37 +1250,45 @@ app.get(
         try {
 
             const username =
-                req.params.username.trim();
+                req.params.username;
 
-            if (!username) {
-
-                return res.json({
-                    success: false,
-                    message: "Username required"
-                });
-
-            }
 
             const response =
                 await fetch(
+
                     "https://users.roblox.com/v1/usernames/users",
+
                     {
+
                         method: "POST",
 
                         headers: {
+
                             "Content-Type":
                                 "application/json"
+
                         },
 
-                        body: JSON.stringify({
-                            usernames: [username],
-                            excludeBannedUsers: true
-                        })
+                        body:
+                            JSON.stringify({
+
+                                usernames: [
+                                    username
+                                ],
+
+                                excludeBannedUsers:
+                                    true
+
+                            })
+
                     }
+
                 );
+
 
             const data =
                 await response.json();
+
 
             if (
                 !data.data ||
@@ -349,22 +1306,22 @@ app.get(
 
             }
 
+
             const user =
                 data.data[0];
 
+
             const avatarResponse =
                 await fetch(
+
                     `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${user.id}&size=150x150&format=Png`
+
                 );
+
 
             const avatarData =
                 await avatarResponse.json();
 
-            const avatar =
-                avatarData.data &&
-                avatarData.data[0]
-                    ? avatarData.data[0].imageUrl
-                    : "";
 
             res.json({
 
@@ -374,26 +1331,29 @@ app.get(
 
                     id: user.id,
 
-                    username: user.name,
+                    username:
+                        user.name,
 
-                    avatar
+                    avatar:
+                        avatarData
+                            ?.data?.[0]
+                            ?.imageUrl || ""
 
                 }
 
             });
 
-        } catch (error) {
+        }
+        catch (error) {
 
-            console.log(
-                "Roblox user error:",
-                error.message
-            );
+            console.error(error);
 
             res.status(500).json({
 
                 success: false,
 
-                message: "Server error"
+                message:
+                    "Server error"
 
             });
 
@@ -402,54 +1362,62 @@ app.get(
     }
 );
 
-// ==============================
-// CREATE VERIFICATION PHRASE
-// ==============================
+
+// =====================================================
+// CREATE PHRASE
+// =====================================================
 
 function generatePhrase() {
 
     const words = [
+
         "BlueTiger",
         "FastCloud",
         "LuckyWave",
         "SilverMoon",
         "GoldenLeaf",
-        "DarkFalcon",
-        "CrystalWolf",
-        "NeonDragon"
+        "PurpleFox",
+        "RapidStar",
+        "CrystalMoon"
+
     ];
 
-    const word =
+
+    return (
         words[
             Math.floor(
                 Math.random() *
                 words.length
             )
-        ];
-
-    const number =
+        ] +
+        "-" +
         Math.floor(
             1000 +
             Math.random() * 9000
-        );
+        )
+    );
 
-    return `${word}-${number}`;
 }
 
-app.get("/create", (req, res) => {
 
-    res.json({
+app.get(
+    "/create",
+    (req, res) => {
 
-        phrase:
-            generatePhrase()
+        res.json({
 
-    });
+            phrase:
+                generatePhrase()
 
-});
+        });
 
-// ==============================
-// VERIFY ROBLOX BIO
-// ==============================
+    }
+);
+
+
+// =====================================================
+// VERIFY ROBLOX BIO + CREATE AUTH TOKEN
+// =====================================================
 
 app.post(
     "/check",
@@ -462,43 +1430,60 @@ app.post(
                 phrase
             } = req.body;
 
-            if (!username || !phrase) {
 
-                return res.json({
+            if (
+                !username ||
+                !phrase
+            ) {
+
+                return res.status(400).json({
 
                     success: false,
 
                     message:
-                        "Username and phrase required"
+                        "Missing username or phrase"
 
                 });
 
             }
 
+
             const response =
                 await fetch(
+
                     "https://users.roblox.com/v1/usernames/users",
+
                     {
+
                         method: "POST",
 
                         headers: {
+
                             "Content-Type":
                                 "application/json"
+
                         },
 
-                        body: JSON.stringify({
+                        body:
+                            JSON.stringify({
 
-                            usernames: [username],
+                                usernames: [
+                                    username
+                                ],
 
-                            excludeBannedUsers: true
+                                excludeBannedUsers:
+                                    true
 
-                        })
+                            })
 
                     }
+
                 );
+
 
             const data =
                 await response.json();
+
 
             if (
                 !data.data ||
@@ -516,53 +1501,121 @@ app.post(
 
             }
 
+
             const id =
                 data.data[0].id;
 
+
             const profileResponse =
                 await fetch(
+
                     `https://users.roblox.com/v1/users/${id}`
+
                 );
+
 
             const profile =
                 await profileResponse.json();
 
+
             if (
-                profile.description &&
-                profile.description.includes(
+                !profile.description ||
+                !profile.description.includes(
                     phrase
                 )
             ) {
 
                 return res.json({
 
-                    success: true,
+                    success: false,
 
-                    username:
-                        profile.name,
-
-                    id:
-                        profile.id
+                    message:
+                        "Verification phrase not found"
 
                 });
 
             }
 
+
+            const avatarResponse =
+                await fetch(
+
+                    `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${id}&size=150x150&format=Png`
+
+                );
+
+
+            const avatarData =
+                await avatarResponse.json();
+
+
+            const avatar =
+                avatarData
+                    ?.data?.[0]
+                    ?.imageUrl || "";
+
+
+            let user =
+                await User.findOne({
+                    robloxId: id
+                });
+
+
+            if (!user) {
+
+                user =
+                    await User.create({
+
+                        robloxId: id,
+
+                        username:
+                            profile.name,
+
+                        avatar,
+
+                        inventory: []
+
+                    });
+
+            }
+            else {
+
+                user.username =
+                    profile.name;
+
+                user.avatar =
+                    avatar;
+
+                await user.save();
+
+            }
+
+
+            const token =
+                signToken(user);
+
+
             res.json({
 
-                success: false,
+                success: true,
 
-                message:
-                    "Verification phrase not found"
+                token,
+
+                username:
+                    user.username,
+
+                id:
+                    user.robloxId,
+
+                avatar:
+                    user.avatar
 
             });
 
-        } catch (error) {
+        }
+        catch (error) {
 
-            console.log(
-                "Verification error:",
-                error.message
-            );
+            console.error(error);
 
             res.status(500).json({
 
@@ -578,243 +1631,183 @@ app.post(
     }
 );
 
-// ==================================================
-// AMVGG PET LOOKUP
-// ==================================================
-//
-// This searches the AMVGG pet page.
-// Example:
-// /amvgg-pet/Unicorn
-//
-// It extracts:
-// - value
-// - image
-// - variation information
-//
-// ==================================================
 
-function escapeRegex(text) {
-
-    return text.replace(
-        /[.*+?^${}()|[\]\\]/g,
-        "\\$&"
-    );
-
-}
+// =====================================================
+// CURRENT USER
+// =====================================================
 
 app.get(
-    "/amvgg-pet/:petName",
+    "/me",
+    auth,
+    async (req, res) => {
+
+        const user =
+            await getCurrentUser(req);
+
+
+        if (!user) {
+
+            return res.status(404).json({
+
+                success: false,
+
+                message: "User not found"
+
+            });
+
+        }
+
+
+        res.json({
+
+            success: true,
+
+            user: {
+
+                id:
+                    user.robloxId,
+
+                username:
+                    user.username,
+
+                avatar:
+                    user.avatar,
+
+                balance:
+                    user.balance,
+
+                wagered:
+                    user.wagered,
+
+                profit:
+                    user.profit,
+
+                inventory:
+                    user.inventory
+
+            }
+
+        });
+
+    }
+);
+
+
+// =====================================================
+// INVENTORY
+// =====================================================
+
+app.get(
+    "/inventory",
+    auth,
+    async (req, res) => {
+
+        const user =
+            await getCurrentUser(req);
+
+
+        if (!user) {
+
+            return res.status(404).json({
+
+                success: false
+
+            });
+
+        }
+
+
+        res.json({
+
+            success: true,
+
+            inventory:
+                user.inventory.filter(
+                    pet =>
+                        !pet.locked
+                )
+
+        });
+
+    }
+);
+
+
+// =====================================================
+// PUBLIC PROFILE
+// =====================================================
+
+app.get(
+    "/profile/:robloxId",
     async (req, res) => {
 
         try {
 
-            const petName =
-                decodeURIComponent(
-                    req.params.petName
-                ).trim();
+            const id =
+                Number(
+                    req.params.robloxId
+                );
 
-            if (!petName) {
+
+            if (!Number.isFinite(id)) {
 
                 return res.status(400).json({
 
-                    success: false,
-
-                    message:
-                        "Pet name required"
+                    success: false
 
                 });
 
             }
 
-            const slug =
-                petName
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, "-")
-                    .replace(/^-|-$/g, "");
 
-            const url =
-                `https://amvgg.com/pet/${slug}`;
+            const user =
+                await User.findOne({
+                    robloxId: id
+                }).lean();
 
-            const response =
-                await fetch(url, {
 
-                    headers: {
-
-                        "User-Agent":
-                            "Mozilla/5.0 ADMFLIP Value Lookup"
-
-                    }
-
-                });
-
-            if (!response.ok) {
+            if (!user) {
 
                 return res.status(404).json({
 
-                    success: false,
-
-                    message:
-                        "Pet not found on AMVGG"
+                    success: false
 
                 });
 
             }
 
-            const html =
-                await response.text();
-
-            // ------------------------------
-            // IMAGE
-            // ------------------------------
-
-            let image = "";
-
-            const imageMatches =
-                html.match(
-                    /<img[^>]+src=["']([^"']+)["'][^>]*>/gi
-                ) || [];
-
-            for (
-                const tag of imageMatches
-            ) {
-
-                const match =
-                    tag.match(
-                        /src=["']([^"']+)["']/i
-                    );
-
-                if (!match) {
-                    continue;
-                }
-
-                const src = match[1];
-
-                if (
-                    !src.includes("logo") &&
-                    !src.includes("avatar") &&
-                    !src.includes("icon") &&
-                    (
-                        src.includes("/storage/") ||
-                        src.includes("/uploads/") ||
-                        src.includes("amvgg")
-                    )
-                ) {
-
-                    image = src;
-
-                    if (
-                        image.startsWith("/")
-                    ) {
-
-                        image =
-                            "https://amvgg.com" +
-                            image;
-
-                    }
-
-                    break;
-                }
-
-            }
-
-            // ------------------------------
-            // TEXT
-            // ------------------------------
-
-            const clean =
-                html
-                    .replace(
-                        /<script[\s\S]*?<\/script>/gi,
-                        " "
-                    )
-                    .replace(
-                        /<style[\s\S]*?<\/style>/gi,
-                        " "
-                    )
-                    .replace(
-                        /<[^>]+>/g,
-                        " "
-                    )
-                    .replace(
-                        /&nbsp;/g,
-                        " "
-                    )
-                    .replace(
-                        /&amp;/g,
-                        "&"
-                    )
-                    .replace(
-                        /\s+/g,
-                        " "
-                    );
-
-            // Look for "Value 0.123"
-            const valueMatch =
-                clean.match(
-                    /Value\s+([0-9]+(?:\.[0-9]+)?)/i
-                );
-
-            const value =
-                valueMatch
-                    ? Number(valueMatch[1])
-                    : null;
-
-            // ------------------------------
-            // VARIATIONS
-            // ------------------------------
-
-            const upper =
-                petName.toUpperCase();
-
-            const variations = {
-
-                ride:
-                    /\bR\b/.test(upper),
-
-                fly:
-                    /\bF\b/.test(upper),
-
-                neon:
-                    /\bN\b/.test(upper),
-
-                megaNeon:
-                    /\bM\b/.test(upper)
-
-            };
 
             res.json({
 
                 success: true,
 
-                pet: {
+                user: {
 
-                    name: petName,
+                    id:
+                        user.robloxId,
 
-                    value,
+                    username:
+                        user.username,
 
-                    image,
+                    avatar:
+                        user.avatar,
 
-                    variations
+                    wagered:
+                        user.wagered,
 
-                },
+                    profit:
+                        user.profit
 
-                source: "AMVGG"
+                }
 
             });
 
-        } catch (error) {
-
-            console.log(
-                "AMVGG lookup error:",
-                error.message
-            );
+        }
+        catch {
 
             res.status(500).json({
 
-                success: false,
-
-                message:
-                    "AMVGG lookup failed"
+                success: false
 
             });
 
@@ -823,54 +1816,544 @@ app.get(
     }
 );
 
-// ==================================================
-// CHAT
-// ==================================================
 
-function containsLink(text) {
+// =====================================================
+// TIP
+// =====================================================
 
-    const patterns = [
+app.post(
+    "/tip",
+    auth,
+    async (req, res) => {
 
-        /https?:\/\//i,
+        const session =
+            await mongoose.startSession();
 
-        /www\./i,
 
-        /\b[a-z0-9-]+\.(com|net|org|gg|io|xyz|me|co|tv|site|dev|app)\b/i,
+        try {
 
-        /\bdiscord\.gg\b/i,
+            const {
+                receiverId,
+                petId
+            } = req.body;
 
-        /\bdiscord\.com\b/i,
 
-        /\bt\.me\b/i,
+            const receiver =
+                Number(receiverId);
 
-        /\bbit\.ly\b/i
 
-    ];
+            if (
+                !Number.isFinite(receiver) ||
+                !petId
+            ) {
 
-    return patterns.some(
-        regex => regex.test(text)
-    );
+                return res.status(400).json({
 
-}
+                    success: false,
 
-// GET CHAT MESSAGES
+                    message:
+                        "Invalid tip"
+
+                });
+
+            }
+
+
+            if (
+                receiver ===
+                req.auth.userId
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    message:
+                        "You cannot tip yourself"
+
+                });
+
+            }
+
+
+            let result;
+
+
+            await session.withTransaction(
+                async () => {
+
+                    const sender =
+                        await User.findOne({
+                            robloxId:
+                                req.auth.userId
+                        }).session(session);
+
+
+                    const target =
+                        await User.findOne({
+                            robloxId:
+                                receiver
+                        }).session(session);
+
+
+                    if (!sender || !target) {
+
+                        throw new Error(
+                            "User not found"
+                        );
+
+                    }
+
+
+                    const index =
+                        sender.inventory.findIndex(
+                            pet =>
+                                pet.petId ===
+                                    petId &&
+                                !pet.locked
+                        );
+
+
+                    if (index === -1) {
+
+                        throw new Error(
+                            "Pet not available"
+                        );
+
+                    }
+
+
+                    const pet =
+                        sender.inventory[index];
+
+
+                    /*
+                     * Remove exact pet.
+                     */
+
+                    sender.inventory.splice(
+                        index,
+                        1
+                    );
+
+
+                    /*
+                     * Create a new object with
+                     * the SAME unique pet ID.
+                     */
+
+                    target.inventory.push(
+                        pet
+                    );
+
+
+                    await sender.save({
+                        session
+                    });
+
+
+                    await target.save({
+                        session
+                    });
+
+
+                    result = {
+
+                        name:
+                            pet.name,
+
+                        value:
+                            pet.value
+
+                    };
+
+                }
+            );
+
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Pet tipped successfully",
+
+                pet: result
+
+            });
+
+        }
+        catch (error) {
+
+            console.error(
+                "Tip error:",
+                error.message
+            );
+
+
+            res.status(400).json({
+
+                success: false,
+
+                message:
+                    error.message ||
+                    "Tip failed"
+
+            });
+
+        }
+        finally {
+
+            await session.endSession();
+
+        }
+
+    }
+);
+
+
+// =====================================================
+// COINFLIP LIST
+// =====================================================
 
 app.get(
-    "/chat/messages",
+    "/coinflips",
+    async (req, res) => {
+
+        const flips =
+            await Coinflip.find({
+
+                status: "open"
+
+            })
+                .sort({
+                    createdAt: -1
+                })
+                .limit(100)
+                .lean();
+
+
+        res.json({
+
+            success: true,
+
+            flips
+
+        });
+
+    }
+);
+
+
+// =====================================================
+// CREATE COINFLIP
+// =====================================================
+
+app.post(
+    "/coinflips",
+    auth,
+    async (req, res) => {
+
+        const session =
+            await mongoose.startSession();
+
+
+        try {
+
+            const {
+                petId,
+                side
+            } = req.body;
+
+
+            if (
+                !petId ||
+                ![
+                    "heads",
+                    "tails"
+                ].includes(side)
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    message:
+                        "Invalid flip"
+
+                });
+
+            }
+
+
+            let created;
+
+
+            await session.withTransaction(
+                async () => {
+
+                    const user =
+                        await User.findOne({
+                            robloxId:
+                                req.auth.userId
+                        }).session(session);
+
+
+                    if (!user) {
+
+                        throw new Error(
+                            "User not found"
+                        );
+
+                    }
+
+
+                    const index =
+                        user.inventory.findIndex(
+                            pet =>
+                                pet.petId ===
+                                    petId &&
+                                !pet.locked
+                        );
+
+
+                    if (index === -1) {
+
+                        throw new Error(
+                            "Pet not available"
+                        );
+
+                    }
+
+
+                    const pet =
+                        user.inventory[index];
+
+
+                    /*
+                     * Lock the exact pet.
+                     */
+
+                    user.inventory[index]
+                        .locked = true;
+
+
+                    await user.save({
+                        session
+                    });
+
+
+                    const flip =
+                        await Coinflip.create(
+                            [{
+                                flipId:
+                                    makeFlipId(),
+
+                                creatorId:
+                                    user.robloxId,
+
+                                creatorUsername:
+                                    user.username,
+
+                                petId:
+                                    pet.petId,
+
+                                petName:
+                                    pet.name,
+
+                                petVariant:
+                                    pet.variant,
+
+                                petValue:
+                                    pet.value,
+
+                                petImage:
+                                    pet.image,
+
+                                side,
+
+                                status:
+                                    "open"
+
+                            }],
+                            {
+                                session
+                            }
+                        );
+
+
+                    created =
+                        flip[0];
+
+                }
+            );
+
+
+            res.json({
+
+                success: true,
+
+                flip: created
+
+            });
+
+        }
+        catch (error) {
+
+            res.status(400).json({
+
+                success: false,
+
+                message:
+                    error.message ||
+                    "Could not create flip"
+
+            });
+
+        }
+        finally {
+
+            await session.endSession();
+
+        }
+
+    }
+);
+
+
+// =====================================================
+// CANCEL COINFLIP
+// =====================================================
+
+app.post(
+    "/coinflips/:flipId/cancel",
+    auth,
+    async (req, res) => {
+
+        const session =
+            await mongoose.startSession();
+
+
+        try {
+
+            await session.withTransaction(
+                async () => {
+
+                    const flip =
+                        await Coinflip.findOne({
+
+                            flipId:
+                                req.params.flipId,
+
+                            creatorId:
+                                req.auth.userId,
+
+                            status:
+                                "open"
+
+                        }).session(session);
+
+
+                    if (!flip) {
+
+                        throw new Error(
+                            "Flip not found"
+                        );
+
+                    }
+
+
+                    const user =
+                        await User.findOne({
+
+                            robloxId:
+                                req.auth.userId
+
+                        }).session(session);
+
+
+                    const pet =
+                        user.inventory.find(
+                            item =>
+                                item.petId ===
+                                flip.petId
+                        );
+
+
+                    if (pet) {
+
+                        pet.locked = false;
+
+                    }
+
+
+                    flip.status =
+                        "cancelled";
+
+
+                    await user.save({
+                        session
+                    });
+
+
+                    await flip.save({
+                        session
+                    });
+
+                }
+            );
+
+
+            res.json({
+
+                success: true
+
+            });
+
+        }
+        catch (error) {
+
+            res.status(400).json({
+
+                success: false,
+
+                message:
+                    error.message
+
+            });
+
+        }
+        finally {
+
+            await session.endSession();
+
+        }
+
+    }
+);
+
+
+// =====================================================
+// CHAT GET
+// =====================================================
+
+app.get(
+    "/chat",
     async (req, res) => {
 
         try {
 
             const messages =
-                await ChatMessage
-                    .find()
+                await Chat.find({})
                     .sort({
                         createdAt: -1
                     })
                     .limit(100)
                     .lean();
 
+
             messages.reverse();
+
 
             res.json({
 
@@ -880,18 +2363,12 @@ app.get(
 
             });
 
-        } catch (error) {
-
-            console.log(
-                "Chat read error:",
-                error.message
-            );
+        }
+        catch {
 
             res.status(500).json({
 
-                success: false,
-
-                messages: []
+                success: false
 
             });
 
@@ -900,165 +2377,105 @@ app.get(
     }
 );
 
-// SEND CHAT MESSAGE
+
+// =====================================================
+// CHAT SEND
+// =====================================================
 
 app.post(
-    "/chat/messages",
+    "/chat",
+    auth,
     async (req, res) => {
 
         try {
 
-            const {
-                username,
-                robloxId,
-                avatar,
-                message
-            } = req.body;
+            const content =
+                cleanText(
+                    req.body.content,
+                    300
+                );
 
-            if (
-                !username ||
-                !robloxId ||
-                !message
-            ) {
+
+            if (!content) {
 
                 return res.status(400).json({
 
                     success: false,
 
                     message:
-                        "You must be signed in"
+                        "Message is empty"
 
                 });
 
             }
 
-            const cleanMessage =
-                String(message)
-                    .trim()
-                    .replace(/\s+/g, " ");
 
-            if (!cleanMessage) {
+            if (containsLink(content)) {
 
                 return res.status(400).json({
 
                     success: false,
 
                     message:
-                        "Message cannot be empty"
+                        "Links are not allowed"
 
                 });
 
             }
 
-            if (
-                cleanMessage.length > 250
-            ) {
 
-                return res.status(400).json({
+            const user =
+                await getCurrentUser(req);
 
-                    success: false,
 
-                    message:
-                        "Message is too long"
+            if (!user) {
 
-                });
+                return res.status(401).json({
 
-            }
-
-            // BLOCK ALL LINKS
-
-            if (
-                containsLink(
-                    cleanMessage
-                )
-            ) {
-
-                return res.status(400).json({
-
-                    success: false,
-
-                    message:
-                        "Links are not allowed in chat."
+                    success: false
 
                 });
 
             }
 
-            // Simple anti-spam cooldown
 
-            const recent =
-                await ChatMessage
-                    .findOne({
-                        robloxId
-                    })
-                    .sort({
-                        createdAt: -1
-                    })
-                    .lean();
+            const message =
+                await Chat.create({
 
-            if (recent) {
+                    type:
+                        "message",
 
-                const elapsed =
-                    Date.now() -
-                    new Date(
-                        recent.createdAt
-                    ).getTime();
-
-                if (elapsed < 2500) {
-
-                    return res.status(429).json({
-
-                        success: false,
-
-                        message:
-                            "Slow down."
-
-                    });
-
-                }
-
-            }
-
-            const newMessage =
-                await ChatMessage.create({
+                    userId:
+                        user.robloxId,
 
                     username:
-                        String(username)
-                            .slice(0, 30),
-
-                    robloxId:
-                        Number(robloxId),
+                        user.username,
 
                     avatar:
-                        String(avatar || ""),
+                        user.avatar,
 
-                    message:
-                        cleanMessage
+                    content
 
                 });
+
 
             res.json({
 
                 success: true,
 
-                message:
-                    newMessage
+                message
 
             });
 
-        } catch (error) {
-
-            console.log(
-                "Chat send error:",
-                error.message
-            );
+        }
+        catch {
 
             res.status(500).json({
 
                 success: false,
 
                 message:
-                    "Could not send message"
+                    "Message failed"
 
             });
 
@@ -1067,9 +2484,33 @@ app.post(
     }
 );
 
-// ==============================
+
+// =====================================================
+// START SERVER
+// =====================================================
+
+app.listen(
+    PORT,
+    () => {
+
+        console.log(
+            `ADMFLIP backend running on port ${PORT}`
+        );
+
+    }
+);
+
+
+// =====================================================
 // TELEGRAM
-// ==============================
+// =====================================================
+
+/*
+ * Telegram is loaded AFTER the HTTP server starts.
+ *
+ * This also means a Telegram failure does not prevent
+ * the website itself from starting.
+ */
 
 try {
 
@@ -1079,27 +2520,12 @@ try {
         "Telegram module loaded"
     );
 
-} catch (error) {
+}
+catch (error) {
 
-    console.log(
+    console.error(
         "Telegram module error:",
         error.message
     );
 
 }
-
-// ==============================
-// SERVER
-// ==============================
-
-app.listen(
-    PORT,
-    "0.0.0.0",
-    () => {
-
-        console.log(
-            `ADMFLIP backend running on port ${PORT}`
-        );
-
-    }
-);
