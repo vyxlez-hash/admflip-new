@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>ADMFLIP — Adopt Me Coinflip</title>
+
+  <link rel="icon" href="/logo.png">
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+<header class="topbar">
+
+  <div class="brand">
+    <img src="/logo.png" alt="ADMFLIP">
+    <span>ADMFLIP</span>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-item active" data-page="coinflip">
+      Coinflip
+    </button>
+
+```
+<button class="nav-item" data-page="leaderboard">
+  Leaderboard
+</button>
+
+<button class="nav-item" data-page="values">
+  Values
+</button>
+
+<button class="nav-item" data-page="chat">
+  Chat
+</button>
+```
+
+  </nav>
+
+  <div class="account-area">
+
+```
+<button id="loginBtn" class="login-btn">
+  <img src="/roblox.png" alt="">
+  Sign In
+</button>
+
+<div id="accountBox" class="account-box hidden">
+
+  <button id="profileBtn" class="account-user">
+    <img id="accountAvatar" src="/logo.png" alt="">
+    <span id="accountUsername">User</span>
+  </button>
+
+  <button id="inventoryBtn" class="account-action">
+    Inventory
+  </button>
+
+  <button id="logoutBtn" class="account-action">
+    Logout
+  </button>
+
+</div>
+```
+
+  </div>
+
+</header>
+
+<main class="container">
+
+  <!-- COINFLIP -->
+
+  <section id="coinflipPage" class="page">
+
+```
+<div class="hero">
+
+  <div>
+    <div class="label">ADMFLIP</div>
+
+    <h1>Coinflip</h1>
+
+    <p>
+      Flip Adopt Me pets against other traders.
+    </p>
+  </div>
+
+  <button id="createCoinflipBtn" class="primary-btn">
+    + Create Coinflip
+  </button>
+
+</div>
+
+
+<div class="stats-row">
+
+  <div class="stat">
+    <span>ACTIVE FLIPS</span>
+    <strong id="activeCount">0</strong>
+  </div>
+
+  <div class="stat">
+    <span>ONLINE</span>
+    <strong id="coinflipOnline">--</strong>
+  </div>
+
+  <div class="stat">
+    <span>STATUS</span>
+    <strong class="online-text">ONLINE</strong>
+  </div>
+
+</div>
+
+
+<div id="coinflips" class="coinflip-list">
+
+  <div class="loading">
+    Loading coinflips...
+  </div>
+
+</div>
+```
+
+  </section>
+
+  <!-- VALUES -->
+
+  <section id="valuesPage" class="page hidden">
+
+```
+<div class="section-head">
+
+  <div>
+    <div class="label">DATABASE</div>
+
+    <h1>Pet Values</h1>
+
+    <p>
+      Browse Adopt Me pets and their current values.
+    </p>
+  </div>
+
+</div>
+
+<div class="search-wrap">
+
+  <span>⌕</span>
+
+  <input
+    id="valueSearch"
+    placeholder="Search for a pet..."
+    autocomplete="off"
+  >
+
+</div>
+
+<div id="valuesGrid" class="pet-grid">
+
+  <div class="loading">
+    Loading values...
+  </div>
+
+</div>
+```
+
+  </section>
+
+  <!-- LEADERBOARD -->
+
+  <section id="leaderboardPage" class="page hidden">
+
+```
+<div class="section-head">
+
+  <div>
+    <div class="label">RANKINGS</div>
+
+    <h1>Leaderboard</h1>
+
+    <p>
+      The biggest ADMFLIP traders.
+    </p>
+  </div>
+
+</div>
+
+<div class="leaderboard-card">
+
+  <div class="leaderboard-head">
+    <span>#</span>
+    <span>PLAYER</span>
+    <span>WAGERED</span>
+  </div>
+
+  <div id="leaderboard">
+
+    <div class="loading">
+      Loading leaderboard...
+    </div>
+
+  </div>
+
+</div>
+```
+
+  </section>
+
+  <!-- PROFILE -->
+
+  <section id="profilePage" class="page hidden">
+
+```
+<div id="profileContent"></div>
+```
+
+  </section>
+
+  <!-- CHAT -->
+
+  <section id="chatPage" class="page hidden">
+
+```
+<div class="section-head">
+
+  <div>
+    <div class="label">COMMUNITY</div>
+
+    <h1>ADMFLIP Chat</h1>
+
+    <p>
+      Talk with other traders.
+    </p>
+  </div>
+
+  <button id="rulesBtnPage" class="secondary-btn">
+    Rules
+  </button>
+
+</div>
+
+<div class="chat-page-card">
+
+  <div class="chat-page-header">
+
+    <div>
+      <strong>ADMFLIP CHAT</strong>
+
+      <span>
+        <i class="online-dot"></i>
+        <b id="onlineCount">--</b> online
+      </span>
+    </div>
+
+    <button id="rulesBtn" class="round-btn">
+      ?
+    </button>
+
+  </div>
+
+
+  <div id="chatMessages" class="chat-messages">
+
+    <div class="loading">
+      Loading chat...
+    </div>
+
+  </div>
+
+
+  <form id="chatForm" class="chat-form">
+
+    <input
+      id="chatInput"
+      placeholder="Sign in to chat..."
+      maxlength="250"
+      autocomplete="off"
+    >
+
+    <button type="submit">
+      Send
+    </button>
+
+  </form>
+
+</div>
+```
+
+  </section>
+
+</main>
+
+<!-- LOGIN MODAL -->
+
+<div id="loginModal" class="modal hidden">
+
+  <div class="modal-box">
+
+```
+<button id="closeLogin" class="modal-close">
+  ×
+</button>
+
+<div class="modal-icon">
+  <img src="/logo.png" alt="">
+</div>
+
+<div class="label">ACCOUNT</div>
+
+<h2>Roblox Sign In</h2>
+
+<p class="muted">
+  Verify your Roblox account using your profile bio.
+</p>
+
+<input
+  id="username"
+  class="input"
+  placeholder="Roblox username"
+  autocomplete="off"
+>
+
+<div id="loginProfile" class="login-profile hidden"></div>
+
+<div id="phrase" class="phrase hidden"></div>
+
+<button
+  id="verify"
+  class="primary-btn full"
+  style="display:none"
+>
+  Verify Account
+</button>
+
+<div id="loginMessage" class="message"></div>
+```
+
+  </div>
+
+</div>
+
+<!-- INVENTORY MODAL -->
+
+<div id="inventoryModal" class="modal hidden">
+
+  <div class="modal-box large">
+
+```
+<button id="closeInventory" class="modal-close">
+  ×
+</button>
+
+<div class="label">YOUR ITEMS</div>
+
+<h2>Inventory</h2>
+
+<p class="muted">
+  Pets available for coinflips.
+</p>
+
+<div id="inventoryGrid" class="pet-grid">
+  Loading...
+</div>
+```
+
+  </div>
+
+</div>
+
+<!-- CREATE MODAL -->
+
+<div id="createModal" class="modal hidden">
+
+  <div class="modal-box large">
+
+```
+<button id="closeCreate" class="modal-close">
+  ×
+</button>
+
+<div class="label">NEW FLIP</div>
+
+<h2>Create Coinflip</h2>
+
+<p class="muted">
+  Select a pet and choose your side.
+</p>
+
+<div id="createInventory" class="pet-grid">
+  Loading...
+</div>
+
+<div id="sideArea" class="side-area hidden">
+
+  <h3>Choose your side</h3>
+
+  <div class="side-buttons">
+
+    <button class="side-btn" data-side="H">
+      <span>H</span>
+      HEADS
+    </button>
+
+    <button class="side-btn" data-side="T">
+      <span>T</span>
+      TAILS
+    </button>
+
+  </div>
+
+  <button id="postCoinflip" class="primary-btn full">
+    Post Coinflip
+  </button>
+
+</div>
+```
+
+  </div>
+
+</div>
+
+<!-- RULES MODAL -->
+
+<div id="rulesModal" class="modal hidden">
+
+  <div class="modal-box">
+
+```
+<button id="closeRules" class="modal-close">
+  ×
+</button>
+
+<div class="label">COMMUNITY</div>
+
+<h2>Chat Rules</h2>
+
+<p class="muted">
+  Keep ADMFLIP welcoming and useful.
+</p>
+
+<div class="rule">
+  <b>01 · Respect everyone</b>
+  <span>
+    Harassment, hate speech and targeted abuse are not allowed.
+  </span>
+</div>
+
+<div class="rule">
+  <b>02 · No spam</b>
+  <span>
+    Avoid repeated messages, flooding and excessive caps.
+  </span>
+</div>
+
+<div class="rule">
+  <b>03 · No begging</b>
+  <span>
+    Do not repeatedly ask users for pets or benefits.
+  </span>
+</div>
+
+<div class="rule">
+  <b>04 · No advertising</b>
+  <span>
+    Unrelated websites and communities are not allowed.
+  </span>
+</div>
+
+<div class="rule">
+  <b>05 · No scams</b>
+  <span>
+    Do not impersonate staff or intentionally mislead users.
+  </span>
+</div>
+
+<div class="rule">
+  <b>06 · Keep it appropriate</b>
+  <span>
+    Sexual or adult content is not allowed.
+  </span>
+</div>
+```
+
+  </div>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="/script.js"></script>
+
+</body>
+</html>
