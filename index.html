@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="ADMFLIP — Adopt Me pet coinflips, values, trading and leaderboards.">
-  <title>ADMFLIP — Adopt Me Coinflipping Site</title>
+  <title>ADMFLIP — Adopt Me Trading</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -14,6 +14,8 @@
     <a href="#coinflip" class="brand" data-page="coinflip">
       <img class="brand-logo" src="/logo.png" alt="ADMFLIP">
       <div class="brand-text">
+        <strong>ADMFLIP</strong>
+        <span>ADOPT ME TRADING</span>
       </div>
     </a>
 
@@ -21,7 +23,7 @@
       <button class="nav-item active" data-page="coinflip" type="button">Coinflip</button>
       <button class="nav-item" data-page="leaderboard" type="button">Leaderboard</button>
       <button class="nav-item" data-page="values" type="button">Values</button>
-      <button class="nav-item" data-page="chat" type="button">Chat</button>
+      <button id="topChatButton" class="nav-item" type="button">Chat</button>
     </nav>
   </div>
 
@@ -139,7 +141,6 @@
 
 </main>
 
-<button id="mobileChatButton" class="mobile-chat-button" type="button">Chat</button>
 
 <div id="loginModal" class="modal hidden">
   <div class="modal-box">
@@ -149,7 +150,7 @@
     <div class="eyebrow">ACCOUNT</div>
     <h2>Roblox Sign In</h2>
     <p class="muted">
-      Verify your Roblox account by putting the verification phrase to your bio
+      Verify your Roblox account using a temporary phrase in your public profile bio.
     </p>
 
     <input id="username" class="input" type="text"
