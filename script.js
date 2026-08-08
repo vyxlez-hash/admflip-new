@@ -22,28 +22,27 @@
     chatOpen: false
   };
 
+  let verificationUsername = "";
+  let verificationPhrase = "";
+
   /* =======================================================
      HELPERS
   ======================================================= */
 
   const $ = (selector) => document.querySelector(selector);
 
-  const $$ = (selector) => [
-    ...document.querySelectorAll(selector)
-  ];
+  const $$ = (selector) => [...document.querySelectorAll(selector)];
 
-  const el = (id) => document.getElementById(id);
+  function el(id) {
+    return document.getElementById(id);
+  }
 
   function show(element) {
-    if (element) {
-      element.classList.remove("hidden");
-    }
+    if (element) element.classList.remove("hidden");
   }
 
   function hide(element) {
-    if (element) {
-      element.classList.add("hidden");
-    }
+    if (element) element.classList.add("hidden");
   }
 
   function escapeHTML(value) {
@@ -77,8 +76,12 @@
     return (
       pet?.image ||
       pet?.imageUrl ||
+      pet?.imageURL ||
       pet?.icon ||
       pet?.thumbnail ||
+      pet?.thumbnailUrl ||
+      pet?.picture ||
+      pet?.pictureUrl ||
       "/logo.png"
     );
   }
@@ -87,6 +90,7 @@
     return (
       pet?.name ||
       pet?.petName ||
+      pet?.displayName ||
       "Unknown Pet"
     );
   }
@@ -97,6 +101,7 @@
       pet?.normalValue ??
       pet?.worth ??
       pet?.price ??
+      pet?.tradeValue ??
       0
     );
   }
@@ -107,7 +112,9 @@
     const response = await fetch(url, {
       credentials: "include",
       headers: {
-        "Content-Type": "application/json",
+        ...(options.body
+          ? { "Content-Type": "application/json" }
+          : {}),
         ...(options.headers || {})
       },
       ...options
@@ -166,25 +173,23 @@
     profile: "profilePage"
   };
 
-  function openPage(page, updateHash = true) {
+  function openPage(page) {
     if (!pages[page]) {
       page = "coinflip";
     }
 
     state.page = page;
 
-    Object.entries(pages).forEach(
-      ([name, id]) => {
-        const pageElement = el(id);
+    Object.entries(pages).forEach(([name, id]) => {
+      const pageElement = el(id);
 
-        if (!pageElement) return;
+      if (!pageElement) return;
 
-        pageElement.classList.toggle(
-          "hidden",
-          name !== page
-        );
-      }
-    );
+      pageElement.classList.toggle(
+        "hidden",
+        name !== page
+      );
+    });
 
     $$(".nav-item").forEach((button) => {
       button.classList.toggle(
@@ -213,7 +218,7 @@
       renderProfile();
     }
 
-    if (updateHash) {
+    if (location.hash !== `#${page}`) {
       history.replaceState(
         null,
         "",
@@ -241,9 +246,11 @@
         location.hash.replace("#", "") ||
         "coinflip";
 
-      if (pages[page]) {
-        openPage(page, false);
-      }
+      openPage(
+        pages[page]
+          ? page
+          : "coinflip"
+      );
     });
 
     const initialPage =
@@ -253,8 +260,7 @@
     openPage(
       pages[initialPage]
         ? initialPage
-        : "coinflip",
-      false
+        : "coinflip"
     );
   }
 
@@ -265,13 +271,14 @@
   function createChatPanel() {
     if (el("chatPanel")) return;
 
-    const panel = document.createElement("aside");
+    const panel =
+      document.createElement("aside");
 
     panel.id = "chatPanel";
     panel.className = "chat-panel";
 
     panel.innerHTML = `
-      <div class="chat-head">
+      <div class="chat-header">
 
         <div>
           <strong>ADMFLIP CHAT</strong>
@@ -349,7 +356,7 @@
       sendPanelMessage
     );
 
-    closeChat();
+    hideChatPanel();
   }
 
   function openChat() {
@@ -357,9 +364,7 @@
 
     if (!panel) return;
 
-    panel.classList.add("open");
     panel.style.display = "flex";
-
     state.chatOpen = true;
 
     loadChat();
@@ -370,20 +375,31 @@
 
     if (!panel) return;
 
-    panel.classList.remove("open");
     panel.style.display = "none";
-
     state.chatOpen = false;
+  }
+
+  function hideChatPanel() {
+    const panel = el("chatPanel");
+
+    if (panel) {
+      panel.style.display = "none";
+    }
   }
 
   function setupMobileChat() {
     let button = el("mobileChatButton");
 
     if (!button) {
-      button = document.createElement("button");
+      button =
+        document.createElement("button");
 
-      button.id = "mobileChatButton";
-      button.className = "mobile-chat-button";
+      button.id =
+        "mobileChatButton";
+
+      button.className =
+        "mobile-chat-button";
+
       button.type = "button";
       button.textContent = "Chat";
 
@@ -402,7 +418,8 @@
 
   async function loadChat() {
     try {
-      const data = await api("/api/chat");
+      const data =
+        await api("/api/chat");
 
       const messages =
         Array.isArray(data)
@@ -414,14 +431,14 @@
       const online =
         data?.online ??
         data?.onlineCount ??
+        data?.count ??
         "--";
 
       setOnlineCount(online);
-
     } catch (error) {
       console.warn(
-        "Chat loading failed:",
-        error
+        "Chat:",
+        error.message
       );
 
       renderChat([]);
@@ -445,49 +462,50 @@
         return;
       }
 
-      container.innerHTML = messages
-        .map((message) => {
-          const username =
-            message.username ||
-            message.user?.username ||
-            "User";
+      container.innerHTML =
+        messages
+          .map((message) => {
+            const username =
+              message.username ||
+              message.user?.username ||
+              "User";
 
-          const avatar =
-            message.avatar ||
-            message.user?.avatar ||
-            "/logo.png";
+            const avatar =
+              message.avatar ||
+              message.user?.avatar ||
+              "/logo.png";
 
-          const text =
-            message.text ||
-            message.message ||
-            "";
+            const text =
+              message.text ||
+              message.message ||
+              "";
 
-          return `
-            <div class="chat-message">
+            return `
+              <div class="chat-message">
 
-              <img
-                class="chat-avatar"
-                src="${escapeHTML(avatar)}"
-                alt=""
-                onerror="this.src='/logo.png'"
-              >
+                <img
+                  class="chat-avatar"
+                  src="${escapeHTML(avatar)}"
+                  alt=""
+                  onerror="this.src='/logo.png'"
+                >
 
-              <div class="chat-content">
+                <div class="chat-content">
 
-                <div class="chat-username">
-                  ${escapeHTML(username)}
-                </div>
+                  <div class="chat-username">
+                    ${escapeHTML(username)}
+                  </div>
 
-                <div class="chat-text">
-                  ${escapeHTML(text)}
+                  <div class="chat-text">
+                    ${escapeHTML(text)}
+                  </div>
+
                 </div>
 
               </div>
-
-            </div>
-          `;
-        })
-        .join("");
+            `;
+          })
+          .join("");
 
       container.scrollTop =
         container.scrollHeight;
@@ -537,17 +555,15 @@
       input.value = "";
 
       await loadChat();
-
     } catch (error) {
       console.warn(
-        "Message failed:",
-        error
+        "Send chat:",
+        error.message
       );
 
       toast(
         "Unable to send message."
       );
-
     } finally {
       input.disabled = false;
       input.focus();
@@ -557,17 +573,19 @@
   function sendPageMessage(event) {
     event.preventDefault();
 
-    sendChatMessage(
-      el("chatInput")
-    );
+    const input =
+      el("chatInput");
+
+    sendChatMessage(input);
   }
 
   function sendPanelMessage(event) {
     event.preventDefault();
 
-    sendChatMessage(
-      el("panelChatInput")
-    );
+    const input =
+      el("panelChatInput");
+
+    sendChatMessage(input);
   }
 
   function setupChat() {
@@ -590,7 +608,8 @@
   ======================================================= */
 
   async function loadValues() {
-    const grid = el("valuesGrid");
+    const grid =
+      el("valuesGrid");
 
     if (!grid) return;
 
@@ -604,33 +623,67 @@
       const data =
         await api("/api/values");
 
-      const pets =
+      let pets =
         Array.isArray(data)
           ? data
           : data?.pets ||
             data?.values ||
+            data?.items ||
+            data?.data ||
             [];
+
+      /*
+       * Support APIs where values are returned
+       * as an object keyed by pet name.
+       */
+      if (
+        !Array.isArray(pets) &&
+        pets &&
+        typeof pets === "object"
+      ) {
+        pets = Object.entries(pets)
+          .map(([name, value]) => {
+            if (
+              value &&
+              typeof value === "object"
+            ) {
+              return {
+                ...value,
+                name:
+                  value.name ||
+                  name
+              };
+            }
+
+            return {
+              name,
+              value
+            };
+          });
+      }
 
       state.pets = pets;
 
       renderValues(pets);
-
     } catch (error) {
       console.warn(
-        "Values loading failed:",
-        error
+        "Values:",
+        error.message
       );
 
-      grid.innerHTML = `
-        <div class="loading">
-          Values are currently unavailable.
-        </div>
-      `;
+      if (!state.pets.length) {
+        grid.innerHTML = `
+          <div class="loading">
+            Values are currently unavailable.
+          </div>
+        `;
+      }
     }
   }
 
   function renderValues(pets) {
-    const grid = el("valuesGrid");
+    const grid =
+      el("valuesGrid");
 
     if (!grid) return;
 
@@ -644,9 +697,10 @@
       return;
     }
 
-    grid.innerHTML = pets
-      .map((pet) => petCard(pet))
-      .join("");
+    grid.innerHTML =
+      pets
+        .map((pet) => petCard(pet))
+        .join("");
   }
 
   function petCard(pet) {
@@ -661,9 +715,7 @@
 
         <img
           class="pet-image"
-          src="${escapeHTML(
-            petImage(pet)
-          )}"
+          src="${escapeHTML(petImage(pet))}"
           alt="${escapeHTML(name)}"
           loading="lazy"
           onerror="this.src='/logo.png'"
@@ -705,18 +757,20 @@
             .trim()
             .toLowerCase();
 
-        $$("#valuesGrid .pet-card")
-          .forEach((card) => {
-            const name =
-              card.dataset.petName
-                ?.toLowerCase() || "";
+        const cards =
+          $$("#valuesGrid .pet-card");
 
-            card.style.display =
-              !query ||
-              name.includes(query)
-                ? ""
-                : "none";
-          });
+        cards.forEach((card) => {
+          const name =
+            card.dataset.petName
+              ?.toLowerCase() || "";
+
+          card.style.display =
+            !query ||
+            name.includes(query)
+              ? ""
+              : "none";
+        });
       }
     );
   }
@@ -740,6 +794,7 @@
           ? data
           : data?.coinflips ||
             data?.flips ||
+            data?.data ||
             [];
 
       state.coinflips = flips;
@@ -753,11 +808,10 @@
         count.textContent =
           flips.length;
       }
-
     } catch (error) {
       console.warn(
-        "Coinflip loading failed:",
-        error
+        "Coinflips:",
+        error.message
       );
 
       renderCoinflips([]);
@@ -780,80 +834,116 @@
       return;
     }
 
-    container.innerHTML = flips
-      .map((flip) => {
-        const username =
-          flip.username ||
-          flip.user?.username ||
-          "Trader";
+    container.innerHTML =
+      flips
+        .map((flip) => {
+          const user =
+            flip.username ||
+            flip.user?.username ||
+            "Trader";
 
-        const pet =
-          flip.pet ||
-          flip.item ||
-          {};
+          const pet =
+            flip.pet ||
+            flip.item ||
+            {};
 
-        const image =
-          petImage(pet);
+          const image =
+            petImage(pet);
 
-        const name =
-          petName(pet);
+          const name =
+            petName(pet);
 
-        const value =
-          petValue(pet);
+          const value =
+            petValue(pet);
 
-        const side =
-          flip.side ||
-          "heads";
+          const side =
+            flip.side ||
+            "heads";
 
-        return `
-          <article class="coinflip">
+          return `
+            <article
+              class="coinflip"
+              data-flip-id="${escapeHTML(
+                flip.id ||
+                flip._id ||
+                ""
+              )}"
+            >
 
-            <div class="cf-users">
+              <div class="cf-users">
 
-              <span>
-                ${escapeHTML(
-                  username
-                )}
-              </span>
+                <span>
+                  ${escapeHTML(user)}
+                </span>
 
-              <span class="cf-side-label">
-                ${escapeHTML(
-                  side
-                )}
-              </span>
+                <span class="cf-side-label">
+                  ${escapeHTML(
+                    String(side).toUpperCase()
+                  )}
+                </span>
 
-            </div>
+              </div>
 
-            <div class="cf-body">
+              <div class="cf-body">
 
-              <div class="cf-side">
+                <div class="cf-side">
 
-                <div class="cf-pet">
+                  <div class="cf-pet">
 
-                  <img
-                    src="${escapeHTML(
-                      image
-                    )}"
-                    alt="${escapeHTML(
-                      name
-                    )}"
-                    onerror="this.src='/logo.png'"
-                  >
+                    <img
+                      src="${escapeHTML(image)}"
+                      alt="${escapeHTML(name)}"
+                      onerror="this.src='/logo.png'"
+                    >
 
-                  <div>
+                    <div>
 
-                    <b>
-                      ${escapeHTML(
-                        name
-                      )}
-                    </b>
+                      <b>
+                        ${escapeHTML(name)}
+                      </b>
 
-                    <small>
-                      Value:
-                      ${formatValue(
-                        value
-                      )}
-                    </small>
+                      <small>
+                        Value:
+                        ${formatValue(value)}
+                      </small>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <div class="cf-center">
+
+                  <div class="coin">
+                    FLIP
+                  </div>
+
+                  <small class="waiting">
+                    Waiting
+                  </small>
+
+                </div>
+
+                <div class="cf-side">
+
+                  <div class="cf-pet">
+
+                    <div class="waiting-icon">
+                      ?
+                    </div>
+
+                    <div>
+
+                      <b>
+                        Waiting for player
+                      </b>
+
+                      <small>
+                        Join this flip
+                      </small>
+
+                    </div>
 
                   </div>
 
@@ -861,48 +951,10 @@
 
               </div>
 
-              <div class="cf-center">
-
-                <div class="coin">
-                  FLIP
-                </div>
-
-                <small class="waiting">
-                  Waiting
-                </small>
-
-              </div>
-
-              <div class="cf-side">
-
-                <div class="cf-pet">
-
-                  <div class="waiting-icon">
-                    ?
-                  </div>
-
-                  <div>
-
-                    <b>
-                      Waiting for player
-                    </b>
-
-                    <small>
-                      Join this flip
-                    </small>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          </article>
-        `;
-      })
-      .join("");
+            </article>
+          `;
+        })
+        .join("");
   }
 
   /* =======================================================
@@ -916,8 +968,8 @@
         openCreate
       );
 
-    $$(".side-btn")
-      .forEach((button) => {
+    $$(".side-btn").forEach(
+      (button) => {
         button.addEventListener(
           "click",
           () => {
@@ -936,7 +988,8 @@
               button.dataset.side;
           }
         );
-      });
+      }
+    );
 
     el("postCoinflip")
       ?.addEventListener(
@@ -952,7 +1005,6 @@
       );
 
       openLogin();
-
       return;
     }
 
@@ -964,28 +1016,31 @@
 
     show(modal);
 
+    setupCreateModal();
+
     const grid =
       el("createInventory");
 
     if (!grid) return;
-
-    state.selectedPet = null;
-    state.selectedSide = null;
-
-    hide(el("sideArea"));
-
-    $$(".side-btn")
-      .forEach((button) => {
-        button.classList.remove(
-          "selected"
-        );
-      });
 
     grid.innerHTML = `
       <div class="loading">
         Loading inventory...
       </div>
     `;
+
+    state.selectedPet = null;
+    state.selectedSide = null;
+
+    $$(".side-btn").forEach(
+      (button) => {
+        button.classList.remove(
+          "selected"
+        );
+      }
+    );
+
+    hide(el("sideArea"));
 
     try {
       const data =
@@ -996,14 +1051,14 @@
           ? data
           : data?.pets ||
             data?.inventory ||
+            data?.items ||
             [];
 
       renderCreateInventory(pets);
-
     } catch (error) {
       console.warn(
-        "Inventory failed:",
-        error
+        "Create inventory:",
+        error.message
       );
 
       grid.innerHTML = `
@@ -1090,6 +1145,42 @@
     `;
   }
 
+  function setupCreateModal() {
+    el("closeCreate")
+      ?.addEventListener(
+        "click",
+        () => closeModal("createModal")
+      );
+
+    $$("#createModal .side-btn")
+      .forEach((button) => {
+        button.addEventListener(
+          "click",
+          () => {
+            $$("#createModal .side-btn")
+              .forEach((item) => {
+                item.classList.remove(
+                  "selected"
+                );
+              });
+
+            button.classList.add(
+              "selected"
+            );
+
+            state.selectedSide =
+              button.dataset.side;
+          }
+        );
+      });
+
+    el("postCoinflip")
+      ?.addEventListener(
+        "click",
+        postCoinflip
+      );
+  }
+
   function renderCreateInventory(pets) {
     const grid =
       el("createInventory");
@@ -1106,47 +1197,50 @@
       return;
     }
 
-    grid.innerHTML = pets
-      .map((pet, index) => `
-        <article
-          class="pet-card"
-          data-inventory-index="${index}"
-        >
+    grid.innerHTML =
+      pets
+        .map((pet, index) => {
+          const name =
+            petName(pet);
 
-          <img
-            class="pet-image"
-            src="${escapeHTML(
-              petImage(pet)
-            )}"
-            alt="${escapeHTML(
-              petName(pet)
-            )}"
-            onerror="this.src='/logo.png'"
-          >
+          return `
+            <article
+              class="pet-card"
+              data-inventory-index="${index}"
+              data-pet-name="${escapeHTML(name)}"
+            >
 
-          <div class="pet-name">
-            ${escapeHTML(
-              petName(pet)
-            )}
-          </div>
+              <img
+                class="pet-image"
+                src="${escapeHTML(
+                  petImage(pet)
+                )}"
+                alt="${escapeHTML(name)}"
+                onerror="this.src='/logo.png'"
+              >
 
-          <div class="pet-meta">
+              <div class="pet-name">
+                ${escapeHTML(name)}
+              </div>
 
-            <span>
-              Value
-            </span>
+              <div class="pet-meta">
 
-            <strong class="pet-value">
-              ${formatValue(
-                petValue(pet)
-              )}
-            </strong>
+                <span>
+                  Value
+                </span>
 
-          </div>
+                <strong class="pet-value">
+                  ${formatValue(
+                    petValue(pet)
+                  )}
+                </strong>
 
-        </article>
-      `)
-      .join("");
+              </div>
+
+            </article>
+          `;
+        })
+        .join("");
 
     $$("#createInventory .pet-card")
       .forEach((card, index) => {
@@ -1171,40 +1265,6 @@
           }
         );
       });
-
-    el("closeCreate")
-      ?.addEventListener(
-        "click",
-        () => closeModal("createModal")
-      );
-
-    $$(".side-btn")
-      .forEach((button) => {
-        button.addEventListener(
-          "click",
-          () => {
-            $$(".side-btn")
-              .forEach((item) => {
-                item.classList.remove(
-                  "selected"
-                );
-              });
-
-            button.classList.add(
-              "selected"
-            );
-
-            state.selectedSide =
-              button.dataset.side;
-          }
-        );
-      });
-
-    el("postCoinflip")
-      ?.addEventListener(
-        "click",
-        postCoinflip
-      );
   }
 
   async function postCoinflip() {
@@ -1212,7 +1272,6 @@
       toast(
         "Select a pet first."
       );
-
       return;
     }
 
@@ -1220,8 +1279,16 @@
       toast(
         "Choose heads or tails."
       );
-
       return;
+    }
+
+    const button =
+      el("postCoinflip");
+
+    if (button) {
+      button.disabled = true;
+      button.textContent =
+        "Creating...";
     }
 
     try {
@@ -1240,21 +1307,25 @@
         "Coinflip created."
       );
 
-      closeModal(
-        "createModal"
-      );
+      closeModal("createModal");
 
       await loadCoinflips();
-
     } catch (error) {
       console.warn(
-        "Coinflip creation failed:",
-        error
+        "Create coinflip:",
+        error.message
       );
 
       toast(
+        error.message ||
         "Could not create coinflip."
       );
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent =
+          "Post Coinflip";
+      }
     }
   }
 
@@ -1285,16 +1356,14 @@
           ? data
           : data?.players ||
             data?.leaderboard ||
+            data?.data ||
             [];
 
-      renderLeaderboard(
-        players
-      );
-
+      renderLeaderboard(players);
     } catch (error) {
       console.warn(
-        "Leaderboard failed:",
-        error
+        "Leaderboard:",
+        error.message
       );
 
       container.innerHTML = `
@@ -1331,6 +1400,7 @@
 
           const avatar =
             player.avatar ||
+            player.avatarUrl ||
             "/logo.png";
 
           const wagered =
@@ -1349,9 +1419,7 @@
               <div class="rank-player">
 
                 <img
-                  src="${escapeHTML(
-                    avatar
-                  )}"
+                  src="${escapeHTML(avatar)}"
                   alt=""
                   onerror="this.src='/logo.png'"
                 >
@@ -1359,9 +1427,7 @@
                 <div>
 
                   <strong>
-                    ${escapeHTML(
-                      username
-                    )}
+                    ${escapeHTML(username)}
                   </strong>
 
                   <small>
@@ -1373,9 +1439,7 @@
               </div>
 
               <div class="rank-value">
-                ${formatValue(
-                  wagered
-                )}
+                ${formatValue(wagered)}
               </div>
 
             </div>
@@ -1391,92 +1455,37 @@
   function createModal(id, content) {
     let modal = el(id);
 
-    if (modal) {
-      return modal;
+    if (!modal) {
+      modal =
+        document.createElement("div");
+
+      modal.id = id;
+      modal.className =
+        "modal hidden";
+
+      document.body.appendChild(
+        modal
+      );
     }
 
-    modal =
-      document.createElement(
-        "div"
-      );
-
-    modal.id = id;
-    modal.className =
-      "modal hidden";
-
-    modal.innerHTML =
-      content;
-
-    document.body.appendChild(
-      modal
-    );
+    modal.innerHTML = content;
 
     return modal;
   }
 
   function closeModal(id) {
-    const modal = el(id);
-
-    if (modal) {
-      hide(modal);
-    }
+    hide(el(id));
   }
+
+  /* =======================================================
+     LOGIN / ROBLOX BIO VERIFICATION
+  ======================================================= */
 
   function openLogin() {
     const modal =
       createModal(
         "loginModal",
-        `
-          <div class="modal-card">
-
-            <button
-              id="closeLogin"
-              class="modal-close"
-              type="button"
-            >×</button>
-
-            <div class="login-logo">
-              <img
-                src="/logo.png"
-                alt="ADMFLIP"
-              >
-            </div>
-
-            <div class="eyebrow">
-              ACCOUNT
-            </div>
-
-            <h2>
-              Roblox Sign In
-            </h2>
-
-            <p class="muted">
-              Enter your Roblox username to continue.
-            </p>
-
-            <input
-              id="username"
-              class="input"
-              type="text"
-              placeholder="Roblox username"
-              autocomplete="off"
-            >
-
-            <button
-              id="loginContinue"
-              class="primary full"
-              type="button"
-            >
-              Continue
-            </button>
-
-            <div
-              id="loginMessage"
-              class="message"
-            ></div>
-
-          </div>
-        `
+        loginModalHTML()
       );
 
     show(modal);
@@ -1484,15 +1493,84 @@
     setupLoginModal();
   }
 
+  function loginModalHTML() {
+    return `
+      <div class="modal-card">
+
+        <button
+          id="closeLogin"
+          class="modal-close"
+          type="button"
+        >×</button>
+
+        <div class="login-logo">
+          <img
+            src="/logo.png"
+            alt="ADMFLIP"
+          >
+        </div>
+
+        <div class="eyebrow">
+          ACCOUNT
+        </div>
+
+        <h2>
+          Roblox Sign In
+        </h2>
+
+        <p class="muted">
+          Verify your Roblox account using your profile bio.
+        </p>
+
+        <input
+          id="username"
+          class="input"
+          type="text"
+          placeholder="Roblox username"
+          autocomplete="off"
+        >
+
+        <div
+          id="loginProfile"
+          class="login-profile hidden"
+        ></div>
+
+        <div
+          id="phrase"
+          class="phrase hidden"
+        ></div>
+
+        <button
+          id="loginContinue"
+          class="primary full"
+          type="button"
+        >
+          Continue
+        </button>
+
+        <button
+          id="verify"
+          class="primary full"
+          type="button"
+          style="display:none"
+        >
+          Verify
+        </button>
+
+        <div
+          id="loginMessage"
+          class="message"
+        ></div>
+
+      </div>
+    `;
+  }
+
   function setupLoginModal() {
     el("closeLogin")
       ?.addEventListener(
         "click",
-        () => {
-          closeModal(
-            "loginModal"
-          );
-        }
+        () => closeModal("loginModal")
       );
 
     el("loginContinue")
@@ -1501,21 +1579,21 @@
         performLogin
       );
 
+    el("verify")
+      ?.addEventListener(
+        "click",
+        verifyRobloxBio
+      );
+
     el("username")
       ?.addEventListener(
         "keydown",
         (event) => {
-          if (
-            event.key === "Enter"
-          ) {
+          if (event.key === "Enter") {
             performLogin();
           }
         }
       );
-
-    setTimeout(() => {
-      el("username")?.focus();
-    }, 50);
   }
 
   async function performLogin() {
@@ -1524,6 +1602,18 @@
 
     const message =
       el("loginMessage");
+
+    const profile =
+      el("loginProfile");
+
+    const phraseBox =
+      el("phrase");
+
+    const verifyBtn =
+      el("verify");
+
+    const continueBtn =
+      el("loginContinue");
 
     if (!input) return;
 
@@ -1539,12 +1629,30 @@
       return;
     }
 
+    verificationUsername =
+      username;
+
+    verificationPhrase = "";
+
+    if (continueBtn) {
+      continueBtn.disabled = true;
+      continueBtn.textContent =
+        "Checking...";
+    }
+
     if (message) {
       message.textContent =
-        "Checking account...";
+        "Looking up Roblox account...";
     }
 
     try {
+      /*
+       * IMPORTANT:
+       * This is the existing login endpoint
+       * used by the site. It should return the
+       * Roblox user and verification phrase.
+       */
+
       const data =
         await api(
           "/api/login",
@@ -1556,36 +1664,181 @@
           }
         );
 
-      state.user =
-        data?.user || {
-          username
-        };
+      const user =
+        data?.user ||
+        data?.profile ||
+        data;
 
-      saveUser();
-      updateAccountUI();
+      if (!user) {
+        throw new Error(
+          "Roblox account not found."
+        );
+      }
 
-      closeModal(
-        "loginModal"
-      );
+      verificationPhrase =
+        data?.phrase ||
+        data?.verificationPhrase ||
+        data?.code ||
+        "";
 
-      toast(
-        `Welcome, ${state.user.username}!`
-      );
+      if (
+        !verificationPhrase
+      ) {
+        throw new Error(
+          "The verification phrase was not returned by the server."
+        );
+      }
+
+      if (profile) {
+        profile.classList.remove(
+          "hidden"
+        );
+
+        profile.innerHTML = `
+          <img
+            src="${escapeHTML(
+              user.avatar ||
+              user.avatarUrl ||
+              user.image ||
+              "/logo.png"
+            )}"
+            alt=""
+            onerror="this.src='/logo.png'"
+          >
+
+          <div>
+            <strong>
+              ${escapeHTML(
+                user.username ||
+                username
+              )}
+            </strong>
+
+            <span>
+              Roblox account found
+            </span>
+          </div>
+        `;
+      }
+
+      if (phraseBox) {
+        phraseBox.classList.remove(
+          "hidden"
+        );
+
+        phraseBox.textContent =
+          verificationPhrase;
+      }
+
+      if (continueBtn) {
+        continueBtn.style.display =
+          "none";
+      }
+
+      if (verifyBtn) {
+        verifyBtn.style.display =
+          "block";
+      }
+
+      if (message) {
+        message.textContent =
+          "Put the phrase above in your Roblox profile bio, then click Verify.";
+      }
 
     } catch (error) {
-      console.warn(
-        "Login endpoint failed:",
+      console.error(
+        "Login:",
         error
       );
 
+      if (message) {
+        message.textContent =
+          error.message ||
+          "Unable to find that Roblox account.";
+      }
+
+      if (continueBtn) {
+        continueBtn.disabled =
+          false;
+
+        continueBtn.textContent =
+          "Continue";
+      }
+    }
+  }
+
+  async function verifyRobloxBio() {
+    const message =
+      el("loginMessage");
+
+    const verifyBtn =
+      el("verify");
+
+    if (
+      !verificationUsername ||
+      !verificationPhrase
+    ) {
+      if (message) {
+        message.textContent =
+          "Start verification first.";
+      }
+
+      return;
+    }
+
+    if (verifyBtn) {
+      verifyBtn.disabled = true;
+      verifyBtn.textContent =
+        "Verifying...";
+    }
+
+    if (message) {
+      message.textContent =
+        "Checking your Roblox profile bio...";
+    }
+
+    try {
       /*
-        Local frontend fallback.
-        This does NOT collect passwords,
-        cookies, .ROBLOSECURITY or tokens.
-      */
+       * The server checks the public Roblox bio.
+       * No password, cookie, or .ROBLOSECURITY
+       * token is collected by this frontend.
+       */
+
+      const data =
+        await api(
+          "/api/verify",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              username:
+                verificationUsername,
+              phrase:
+                verificationPhrase
+            })
+          }
+        );
+
+      if (
+        data?.verified === false ||
+        data?.success === false
+      ) {
+        throw new Error(
+          data?.message ||
+          "The verification phrase was not found in your Roblox bio."
+        );
+      }
+
+      const verifiedUser =
+        data?.user ||
+        data?.profile ||
+        {};
 
       state.user = {
-        username
+        ...(verifiedUser || {}),
+        username:
+          verifiedUser.username ||
+          data?.username ||
+          verificationUsername
       };
 
       saveUser();
@@ -1596,95 +1849,41 @@
       );
 
       toast(
-        `Signed in as ${username}`
+        `Verified as ${state.user.username}!`
       );
+
+      await loadChat();
+    } catch (error) {
+      console.error(
+        "Bio verification:",
+        error
+      );
+
+      if (message) {
+        message.textContent =
+          error.message ||
+          "Verification failed. Make sure the phrase is in your Roblox bio.";
+      }
+    } finally {
+      if (verifyBtn) {
+        verifyBtn.disabled =
+          false;
+
+        verifyBtn.textContent =
+          "Verify";
+      }
     }
   }
+
+  /* =======================================================
+     CHAT RULES
+  ======================================================= */
 
   function openRules() {
     const modal =
       createModal(
         "rulesModal",
-        `
-          <div class="modal-card rules-box">
-
-            <button
-              id="closeRules"
-              class="modal-close"
-              type="button"
-            >×</button>
-
-            <div class="eyebrow">
-              COMMUNITY
-            </div>
-
-            <h2>
-              Chat Rules
-            </h2>
-
-            <p class="muted">
-              Keep ADMFLIP welcoming and useful.
-            </p>
-
-            <div class="rule">
-              <b>
-                01 · Respect everyone
-              </b>
-              <span>
-                Harassment, hate speech and targeted
-                abuse are not allowed.
-              </span>
-            </div>
-
-            <div class="rule">
-              <b>
-                02 · No spam
-              </b>
-              <span>
-                Avoid repeated messages and flooding.
-              </span>
-            </div>
-
-            <div class="rule">
-              <b>
-                03 · No begging
-              </b>
-              <span>
-                Do not repeatedly ask users for pets.
-              </span>
-            </div>
-
-            <div class="rule">
-              <b>
-                04 · No advertising
-              </b>
-              <span>
-                Unrelated websites and communities
-                are not allowed.
-              </span>
-            </div>
-
-            <div class="rule">
-              <b>
-                05 · No scams
-              </b>
-              <span>
-                Do not impersonate staff or intentionally
-                mislead users.
-              </span>
-            </div>
-
-            <div class="rule">
-              <b>
-                06 · Keep it appropriate
-              </b>
-              <span>
-                Sexual or adult content is not allowed.
-              </span>
-            </div>
-
-          </div>
-        `
+        rulesModalHTML()
       );
 
     show(modal);
@@ -1692,13 +1891,101 @@
     el("closeRules")
       ?.addEventListener(
         "click",
-        () => {
-          closeModal(
-            "rulesModal"
-          );
-        }
+        () => closeModal(
+          "rulesModal"
+        )
       );
   }
+
+  function rulesModalHTML() {
+    return `
+      <div class="modal-card rules-box">
+
+        <button
+          id="closeRules"
+          class="modal-close"
+          type="button"
+        >×</button>
+
+        <div class="eyebrow">
+          COMMUNITY
+        </div>
+
+        <h2>
+          Chat Rules
+        </h2>
+
+        <p class="muted">
+          Keep ADMFLIP welcoming and useful.
+        </p>
+
+        <div class="rule">
+          <b>
+            01 · Respect everyone
+          </b>
+
+          <span>
+            Harassment, hate speech and targeted abuse are not allowed.
+          </span>
+        </div>
+
+        <div class="rule">
+          <b>
+            02 · No spam
+          </b>
+
+          <span>
+            Avoid repeated messages, flooding and excessive caps.
+          </span>
+        </div>
+
+        <div class="rule">
+          <b>
+            03 · No begging
+          </b>
+
+          <span>
+            Do not repeatedly ask users for pets or benefits.
+          </span>
+        </div>
+
+        <div class="rule">
+          <b>
+            04 · No advertising
+          </b>
+
+          <span>
+            Unrelated websites and communities are not allowed.
+          </span>
+        </div>
+
+        <div class="rule">
+          <b>
+            05 · No scams
+          </b>
+
+          <span>
+            Do not impersonate staff or intentionally mislead users.
+          </span>
+        </div>
+
+        <div class="rule">
+          <b>
+            06 · Keep it appropriate
+          </b>
+
+          <span>
+            Sexual or adult content is not allowed.
+          </span>
+        </div>
+
+      </div>
+    `;
+  }
+
+  /* =======================================================
+     INVENTORY
+  ======================================================= */
 
   function openInventory() {
     if (!state.user) {
@@ -1707,7 +1994,6 @@
       );
 
       openLogin();
-
       return;
     }
 
@@ -1753,11 +2039,9 @@
     el("closeInventory")
       ?.addEventListener(
         "click",
-        () => {
-          closeModal(
-            "inventoryModal"
-          );
-        }
+        () => closeModal(
+          "inventoryModal"
+        )
       );
 
     loadInventory();
@@ -1780,6 +2064,7 @@
           ? data
           : data?.pets ||
             data?.inventory ||
+            data?.items ||
             [];
 
       if (!pets.length) {
@@ -1798,11 +2083,10 @@
             petCard(pet)
           )
           .join("");
-
     } catch (error) {
       console.warn(
-        "Inventory failed:",
-        error
+        "Inventory:",
+        error.message
       );
 
       grid.innerHTML = `
@@ -1839,7 +2123,6 @@
         state.user =
           JSON.parse(saved);
       }
-
     } catch {
       state.user = null;
     }
@@ -1884,15 +2167,19 @@
         state.user.avatar;
     }
 
-    [
+    const chatInputs = [
       el("chatInput"),
       el("panelChatInput")
-    ].forEach((input) => {
-      if (input) {
-        input.placeholder =
-          "Type a message...";
+    ];
+
+    chatInputs.forEach(
+      (input) => {
+        if (input) {
+          input.placeholder =
+            "Type a message...";
+        }
       }
-    });
+    );
   }
 
   function logout() {
@@ -1935,9 +2222,14 @@
         "click",
         () => {
           openPage("profile");
+          renderProfile();
         }
       );
   }
+
+  /* =======================================================
+     PROFILE
+  ======================================================= */
 
   function renderProfile() {
     const container =
@@ -2055,19 +2347,23 @@
   }
 
   /* =======================================================
-     MODAL EVENTS
+     MODAL BACKDROP / ESC
   ======================================================= */
 
   document.addEventListener(
     "click",
     (event) => {
       if (
-        event.target.classList.contains(
+        !event.target.classList.contains(
           "modal"
         )
       ) {
-        hide(event.target);
+        return;
       }
+
+      event.target.classList.add(
+        "hidden"
+      );
     }
   );
 
@@ -2080,7 +2376,9 @@
 
       $$(".modal").forEach(
         (modal) => {
-          hide(modal);
+          modal.classList.add(
+            "hidden"
+          );
         }
       );
 
@@ -2108,7 +2406,8 @@
 
     setInterval(() => {
       if (
-        state.page === "coinflip"
+        state.page ===
+        "coinflip"
       ) {
         loadCoinflips();
       }
