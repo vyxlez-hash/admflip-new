@@ -226,3 +226,26 @@ img{max-width:100%}a{color:inherit;text-decoration:none}.hidden{display:none!imp
     display:none;
   }
 }
+
+/* ADMFLIP large logo override */
+.brand-logo,.brand img{
+  width:72px;
+  height:72px;
+}
+.brand{
+  width:76px;
+  min-width:76px;
+  height:70px;
+}
+@media (max-width:900px){
+  .brand-logo,.brand img{width:58px;height:58px}
+  .brand{width:62px;min-width:62px;height:62px}
+}
+@media (max-width:650px){
+  .brand-logo,.brand img{width:54px;height:54px}
+  .brand{width:58px;min-width:58px;height:58px}
+}
+@media (max-width:420px){
+  .brand-logo,.brand img{width:50px;height:50px}
+  .brand{width:54px;min-width:54px;height:54px}
+}
