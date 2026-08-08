@@ -292,13 +292,17 @@ function renderLoginProfile(user){
 
   const username = user.username || user.name || "Roblox User";
   const userId = user.id || user.userId || "";
-  const avatar = user.avatar || user.avatarUrl || user.thumbnail || user.image || "/logo.png";
+
+  // Roblox headshot thumbnail, not the ADMFLIP site logo.
+  const avatar = userId
+    ? `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(userId)}&width=150&height=150&format=png`
+    : "https://tr.rbxcdn.com/30DAY-AvatarHeadshot-DEFAULT-PNG/150/150/AvatarHeadshot/Png/noFilter";
 
   box.innerHTML = `
     <div style="display:flex;align-items:center;gap:12px">
-      <img src="${escapeHTML(avatar)}" alt=""
+      <img src="${escapeHTML(avatar)}" alt="${escapeHTML(username)}"
            style="width:44px;height:44px;border-radius:10px;object-fit:cover"
-           onerror="this.src='/logo.png'">
+           onerror="this.src='https://tr.rbxcdn.com/30DAY-AvatarHeadshot-DEFAULT-PNG/150/150/AvatarHeadshot/Png/noFilter'">
       <div>
         <strong style="display:block;font-size:13px">${escapeHTML(username)}</strong>
         <span style="display:block;margin-top:3px;color:var(--muted);font-size:10px">
@@ -366,7 +370,7 @@ async function verifyRobloxBio(){
       username: latestUser.name || state.verification.username,
       displayName: latestUser.displayName || latestUser.name || state.verification.username,
       id: latestUser.id,
-      avatar: latestUser.avatar || latestUser.avatarUrl || "/logo.png",
+      avatar: latestUser.id ? `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(latestUser.id)}&width=150&height=150&format=png` : "",
       verified: true
     };
 
@@ -446,7 +450,7 @@ function updateAccountUI(){
   if(username) username.textContent = state.user.username || "User";
 
   const avatar = el("accountAvatar");
-  if(avatar) avatar.src = state.user.avatar || "/logo.png";
+  if(avatar) avatar.src = state.user.avatar || (state.user.id ? `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(state.user.id)}&width=150&height=150&format=png` : "/logo.png");
 
   [el("chatInput"),el("panelChatInput")].forEach(input => {
     if(input) input.placeholder = "Type a message...";
@@ -1026,7 +1030,7 @@ function renderProfile(){
   container.innerHTML = `
     <div class="profile-grid">
       <div class="profile-card">
-        <img class="profile-avatar" src="${escapeHTML(state.user.avatar || "/logo.png")}"
+        <img class="profile-avatar" src="${escapeHTML(state.user.avatar || (state.user.id ? `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(state.user.id)}&width=150&height=150&format=png` : "/logo.png"))}"
              alt="" onerror="this.src='/logo.png'">
         <h2>${escapeHTML(state.user.username || "User")}</h2>
         <p class="muted">ADMFLIP Trader</p>
