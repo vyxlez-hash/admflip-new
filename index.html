@@ -3,154 +3,163 @@
 
 <head>
 
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-    <title>ADMFLIP</title>
+<title>ADMFLIP</title>
 
-    <link
-        rel="icon"
-        href="logo.png"
-    >
+<link
+    rel="icon"
+    href="logo.png"
+>
 
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
+<link
+    rel="stylesheet"
+    href="style.css"
+>
 
 </head>
-
 
 <body>
 
 
 <!-- =========================
-     MOBILE CHAT BUTTON
+     HEADER
 ========================= -->
 
-<button
-    id="mobileChatButton"
-    class="mobile-chat-button"
-    type="button"
->
+<header class="header">
 
-    <span>💬</span>
 
-    <span>Chat</span>
+    <div class="brand">
 
-</button>
+        <img
+            src="logo.png"
+            alt="ADMFLIP"
+        >
+
+    </div>
+
+
+    <nav class="menu">
+
+
+        <a href="#" data-page="coinflip">
+            Coinflip
+        </a>
+
+
+        <a href="#" data-page="leaderboard">
+            Leaderboard
+        </a>
+
+
+        <a
+            href="#"
+            id="chatMenu"
+            data-page="chat"
+        >
+            Chat
+        </a>
+
+
+        <a
+            href="#"
+            id="valuesMenu"
+            data-page="values"
+        >
+            Values
+        </a>
+
+
+    </nav>
+
+
+    <div class="account-buttons">
+
+
+        <button
+            class="login"
+            id="loginBtn"
+            type="button"
+        >
+
+            <img
+                src="roblox.png"
+                alt=""
+            >
+
+            <span>
+                Sign In
+            </span>
+
+        </button>
+
+
+        <button
+            class="logout"
+            id="logoutBtn"
+            type="button"
+            style="display:none;"
+        >
+
+            Log Out
+
+        </button>
+
+
+    </div>
+
+
+</header>
 
 
 
 <!-- =========================
-     CHAT
+     MOBILE MENU
 ========================= -->
 
-<aside
-    id="chatPanel"
-    class="chat-panel"
+<button
+    id="mobileMenuButton"
+    class="mobile-menu-button"
+    type="button"
+>
+
+    ☰
+
+</button>
+
+
+<div
+    id="mobileMenu"
+    class="mobile-menu"
 >
 
 
-    <div class="chat-header">
+    <a href="#" data-page="coinflip">
+        Coinflip
+    </a>
 
 
-        <div class="chat-title">
+    <a href="#" data-page="leaderboard">
+        Leaderboard
+    </a>
 
 
-            <div class="chat-title-main">
-
-                Chat
-
-            </div>
+    <a href="#" data-page="chat">
+        Chat
+    </a>
 
 
-            <div class="chat-online">
-
-                <span class="online-dot"></span>
-
-                Online
-
-            </div>
+    <a href="#" data-page="values">
+        Values
+    </a>
 
 
-        </div>
-
-
-        <button
-            id="mobileChatClose"
-            class="mobile-chat-close"
-            type="button"
-        >
-
-            ×
-
-        </button>
-
-
-    </div>
-
-
-
-    <div
-        id="chatMessages"
-        class="chat-messages"
-    ></div>
-
-
-
-    <div
-        id="chatLoginMessage"
-        class="chat-login-message"
-    >
-
-        <div class="chat-login-icon">
-            🔒
-        </div>
-
-        <strong>
-            Sign in to chat
-        </strong>
-
-        <span>
-            You need to verify your Roblox account first.
-        </span>
-
-    </div>
-
-
-
-    <form
-        id="chatForm"
-        class="chat-form"
-        style="display:none;"
-    >
-
-        <input
-            id="chatInput"
-            type="text"
-            maxlength="500"
-            autocomplete="off"
-            placeholder="Message..."
-        >
-
-        <button
-            type="submit"
-            title="Send"
-        >
-
-            ➤
-
-        </button>
-
-    </form>
-
-
-</aside>
+</div>
 
 
 
@@ -158,103 +167,18 @@
      MAIN SITE
 ========================= -->
 
-<div id="site">
+<main id="siteContent">
 
 
-    <!-- HEADER -->
+    <!-- HOME -->
 
-    <header class="header">
-
-
-        <div class="brand">
-
-            <img
-                src="logo.png"
-                alt="ADMFLIP"
-            >
-
-        </div>
+    <section
+        id="homePage"
+        class="page active-page"
+    >
 
 
-
-        <nav class="menu">
-
-            <a href="#">
-                Coinflip
-            </a>
-
-            <a href="#">
-                Leaderboard
-            </a>
-
-            <a href="#">
-                Chat
-            </a>
-
-        </nav>
-
-
-
-        <div class="account-buttons">
-
-
-            <button
-                class="login"
-                id="loginBtn"
-                type="button"
-            >
-
-                <img
-                    src="roblox.png"
-                    alt=""
-                >
-
-                <span>
-                    Sign In
-                </span>
-
-            </button>
-
-
-
-            <button
-                class="logout"
-                id="logoutBtn"
-                type="button"
-                style="display:none;"
-            >
-
-                Log Out
-
-            </button>
-
-
-        </div>
-
-
-    </header>
-
-
-
-    <!-- =========================
-         ANNOUNCEMENT
-    ========================= -->
-
-    <div
-        id="announcement"
-        class="announcement hidden"
-    ></div>
-
-
-
-    <!-- =========================
-         YOUR SITE CONTENT
-    ========================= -->
-
-    <main class="main-content">
-
-
-        <section class="hero">
+        <div class="hero">
 
 
             <div class="hero-content">
@@ -283,7 +207,10 @@
                     </button>
 
 
-                    <button class="secondary-button">
+                    <button
+                        class="secondary-button"
+                        id="viewValuesButton"
+                    >
                         View Values
                     </button>
 
@@ -294,13 +221,226 @@
             </div>
 
 
-        </section>
+        </div>
 
 
-    </main>
+    </section>
 
 
-</div>
+
+    <!-- CHAT -->
+
+    <section
+        id="chatPage"
+        class="page"
+    >
+
+
+        <div class="page-header">
+
+
+            <div>
+
+                <h2>
+                    Site Chat
+                </h2>
+
+                <p>
+                    Talk with other ADMFLIP users.
+                </p>
+
+            </div>
+
+
+            <button
+                id="closeChat"
+                class="close-panel"
+            >
+                ×
+            </button>
+
+
+        </div>
+
+
+        <div class="chat-container">
+
+
+            <div
+                id="chatMessages"
+                class="chat-messages"
+            ></div>
+
+
+            <div
+                id="chatLoginMessage"
+                class="chat-login-message"
+            >
+
+                🔒
+
+                <strong>
+                    Sign in to chat
+                </strong>
+
+                <span>
+                    Verify your Roblox account first.
+                </span>
+
+            </div>
+
+
+            <form
+                id="chatForm"
+                class="chat-form"
+                style="display:none;"
+            >
+
+                <input
+                    id="chatInput"
+                    type="text"
+                    maxlength="500"
+                    autocomplete="off"
+                    placeholder="Write a message..."
+                >
+
+
+                <button type="submit">
+                    Send
+                </button>
+
+            </form>
+
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- VALUES -->
+
+    <section
+        id="valuesPage"
+        class="page"
+    >
+
+
+        <div class="page-header">
+
+
+            <div>
+
+                <h2>
+                    Pet Values
+                </h2>
+
+                <p>
+                    Current ADMFLIP pet values.
+                </p>
+
+            </div>
+
+
+            <button
+                id="closeValues"
+                class="close-panel"
+            >
+                ×
+            </button>
+
+
+        </div>
+
+
+        <div class="values-tools">
+
+
+            <input
+                id="valueSearch"
+                type="search"
+                placeholder="Search pets..."
+                autocomplete="off"
+            >
+
+
+        </div>
+
+
+        <div
+            id="petList"
+            class="pet-list"
+        >
+
+            <div class="loading">
+                Loading values...
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- LEADERBOARD -->
+
+    <section
+        id="leaderboardPage"
+        class="page"
+    >
+
+        <div class="empty-page">
+
+            <h2>
+                Leaderboard
+            </h2>
+
+            <p>
+                Leaderboard coming soon.
+            </p>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- COINFLIP -->
+
+    <section
+        id="coinflipPage"
+        class="page"
+    >
+
+        <div class="empty-page">
+
+            <h2>
+                Coinflip
+            </h2>
+
+            <p>
+                Coinflip coming soon.
+            </p>
+
+        </div>
+
+    </section>
+
+
+</main>
+
+
+
+<!-- =========================
+     ANNOUNCEMENT
+========================= -->
+
+<div
+    id="announcement"
+    class="announcement hidden"
+></div>
 
 
 
@@ -312,6 +452,7 @@
     id="maintenance"
     class="maintenance hidden"
 >
+
 
     <div class="maintenance-box">
 
@@ -333,6 +474,7 @@
         </p>
 
     </div>
+
 
 </div>
 
@@ -356,9 +498,7 @@
             class="modal-close"
             type="button"
         >
-
             ×
-
         </button>
 
 
@@ -368,9 +508,8 @@
 
 
         <p class="modal-description">
-            Enter your Roblox username to verify your account.
+            Verify your Roblox account to use ADMFLIP chat.
         </p>
-
 
 
         <input
@@ -381,12 +520,10 @@
         >
 
 
-
         <div
             id="profile"
             class="hidden"
         ></div>
-
 
 
         <div
@@ -395,15 +532,12 @@
         ></div>
 
 
-
         <button
             id="verify"
             type="button"
             style="display:none;"
         >
-
             Verify
-
         </button>
 
 
