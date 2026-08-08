@@ -301,11 +301,19 @@ function generatePhrase() {
     Math.floor(1000 + Math.random() * 9000);
 }
 
-app.get("/create", (req, res) => {
+function sendVerificationPhrase(res) {
   res.json({
     success: true,
     phrase: generatePhrase()
   });
+}
+
+app.get("/create", (req, res) => {
+  sendVerificationPhrase(res);
+});
+
+app.post("/create", (req, res) => {
+  sendVerificationPhrase(res);
 });
 
 app.post("/check", async (req, res) => {
@@ -341,9 +349,9 @@ app.post("/check", async (req, res) => {
     }
 
     const profile = await profileResponse.json();
-    const description = String(profile.description || "");
+    const description = String(profile.description || "").trim();
 
-    if (!description.includes(phrase)) {
+    if (!description.toLowerCase().includes(phrase.toLowerCase())) {
       return res.json({
         success: false,
         message: "Verification phrase not found in Roblox bio"
