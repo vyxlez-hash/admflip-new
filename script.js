@@ -20,7 +20,7 @@
     from your backend.
   */
 
-  const BACKEND = window.ADMFLIP_BACKEND || "";
+const BACKEND = "https://admflip-backend.onrender.com";
 
   const state = {
     page: "coinflip",
