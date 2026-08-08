@@ -30,15 +30,6 @@ const phraseText =
 const verifyBtn =
     document.getElementById("verify");
 
-const chatPanel =
-    document.getElementById("chatPanel");
-
-const mobileChatButton =
-    document.getElementById("mobileChatButton");
-
-const mobileChatClose =
-    document.getElementById("mobileChatClose");
-
 const chatMessages =
     document.getElementById("chatMessages");
 
@@ -49,39 +40,224 @@ const chatInput =
     document.getElementById("chatInput");
 
 const chatLoginMessage =
-    document.getElementById(
-        "chatLoginMessage"
-    );
+    document.getElementById("chatLoginMessage");
+
+const petList =
+    document.getElementById("petList");
+
+const valueSearch =
+    document.getElementById("valueSearch");
 
 const announcement =
-    document.getElementById(
-        "announcement"
-    );
+    document.getElementById("announcement");
 
 const maintenance =
+    document.getElementById("maintenance");
+
+const mobileMenuButton =
     document.getElementById(
-        "maintenance"
+        "mobileMenuButton"
     );
 
-const site =
+const mobileMenu =
     document.getElementById(
-        "site"
+        "mobileMenu"
     );
 
 
 // ======================
-// USER
+// STATE
 // ======================
 
 let currentUser = null;
 
 let phrase = "";
 
+let pets = [];
+
 let lastChatSignature = "";
 
 
 // ======================
-// LOAD SAVED USER
+// PAGES
+// ======================
+
+const pages = {
+
+    coinflip:
+        document.getElementById(
+            "coinflipPage"
+        ),
+
+    leaderboard:
+        document.getElementById(
+            "leaderboardPage"
+        ),
+
+    chat:
+        document.getElementById(
+            "chatPage"
+        ),
+
+    values:
+        document.getElementById(
+            "valuesPage"
+        )
+
+};
+
+
+const homePage =
+    document.getElementById(
+        "homePage"
+    );
+
+
+// ======================
+// NAVIGATION
+// ======================
+
+function openPage(page){
+
+    homePage.classList.remove(
+        "active-page"
+    );
+
+
+    Object.values(pages).forEach(
+        element => {
+
+            element.classList.remove(
+                "active-page"
+            );
+
+        }
+    );
+
+
+    if(page === "coinflip"){
+
+        pages.coinflip.classList.add(
+            "active-page"
+        );
+
+    }
+    else if(page === "leaderboard"){
+
+        pages.leaderboard.classList.add(
+            "active-page"
+        );
+
+    }
+    else if(page === "chat"){
+
+        pages.chat.classList.add(
+            "active-page"
+        );
+
+        loadChat();
+
+    }
+    else if(page === "values"){
+
+        pages.values.classList.add(
+            "active-page"
+        );
+
+        loadPets();
+
+    }
+    else{
+
+        homePage.classList.add(
+            "active-page"
+        );
+
+    }
+
+
+    mobileMenu.classList.remove(
+        "show"
+    );
+
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
+}
+
+
+document.querySelectorAll(
+    "[data-page]"
+).forEach(
+    link => {
+
+        link.addEventListener(
+            "click",
+            event => {
+
+                event.preventDefault();
+
+                openPage(
+                    link.dataset.page
+                );
+
+            }
+        );
+
+    }
+);
+
+
+// ======================
+// CLOSE BUTTONS
+// ======================
+
+document.getElementById(
+    "closeChat"
+).onclick = () => {
+
+    openPage("coinflip");
+
+};
+
+
+document.getElementById(
+    "closeValues"
+).onclick = () => {
+
+    openPage("coinflip");
+
+};
+
+
+document.getElementById(
+    "viewValuesButton"
+).onclick = () => {
+
+    openPage("values");
+
+};
+
+
+// ======================
+// MOBILE MENU
+// ======================
+
+mobileMenuButton.onclick =
+() => {
+
+    mobileMenu.classList.toggle(
+        "show"
+    );
+
+};
+
+
+// ======================
+// LOGIN
 // ======================
 
 function loadSavedUser(){
@@ -92,45 +268,21 @@ function loadSavedUser(){
         );
 
 
-    if(!saved){
+    if(saved){
 
-        updateLoginUI();
-
-        updateChatUI();
-
-        return;
-
-    }
-
-
-    try{
-
-        const parsed =
-            JSON.parse(saved);
-
-
-        if(
-            parsed &&
-            parsed.id &&
-            parsed.username
-        ){
+        try{
 
             currentUser =
-                parsed;
+                JSON.parse(saved);
 
         }
+        catch{
 
-    }
-    catch(error){
+            localStorage.removeItem(
+                "admflipUser"
+            );
 
-        console.log(
-            "Saved login error:",
-            error
-        );
-
-        localStorage.removeItem(
-            "admflipUser"
-        );
+        }
 
     }
 
@@ -142,10 +294,6 @@ function loadSavedUser(){
 }
 
 
-// ======================
-// LOGIN UI
-// ======================
-
 function updateLoginUI(){
 
     if(currentUser){
@@ -154,7 +302,8 @@ function updateLoginUI(){
 
             <img
                 src="${escapeAttribute(
-                    currentUser.avatar || "roblox.png"
+                    currentUser.avatar ||
+                    "roblox.png"
                 )}"
                 alt=""
             >
@@ -166,10 +315,6 @@ function updateLoginUI(){
             </span>
 
         `;
-
-        loginBtn.classList.add(
-            "logged"
-        );
 
 
         logoutBtn.style.display =
@@ -191,10 +336,6 @@ function updateLoginUI(){
 
         `;
 
-        loginBtn.classList.remove(
-            "logged"
-        );
-
 
         logoutBtn.style.display =
             "none";
@@ -204,29 +345,18 @@ function updateLoginUI(){
 }
 
 
-// ======================
-// OPEN LOGIN
-// ======================
-
 loginBtn.onclick = () => {
 
-    if(currentUser){
+    if(!currentUser){
 
-        return;
+        modal.classList.add(
+            "show"
+        );
 
     }
 
-
-    modal.classList.add(
-        "show"
-    );
-
 };
 
-
-// ======================
-// CLOSE LOGIN
-// ======================
 
 modalClose.onclick = () => {
 
@@ -237,27 +367,23 @@ modalClose.onclick = () => {
 };
 
 
-modal.addEventListener(
-    "click",
-    (event) => {
+modal.onclick = event => {
 
-        if(
-            event.target ===
-            modal
-        ){
+    if(
+        event.target === modal
+    ){
 
-            modal.classList.remove(
-                "show"
-            );
-
-        }
+        modal.classList.remove(
+            "show"
+        );
 
     }
-);
+
+};
 
 
 // ======================
-// ROBLOX USER LOOKUP
+// ROBLOX LOOKUP
 // ======================
 
 usernameInput.onchange =
@@ -382,7 +508,6 @@ async () => {
         verifyBtn.style.display =
             "block";
 
-
     }
     catch(error){
 
@@ -404,13 +529,6 @@ async () => {
 verifyBtn.onclick =
 async () => {
 
-    if(!currentUser){
-
-        return;
-
-    }
-
-
     verifyBtn.disabled =
         true;
 
@@ -428,21 +546,20 @@ async () => {
                     method: "POST",
 
                     headers: {
-
                         "Content-Type":
                             "application/json"
-
                     },
 
-                    body: JSON.stringify({
+                    body:
+                        JSON.stringify({
 
-                        username:
-                            currentUser.username,
+                            username:
+                                currentUser.username,
 
-                        phrase:
-                            phrase
+                            phrase:
+                                phrase
 
-                    })
+                        })
 
                 }
             );
@@ -457,7 +574,6 @@ async () => {
             currentUser.id =
                 data.id;
 
-
             currentUser.username =
                 data.username;
 
@@ -470,20 +586,18 @@ async () => {
             );
 
 
+            updateLoginUI();
+
+            updateChatUI();
+
+
             modal.classList.remove(
                 "show"
             );
 
 
-            updateLoginUI();
-
-            updateChatUI();
-
-            await loadChat();
-
-
             alert(
-                "Verified successfully."
+                "Verified successfully!"
             );
 
         }
@@ -535,12 +649,9 @@ logoutBtn.onclick = () => {
     );
 
 
-    currentUser =
-        null;
+    currentUser = null;
 
-
-    phrase =
-        "";
+    phrase = "";
 
 
     updateLoginUI();
@@ -551,7 +662,7 @@ logoutBtn.onclick = () => {
 
 
 // ======================
-// CHAT UI
+// CHAT LOGIN
 // ======================
 
 function updateChatUI(){
@@ -579,64 +690,6 @@ function updateChatUI(){
 
 
 // ======================
-// MOBILE CHAT
-// ======================
-
-mobileChatButton.onclick =
-() => {
-
-    chatPanel.classList.add(
-        "mobile-open"
-    );
-
-};
-
-
-mobileChatClose.onclick =
-() => {
-
-    chatPanel.classList.remove(
-        "mobile-open"
-    );
-
-};
-
-
-// Close mobile chat when clicking outside
-
-document.addEventListener(
-    "click",
-    (event) => {
-
-        if(
-            window.innerWidth > 700
-        ){
-
-            return;
-
-        }
-
-
-        if(
-            !chatPanel.contains(
-                event.target
-            ) &&
-            !mobileChatButton.contains(
-                event.target
-            )
-        ){
-
-            chatPanel.classList.remove(
-                "mobile-open"
-            );
-
-        }
-
-    }
-);
-
-
-// ======================
 // LOAD CHAT
 // ======================
 
@@ -661,9 +714,7 @@ async function loadChat(){
             await response.json();
 
 
-        if(
-            !data.success
-        ){
+        if(!data.success){
 
             return;
 
@@ -675,12 +726,10 @@ async function loadChat(){
 
 
         const signature =
-            messages
-                .map(
-                    message =>
-                        message._id
-                )
-                .join(",");
+            messages.map(
+                message =>
+                    message._id
+            ).join(",");
 
 
         if(
@@ -697,9 +746,122 @@ async function loadChat(){
             signature;
 
 
-        renderChat(
-            messages
+        chatMessages.innerHTML =
+            "";
+
+
+        messages.forEach(
+            message => {
+
+                const row =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                row.className =
+                    "chat-message";
+
+
+                if(
+                    message.type ===
+                    "announcement"
+                ){
+
+                    row.classList.add(
+                        "announcement-message"
+                    );
+
+                }
+
+
+                const avatar =
+                    document.createElement(
+                        "img"
+                    );
+
+
+                avatar.className =
+                    "chat-avatar";
+
+
+                avatar.src =
+                    message.avatar ||
+                    "roblox.png";
+
+
+                avatar.onerror =
+                    () => {
+
+                        avatar.src =
+                            "roblox.png";
+
+                    };
+
+
+                const body =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                body.className =
+                    "chat-body";
+
+
+                const name =
+                    document.createElement(
+                        "strong"
+                    );
+
+
+                name.textContent =
+                    message.username ||
+                    "User";
+
+
+                const text =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                text.className =
+                    "chat-text";
+
+
+                text.textContent =
+                    message.message;
+
+
+                body.appendChild(
+                    name
+                );
+
+                body.appendChild(
+                    text
+                );
+
+
+                row.appendChild(
+                    avatar
+                );
+
+                row.appendChild(
+                    body
+                );
+
+
+                chatMessages.appendChild(
+                    row
+                );
+
+            }
         );
+
+
+        chatMessages.scrollTop =
+            chatMessages.scrollHeight;
 
     }
     catch(error){
@@ -715,172 +877,29 @@ async function loadChat(){
 
 
 // ======================
-// RENDER CHAT
-// ======================
-
-function renderChat(messages){
-
-    chatMessages.innerHTML =
-        "";
-
-
-    messages.forEach(
-        (message) => {
-
-            const row =
-                document.createElement(
-                    "div"
-                );
-
-
-            row.className =
-                "chat-message";
-
-
-            if(
-                message.type ===
-                "announcement"
-            ){
-
-                row.classList.add(
-                    "announcement-message"
-                );
-
-            }
-
-
-            const avatar =
-                document.createElement(
-                    "img"
-                );
-
-
-            avatar.className =
-                "chat-avatar";
-
-
-            avatar.src =
-                message.avatar ||
-                "roblox.png";
-
-
-            avatar.onerror =
-                () => {
-
-                    avatar.src =
-                        "roblox.png";
-
-                };
-
-
-            const content =
-                document.createElement(
-                    "div"
-                );
-
-
-            content.className =
-                "chat-content";
-
-
-            const name =
-                document.createElement(
-                    "div"
-                );
-
-
-            name.className =
-                "chat-name";
-
-
-            name.textContent =
-                message.username ||
-                "User";
-
-
-            const text =
-                document.createElement(
-                    "div"
-                );
-
-
-            text.className =
-                "chat-text";
-
-
-            // textContent prevents HTML injection
-
-            text.textContent =
-                message.message;
-
-
-            content.appendChild(
-                name
-            );
-
-
-            content.appendChild(
-                text
-            );
-
-
-            row.appendChild(
-                avatar
-            );
-
-
-            row.appendChild(
-                content
-            );
-
-
-            chatMessages.appendChild(
-                row
-            );
-
-        }
-    );
-
-
-    chatMessages.scrollTop =
-        chatMessages.scrollHeight;
-
-}
-
-
-// ======================
 // LINK FILTER
 // ======================
 
 function containsLink(text){
 
-    const pattern =
-        /(?:https?:\/\/|http:\/\/|www\.|ftp:\/\/|discord\.gg\/|discord\.com\/invite\/|t\.me\/|telegram\.me\/|bit\.ly\/|tinyurl\.com\/|t\.co\/|youtu\.be\/|youtube\.com\/)/i;
-
-
-    return pattern.test(
-        text
-    );
+    return /(?:https?:\/\/|http:\/\/|www\.|ftp:\/\/|discord\.gg\/|discord\.com\/invite\/|t\.me\/|telegram\.me\/|bit\.ly\/|tinyurl\.com\/|youtu\.be\/|youtube\.com\/)/i
+        .test(text);
 
 }
 
 
 // ======================
-// SEND MESSAGE
+// SEND CHAT
 // ======================
 
 chatForm.addEventListener(
     "submit",
-    async (event) => {
+    async event => {
 
         event.preventDefault();
 
 
         if(!currentUser){
-
-            alert(
-                "You must be logged in to chat."
-            );
 
             return;
 
@@ -898,24 +917,7 @@ chatForm.addEventListener(
         }
 
 
-        if(
-            message.length > 500
-        ){
-
-            alert(
-                "Message cannot be longer than 500 characters."
-            );
-
-            return;
-
-        }
-
-
-        if(
-            containsLink(
-                message
-            )
-        ){
+        if(containsLink(message)){
 
             alert(
                 "Links are not allowed in chat."
@@ -924,10 +926,6 @@ chatForm.addEventListener(
             return;
 
         }
-
-
-        chatInput.disabled =
-            true;
 
 
         try{
@@ -946,18 +944,19 @@ chatForm.addEventListener(
 
                         },
 
-                        body: JSON.stringify({
+                        body:
+                            JSON.stringify({
 
-                            username:
-                                currentUser.username,
+                                username:
+                                    currentUser.username,
 
-                            avatar:
-                                currentUser.avatar,
+                                avatar:
+                                    currentUser.avatar,
 
-                            message:
-                                message
+                                message:
+                                    message
 
-                        })
+                            })
 
                     }
                 );
@@ -982,7 +981,6 @@ chatForm.addEventListener(
             chatInput.value =
                 "";
 
-
             lastChatSignature =
                 "";
 
@@ -999,17 +997,251 @@ chatForm.addEventListener(
             );
 
         }
-        finally{
-
-            chatInput.disabled =
-                false;
-
-            chatInput.focus();
-
-        }
 
     }
 );
+
+
+// ======================
+// PET VALUES
+// ======================
+
+async function loadPets(){
+
+    petList.innerHTML = `
+
+        <div class="loading">
+            Loading pet values...
+        </div>
+
+    `;
+
+
+    try{
+
+        const response =
+            await fetch(
+                BACKEND + "/pets"
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if(
+            !data.success
+        ){
+
+            throw new Error(
+                "Could not load pets"
+            );
+
+        }
+
+
+        pets =
+            data.pets || [];
+
+
+        renderPets(
+            pets
+        );
+
+    }
+    catch(error){
+
+        console.log(error);
+
+        petList.innerHTML = `
+
+            <div class="loading">
+                Could not load pet values.
+            </div>
+
+        `;
+
+    }
+
+}
+
+
+// ======================
+// RENDER PETS
+// ======================
+
+function renderPets(list){
+
+    petList.innerHTML =
+        "";
+
+
+    if(!list.length){
+
+        petList.innerHTML = `
+
+            <div class="loading">
+                No pets found.
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    list.forEach(
+        pet => {
+
+            const item =
+                document.createElement(
+                    "div"
+                );
+
+
+            item.className =
+                "pet-item";
+
+
+            const image =
+                document.createElement(
+                    "img"
+                );
+
+
+            image.className =
+                "pet-image";
+
+
+            image.src =
+                pet.image ||
+                pet.imageUrl ||
+                "pet-placeholder.png";
+
+
+            image.onerror =
+                () => {
+
+                    image.src =
+                        "pet-placeholder.png";
+
+                };
+
+
+            const info =
+                document.createElement(
+                    "div"
+                );
+
+
+            info.className =
+                "pet-info";
+
+
+            const name =
+                document.createElement(
+                    "strong"
+                );
+
+
+            name.textContent =
+                pet.name;
+
+
+            const value =
+                document.createElement(
+                    "span"
+                );
+
+
+            value.textContent =
+                formatValue(
+                    pet.value
+                );
+
+
+            info.appendChild(
+                name
+            );
+
+            info.appendChild(
+                value
+            );
+
+
+            item.appendChild(
+                image
+            );
+
+            item.appendChild(
+                info
+            );
+
+
+            petList.appendChild(
+                item
+            );
+
+        }
+    );
+
+}
+
+
+// ======================
+// SEARCH VALUES
+// ======================
+
+valueSearch.addEventListener(
+    "input",
+    () => {
+
+        const search =
+            valueSearch.value
+                .trim()
+                .toLowerCase();
+
+
+        const filtered =
+            pets.filter(
+                pet =>
+                    pet.name
+                        .toLowerCase()
+                        .includes(search)
+            );
+
+
+        renderPets(
+            filtered
+        );
+
+    }
+);
+
+
+// ======================
+// VALUE FORMAT
+// ======================
+
+function formatValue(value){
+
+    const number =
+        Number(value);
+
+
+    if(
+        Number.isNaN(number)
+    ){
+
+        return String(value);
+
+    }
+
+
+    return number.toLocaleString();
+
+}
 
 
 // ======================
@@ -1038,18 +1270,12 @@ async function checkSiteStatus(){
                 "hidden"
             );
 
-            site.style.display =
-                "none";
-
         }
         else{
 
             maintenance.classList.add(
                 "hidden"
             );
-
-            site.style.display =
-                "block";
 
         }
 
@@ -1061,6 +1287,7 @@ async function checkSiteStatus(){
             announcement.classList.remove(
                 "hidden"
             );
+
 
             announcement.textContent =
                 "📢 " +
@@ -1078,10 +1305,7 @@ async function checkSiteStatus(){
     }
     catch(error){
 
-        console.log(
-            "Status error:",
-            error
-        );
+        console.log(error);
 
     }
 
@@ -1089,17 +1313,32 @@ async function checkSiteStatus(){
 
 
 // ======================
-// SECURITY HELPERS
+// SECURITY
 // ======================
 
 function escapeHtml(value){
 
     return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
 
 }
 
@@ -1107,10 +1346,22 @@ function escapeHtml(value){
 function escapeAttribute(value){
 
     return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;");
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        );
 
 }
 
@@ -1121,20 +1372,30 @@ function escapeAttribute(value){
 
 loadSavedUser();
 
-loadChat();
-
 checkSiteStatus();
 
 
-// Refresh chat every 3 seconds
+// Chat refresh
 
 setInterval(
-    loadChat,
+    () => {
+
+        if(
+            pages.chat.classList.contains(
+                "active-page"
+            )
+        ){
+
+            loadChat();
+
+        }
+
+    },
     3000
 );
 
 
-// Check site status every 15 sec
+// Status refresh
 
 setInterval(
     checkSiteStatus,
